@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PsicoCare · cuidado inteligente em saúde mental</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300..700&family=Outfit:wght@300..700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #faf3ed; 
+            font-family: 'Inter', 'Outfit', sans-serif;
+            color: #2d3f3a;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        @keyframes fadeUp {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 0 0 rgba(180, 160, 200, 0.4); }
+            70% { box-shadow: 0 0 0 15px rgba(180, 160, 200, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(180, 160, 200, 0); }
+        }
+
+        .animate-up {
+            animation: fadeUp 0.9s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+            opacity: 0;
+        }
+
+        .delay-1 { animation-delay: 0.15s; }
+        .delay-2 { animation-delay: 0.3s; }
+        .delay-3 { animation-delay: 0.45s; }
+        .delay-4 { animation-delay: 0.6s; }
+        .delay-5 { animation-delay: 0.75s; }
+
+        .float {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 2rem 2rem 3rem;
+            position: relative;
+        }
+
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding: 0.8rem 1.8rem;
+            background: rgba(255, 248, 242, 0.7);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 80px;
+            border: 1px solid rgba(210, 185, 170, 0.25);
+            box-shadow: 0 20px 40px -12px rgba(140, 110, 100, 0.18);
+        }
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+        }
+
+        .logo-icon {
+            background: linear-gradient(145deg, #dcc9e8, #cfbcdb); 
+            color: #5b4b6b;
+            width: 52px;
+            height: 52px;
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 12px 22px -10px #b39fbd;
+            transition: all 0.3s ease;
+        }
+
+        .logo-icon:hover {
+            transform: scale(1.07) rotate(3deg);
+            background: linear-gradient(145deg, #d4bde6, #c5b0d4);
+        }
+
+        .logo-text h1 {
+            font-size: 2.1rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #826d94, #9a87aa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text span {
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: #839b8b; 
+            display: block;
+            margin-top: 2px;
+        }
+
+        .cta-top {
+            background: rgba(210, 220, 190, 0.5); 
+            padding: 0.8rem 2rem;
+            border-radius: 60px;
+            font-weight: 600;
+            color: #567056;
+            border: 1px solid rgba(170, 190, 150, 0.5);
+            backdrop-filter: blur(4px);
+            transition: all 0.25s;
+            cursor: default;
+        }
+
+        .cta-top i {
+            margin-right: 8px;
+            color: #a693b5; 
+        }
+
+        .cta-top:hover {
+            background: #dacfdf;
+            border-color: #b8a7c5;
+            color: #4a5b4a;
+        }
+
+        .hero {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 3rem;
+            margin: 3rem 0 5rem;
+            align-items: center;
+        }
+
+        .hero-content {
+            flex: 1 1 400px;
+        }
+
+        .hero-badge {
+            background: rgba(230, 215, 225, 0.7);
+            backdrop-filter: blur(8px);
+            padding: 0.5rem 1.4rem;
+            border-radius: 40px;
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.95rem;
+            color: #6b7d70;
+            margin-bottom: 1.8rem;
+            border: 1px solid rgba(200, 175, 190, 0.4);
+            box-shadow: 0 5px 12px rgba(170, 140, 150, 0.1);
+        }
+
+        .hero-content h2 {
+            font-size: 3.2rem;
+            font-weight: 700;
+            line-height: 1.15;
+            letter-spacing: -1.5px;
+            color: #7b638b; 
+            margin-bottom: 1.5rem;
+        }
+
+        .hero-content h2 i {
+            color: #b3bf98; 
+            font-size: 3rem;
+            margin-right: 6px;
+            filter: drop-shadow(0 4px 6px rgba(150, 160, 120, 0.3));
+        }
+
+        .hero-desc {
+            font-size: 1.2rem;
+            color: #638072;  
+            max-width: 550px;
+            margin-bottom: 2.2rem;
+            border-left: 4px solid #d7bfe0; 
+            padding-left: 1.8rem;
+            background: rgba(250, 240, 235, 0.4);
+            border-radius: 0 20px 20px 0;
+        }
+
+        .hero-cta-block {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.3rem;
+            align-items: center;
+        }
+
+        .btn-contato-grande {
+            background: #b1b992; 
+            color: #2f4037;
+            border: none;
+            padding: 1rem 2.8rem;
+            border-radius: 60px;
+            font-weight: 600;
+            font-size: 1.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 25px 30px -12px rgba(130, 145, 100, 0.5);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 245, 0.4);
+            backdrop-filter: blur(2px);
+        }
+
+        .btn-contato-grande i {
+            font-size: 1.5rem;
+            color: #fbf3e9;
+            transition: transform 0.2s;
+        }
+
+        .btn-contato-grande:hover {
+            background: #a0a87c;
+            transform: scale(1.03) translateY(-3px);
+            box-shadow: 0 30px 35px -12px #8d9a75;
+        }
+
+        .btn-contato-grande:hover i {
+            transform: translateX(5px);
+        }
+
+        .small-note {
+            color: #7f948b;
+            font-size: 0.95rem;
+            background: rgba(245, 235, 225, 0.6);
+            padding: 0.4rem 1.2rem;
+            border-radius: 40px;
+            backdrop-filter: blur(4px);
+        }
+
+        .hero-visual {
+            flex: 1 1 350px;
+            background: rgba(255, 247, 240, 0.7);
+            backdrop-filter: blur(12px);
+            padding: 2.2rem 1.8rem;
+            border-radius: 48px;
+            box-shadow: 0 30px 45px -20px #bba18d;
+            border: 1px solid rgba(255, 235, 220, 0.6);
+            transition: transform 0.4s;
+        }
+
+        .hero-visual:hover {
+            transform: scale(1.01);
+        }
+
+        .phone-mock {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .metric-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(4px);
+            padding: 1rem 1.5rem;
+            border-radius: 70px;
+            box-shadow: 0 6px 18px rgba(160, 135, 120, 0.08);
+            border: 1px solid rgba(240, 220, 205, 0.7);
+            transition: all 0.3s;
+        }
+
+        .metric-row:hover {
+            background: rgba(255, 245, 235, 0.9);
+            transform: translateX(6px);
+        }
+
+        .metric-icon {
+            background: #e6d5ea; 
+            width: 52px;
+            height: 52px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.7rem;
+            color: #7e6791;
+        }
+
+        .metric-text h4 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #506454;
+        }
+
+        .metric-text p {
+            color: #799283;
+            font-size: 0.95rem;
+        }
+
+        .badge-wearable {
+            background: rgba(235, 225, 240, 0.7);
+            backdrop-filter: blur(4px);
+            border-radius: 50px;
+            padding: 0.7rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 500;
+            color: #62786b;
+            border: 1px solid #d9cfc2;
+            transition: 0.2s;
+        }
+
+        .badge-wearable:hover {
+            background: #e5d7e0;
+        }
+
+       
+        .section-title {
+            text-align: center;
+            margin: 5rem 0 2.5rem;
+        }
+
+        .section-title h3 {
+            font-size: 2.4rem;
+            font-weight: 650;
+            color: #856d99;
+            background: linear-gradient(145deg, #826d94, #6f8a7a);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-title p {
+            color: #74927c;
+            max-width: 700px;
+            margin: 0.8rem auto 0;
+            font-size: 1.2rem;
+        }
+
+        .grid-3 {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            justify-content: center;
+            margin: 2.5rem 0;
+        }
+
+        .card {
+            background: rgba(255, 250, 242, 0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 40px;
+            padding: 2.2rem 2rem;
+            flex: 1 1 280px;
+            box-shadow: 0 25px 35px -16px #c0ad9a;
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1);
+            border: 1px solid rgba(240, 220, 205, 0.6);
+            opacity: 0;
+            animation: fadeUp 0.7s forwards;
+        }
+
+        .card:nth-child(1) { animation-delay: 0.2s; }
+        .card:nth-child(2) { animation-delay: 0.35s; }
+        .card:nth-child(3) { animation-delay: 0.5s; }
+
+        .card:hover {
+            transform: translateY(-14px) scale(1.02);
+            background: rgba(255, 245, 235, 0.9);
+            border-color: #dac0cf;
+            box-shadow: 0 40px 50px -18px #a48d81;
+        }
+
+        .card-icon {
+            background: linear-gradient(145deg, #e4d2ee, #d5c2e2);
+            width: 80px;
+            height: 80px;
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            color: #6f5a82;
+            margin-bottom: 2rem;
+            transition: 0.3s;
+        }
+
+        .card:hover .card-icon {
+            transform: rotate(5deg) scale(1.05);
+            background: #dbc6ea;
+        }
+
+        .card h4 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 1.3rem;
+            color: #7f6b8f;
+        }
+
+        .card ul {
+            list-style: none;
+        }
+
+        .card li {
+            margin-bottom: 0.8rem;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            color: #607467;
+        }
+
+        .card li i {
+            color: #b8b68b;
+            font-size: 1.2rem;
+            margin-top: 3px;
+        }
+
+        .profile-panel {
+            background: rgba(245, 235, 225, 0.7);
+            backdrop-filter: blur(16px);
+            border-radius: 60px;
+            padding: 2.8rem 2.5rem;
+            margin: 5rem 0;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2.5rem;
+            align-items: center;
+            border: 1px solid rgba(220, 200, 185, 0.5);
+            box-shadow: 0 30px 40px -18px #ab9587;
+        }
+
+        .profile-text {
+            flex: 2 1 300px;
+        }
+
+        .profile-text h3 {
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 1.2rem;
+            color: #846d9b;
+        }
+
+        .tag-profi, .tag-paciente {
+            display: inline-block;
+            background: #b9c19e; 
+            color: #2e4438;
+            border-radius: 50px;
+            padding: 0.4rem 1.4rem;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-right: 1rem;
+            border: 1px solid #d6dbbd;
+        }
+
+        .tag-paciente {
+            background: #dbcde6; 
+            color: #514763;
+        }
+
+        .assinatura-box {
+            background: rgba(185, 180, 145, 0.75);
+            backdrop-filter: blur(8px);
+            padding: 2rem 2.2rem;
+            border-radius: 42px;
+            flex: 1 1 280px;
+            border: 1px solid #ece1cf;
+            transition: transform 0.3s;
+        }
+
+        .assinatura-box:hover {
+            transform: scale(1.02);
+            background: rgba(180, 175, 140, 0.8);
+        }
+
+        .assinatura-box h4 {
+            font-size: 1.9rem;
+            font-weight: 600;
+            color: #3c4f41;
+        }
+
+        .assinatura-box .price {
+            font-size: 2.7rem;
+            font-weight: 700;
+            margin: 1rem 0;
+            color: #2b4637;
+        }
+
+        .price small {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #5f7663;
+        }
+
+        .btn-assinar {
+            background: #ede3d3; 
+            border: none;
+            color: #5b7057;
+            padding: 1rem 2rem;
+            border-radius: 60px;
+            font-weight: 700;
+            width: 100%;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: 0.25s;
+            border: 1px solid #cfc2b0;
+        }
+
+        .btn-assinar:hover {
+            background: #e0d2bc;
+            gap: 16px;
+            box-shadow: 0 15px 20px -10px #a6937e;
+        }
+
+        .contact-highlight {
+            background: rgba(235, 220, 225, 0.6);
+            backdrop-filter: blur(16px);
+            border-radius: 80px;
+            padding: 2.8rem 2.5rem;
+            text-align: center;
+            margin: 5rem 0 2rem;
+            border: 1px solid rgba(220, 195, 200, 0.5);
+            box-shadow: 0 25px 40px -18px #b5958f;
+            animation: pulseGlow 4s infinite;
+        }
+
+        .contact-highlight h3 {
+            font-size: 2.7rem;
+            font-weight: 650;
+            color: #8c71a3;
+        }
+
+        .contact-flex {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 2rem;
+            margin: 2.5rem 0 1.5rem;
+        }
+
+        .contact-item {
+            background: rgba(255, 250, 240, 0.8);
+            backdrop-filter: blur(8px);
+            border-radius: 70px;
+            padding: 1rem 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 15px 20px -10px rgba(150, 120, 100, 0.2);
+            font-size: 1.3rem;
+            font-weight: 500;
+            border: 1px solid #eddccd;
+            transition: 0.25s;
+        }
+
+        .contact-item:hover {
+            background: #ffffff;
+            transform: scale(1.05) translateY(-4px);
+            border-color: #c3abbe;
+        }
+
+        .contact-item i {
+            font-size: 2rem;
+            color: #b2ab84; 
+        }
+
+        .contact-item a {
+            text-decoration: none;
+            color: #627a68;
+        }
+
+        .footer-note {
+            text-align: center;
+            color: #809988;
+            margin-top: 4rem;
+            font-size: 1rem;
+            border-top: 1px solid #dacfc1;
+            padding-top: 2rem;
+        }
+
+        .floating-contact {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: #b9b994; 
+            color: #2f4237;
+            width: 70px;
+            height: 70px;
+            border-radius: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 20px 30px -8px #8f8e74;
+            transition: all 0.3s ease;
+            z-index: 99;
+            border: 1px solid #ece1cf;
+            backdrop-filter: blur(8px);
+            animation: float 5s ease-in-out infinite;
+        }
+
+        .floating-contact:hover {
+            background: #cfc8a6;
+            width: 170px;
+            border-radius: 60px;
+            gap: 12px;
+            animation: none;
+        }
+
+        .floating-contact span {
+            display: none;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .floating-contact:hover span {
+            display: inline;
+        }
+
+        @media (max-width: 700px) {
+            .hero-content h2 { font-size: 2.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header animate-up">
+            <div class="logo-area">
+                <div class="logo-icon"><i class="fas fa-brain"></i></div>
+                <div class="logo-text">
+                    <h1>PsicoCare</h1>
+                    <span>inteligência clínica · dados multimodais</span>
+                </div>
+            </div>
+            <div class="cta-top">
+                <i class="fas fa-feather"></i> Área do profissional
+            </div>
+        </div>
+
+        <div class="hero">
+            <div class="hero-content">
+                <div class="hero-badge animate-up delay-1"><i class="fas fa-sparkles"></i> IA explicável · suporte à decisão</div>
+                <h2 class="animate-up delay-2"><i class="fas fa-leaf"></i> Acompanhamento em saúde mental com dados contínuos</h2>
+                <div class="hero-desc animate-up delay-3">
+                    Integração de autorrelato + wearables + inteligência artificial para gerar insights semanais e compartilhamento seguro com o profissional.
+                </div>
+                <div class="hero-cta-block animate-up delay-4">
+                    <button class="btn-contato-grande" onclick="document.getElementById('fale').scrollIntoView({behavior:'smooth'})">
+                        <i class="fas fa-feather"></i> FALE CONOSCO
+                    </button>
+                    <span class="small-note"><i class="fas fa-lock"></i> licenciamento para psicólogos e psiquiatras</span>
+                </div>
+                <div style="display: flex; gap: 12px; margin-top: 2rem; flex-wrap: wrap;" class="animate-up delay-5">
+                    <span class="badge-wearable"><i class="fab fa-apple"></i> HealthKit</span>
+                    <span class="badge-wearable"><i class="fab fa-google"></i> Google Fit</span>
+                    <span class="badge-wearable"><i class="fas fa-heart"></i> HRV · sono · FC</span>
+                </div>
+            </div>
+            <div class="hero-visual float animate-up delay-2">
+                <div class="phone-mock">
+                    <div class="metric-row">
+                        <div class="metric-icon"><i class="fas fa-face-smile"></i></div>
+                        <div class="metric-text">
+                            <h4>Humor hoje · 8/10</h4>
+                            <p>estável comparado à semana</p>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-icon"><i class="fas fa-moon"></i></div>
+                        <div class="metric-text">
+                            <h4>Sono REM 2h40</h4>
+                            <p>+12% vs. média</p>
+                        </div>
+                    </div>
+                    <div class="metric-row">
+                        <div class="metric-icon"><i class="fas fa-wave-square"></i></div>
+                        <div class="metric-text">
+                            <h4>HRV 42 ms</h4>
+                            <p>variabilidade dentro do esperado</p>
+                        </div>
+                    </div>
+                    <div style="background: rgba(255, 245, 235, 0.7); border-radius: 24px; padding: 1rem; margin-top: 0.8rem; border: 1px solid #e5d4c4; backdrop-filter: blur(4px);">
+                        <i class="fas fa-file-lines" style="color:#9a87aa;"></i> <strong style="color:#5e7868;">Insight da semana:</strong> "Redução do estresse nos dias com atividade física >30min"
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h3>Camadas de cuidado multimodal</h3>
+            <p>dados subjetivos, fisiológicos e inteligência artificial num só ecossistema</p>
+        </div>
+        <div class="grid-3">
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-pen-to-square"></i></div>
+                <h4>Diário emocional</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Escalas de humor e ansiedade (GAD-2)</li>
+                    <li><i class="fas fa-check-circle"></i> Eventos relevantes e crises</li>
+                    <li><i class="fas fa-check-circle"></i> Registro livre com análise NLP</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-clock"></i></div>
+                <h4>Wearables & sinais</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Frequência cardíaca / HRV</li>
+                    <li><i class="fas fa-check-circle"></i> Sono (profundo, REM, fragmentação)</li>
+                    <li><i class="fas fa-check-circle"></i> Passos e atividade física</li>
+                </ul>
+            </div>
+            <div class="card">
+                <div class="card-icon"><i class="fas fa-chart-line"></i></div>
+                <h4>IA + relatórios</h4>
+                <ul>
+                    <li><i class="fas fa-check-circle"></i> Correlação sono–humor</li>
+                    <li><i class="fas fa-check-circle"></i> Predição de padrões depressivos</li>
+                    <li><i class="fas fa-check-circle"></i> Resumo semanal compartilhável</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="profile-panel">
+            <div class="profile-text">
+                <h3><i class="fas fa-users" style="color:#a693b5;"></i> Dois perfis, um objetivo</h3>
+                <p style="font-size: 1.2rem; margin-bottom: 2rem; color:#627a68;">Plataforma pensada para o contexto clínico com total privacidade.</p>
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+                    <div>
+                        <span class="tag-profi"><i class="fas fa-user-md"></i> Profissional</span>
+                        <ul style="margin-top: 1rem; list-style: none;">
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> Cadastra múltiplos pacientes</li>
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> Acessa dashboards e alertas</li>
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> Relatórios exportáveis</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <span class="tag-paciente"><i class="fas fa-user"></i> Paciente</span>
+                        <ul style="margin-top: 1rem; list-style: none;">
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> App simples para registro</li>
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> Conexão com wearables</li>
+                            <li><i class="fas fa-arrow-right" style="color:#b2b187;"></i> Dados compartilhados apenas com seu terapeuta</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="assinatura-box">
+                <h4>Licença profissional</h4>
+                <div class="price">R$ 97 <small>/mês</small></div>
+                <p><i class="fas fa-check"></i> Até 20 pacientes incluídos</p>
+                <p><i class="fas fa-check"></i> Todas as funcionalidades de IA</p>
+                <p><i class="fas fa-check"></i> Suporte prioritário</p>
+                <button class="btn-assinar" onclick="document.getElementById('fale').scrollIntoView({behavior:'smooth'})"><i class="fas fa-envelope"></i> FALE PARA ASSINAR</button>
+                <p style="font-size:0.85rem; margin-top: 1.5rem; opacity:0.8;"><i class="fas fa-shield-alt"></i> plano adaptável para clínicas</p>
+            </div>
+        </div>
+
+        <div id="fale" class="contact-highlight">
+            <h3><i class="fas fa-feather"></i> Fale com a equipe PsicoCare</h3>
+            <p style="font-size: 1.3rem; color:#7d6391;">Tire dúvidas, solicite uma demonstração ou adquira a licença</p>
+            <div class="contact-flex">
+                <div class="contact-item">
+                    <i class="fas fa-phone-alt"></i>
+                    <a href="tel:+5511999999999">(11) 99999-9999</a>
+                </div>
+                <div class="contact-item">
+                    <i class="fas fa-envelope"></i>
+                    <a href="mailto:contato@psicocare.com">contato@psicocare.com</a>
+                </div>
+                <div class="contact-item">
+                    <i class="fab fa-whatsapp"></i>
+                    <a href="#">WhatsApp comercial</a>
+                </div>
+            </div>
+            <p style="margin-top: 2rem; background: rgba(250, 240, 230, 0.7); border-radius: 60px; padding: 0.6rem 1.8rem; display: inline-block; color:#5b6f5b; backdrop-filter: blur(4px);">
+                <i class="fas fa-calendar-check" style="color:#9f87b0;"></i> Atendimento de segunda a sexta, 9h às 18h
+            </p>
+        </div>
+
+        <div class="footer-note">
+            <i class="fas fa-copyright"></i> PsicoCare — sistema de apoio clínico em saúde mental. 
+            <span style="display: block; margin-top: 0.5rem;"> 
+                <i class="fas fa-heart" style="color:#c9aec2;"></i> 
+                tecnologia a serviço do cuidado humano
+            </span>
+        </div>
+    </div>
+
+   
+</body>
+</html>
