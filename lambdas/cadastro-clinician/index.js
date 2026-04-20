@@ -1,0 +1,84 @@
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand, QueryCommand } from "@aws-sdk/lib-dynamodb";
+import bcrypt from "bcryptjs";
+import { v4 as uuidv4 } from "uuid";
+
+const client = new DynamoDBClient({ region: "sa-east-1" });
+const dynamo = DynamoDBDocumentClient.from(client);
+const TABLE_NAME = "PsicoCare";
+
+export const handler = async (event) => {
+  try {
+    const body = JSON.parse(event.body);
+    const { name, email, password, phone, councilId } = body;
+
+    // Validação básica
+    if (!name || !email || !password || !councilId) {
+      return response(400, { error: "Campos obrigatórios: name, email, password, councilId" });
+    }
+
+    // Verifica se email já existe no GSI1
+    const existing = await dynamo.send(new QueryCommand({
+      TableName: TABLE_NAME,
+      IndexName: "GSI1PK-GSI1SK-index",
+      KeyConditionExpression: "GSI1PK = :email",
+      ExpressionAttributeValues: {
+        ":email": `EMAIL#${email}`
+      }
+    }));
+
+    if (existing.Items.length > 0) {
+      return response(409, { error: "Email já cadastrado" });
+    }
+
+    // Cria o psicólogo
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const item = {
+      PK: `CLINICIAN#${id}`,
+      SK: "PROFILE",
+      GSI1PK: `EMAIL#${email}`,
+      GSI1SK: `CLINICIAN#${id}`,
+      type: "CLINICIAN",
+      createdAt: now,
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        councilId,
+        passwordHash,
+        isActive: true,
+        isAdmin: false,
+        createdAt: now
+      }
+    };
+
+    await dynamo.send(new PutCommand({
+      TableName: TABLE_NAME,
+      Item: item
+    }));
+
+    return response(201, {
+      id,
+      name,
+      email,
+      councilId,
+      createdAt: now
+    });
+
+  } catch (err) {
+    console.error(err);
+    return response(500, { error: "Erro interno do servidor" });
+  }
+};
+
+const response = (statusCode, body) => ({
+  statusCode,
+  headers: {
+    "Content-Type": "application/json",
+    "Access-Control-Allow-Origin": "*"
+  },
+  body: JSON.stringify(body)
+});
