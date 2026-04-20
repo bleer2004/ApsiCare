@@ -1,2 +1,4 @@
 dataset/
 .venv/
+lambdas/**/node_modules/
+node_modules/
