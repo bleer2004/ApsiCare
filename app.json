@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "PsicoCare",
+    "slug": "psicocare",
+    "extra": {
+      "eas": {
+        "projectId": "dc57821e-c0a1-41cd-9b7e-49bfb1f18b5f"
+      }
+    },
+    "ios": {
+      "bundleIdentifier": "com.vewadie.psicocare",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "plugins": [
+      "@react-native-community/datetimepicker"
+    ]
+  }
+}

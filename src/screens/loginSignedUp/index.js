@@ -8,24 +8,64 @@ import {
   Platform,
   ScrollView,
   SafeAreaView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { styles } from './styles';
+import { API_URL } from '../../services/api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const LoginSignedUp = () => {
+const LoginSignedUp = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberPassword, setRememberPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Login pressed', { email, password });
+ const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Atenção', 'Preencha e-mail e senha.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        Alert.alert('Erro', data.error || 'E-mail ou senha incorretos.');
+        return;
+      }
+
+      // Se data.token for undefined, salvamos o ID como string para não dar erro
+      const tokenToSave = data.token || String(data.user.id);
+      
+      await AsyncStorage.setItem('token', tokenToSave);
+      await AsyncStorage.setItem('user', JSON.stringify(data.user));
+
+      console.log('Login realizado com sucesso:', data.user);
+      navigation.replace('VisaoGeral');
+      
+    } catch (err) {
+      console.error("Erro na requisição de login:", err);
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor. Verifique sua internet.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
-    console.log('Forgot password pressed');
+    // Navega pra tela de forgot password 
+    // navigation.navigate('ForgotPassword');
   };
 
   const handleSignUp = () => {
-    console.log('Sign up pressed');
+    navigation.navigate('Cadastro');
   };
 
   return (
@@ -83,8 +123,11 @@ const LoginSignedUp = () => {
               <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Entrar →</Text>
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.loginButtonText}>Entrar →</Text>
+              }
             </TouchableOpacity>
 
             <View style={styles.signUpContainer}>

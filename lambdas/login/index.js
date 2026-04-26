@@ -1,12 +1,10 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
-import bcrypt from "bcryptjs";
-import jwt from "jsonwebtoken";
+import crypto from "crypto";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = "PsicoCare";
-const JWT_SECRET = process.env.JWT_SECRET;
 
 export const handler = async (event) => {
   try {
@@ -27,47 +25,38 @@ export const handler = async (event) => {
       }
     }));
 
-    if (result.Items.length === 0) {
+    if (!result.Items || result.Items.length === 0) {
       return response(401, { error: "Email ou senha inválidos" });
     }
 
     const user = result.Items[0];
 
-    // Valida senha
-    const validPassword = await bcrypt.compare(password, user.data.passwordHash);
-    if (!validPassword) {
+    // Valida senha usando SHA-256 (Igual ao seu cadastro)
+    const loginPasswordHash = crypto
+      .createHash("sha256")
+      .update(password)
+      .digest("hex");
+
+    if (loginPasswordHash !== user.data.passwordHash) {
       return response(401, { error: "Email ou senha inválidos" });
     }
 
-    // Extrai id e tipo do usuário
-    const userType = user.type; // CLINICIAN ou PATIENT
+    // Extrai id
     const userId = user.PK.split("#")[1];
 
-    // Gera JWT
-    const token = jwt.sign(
-      {
-        id: userId,
-        type: userType,
-        email: user.data.email
-      },
-      JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-
     return response(200, {
-      token,
+      message: "Login realizado com sucesso",
       user: {
         id: userId,
         name: user.data.name,
         email: user.data.email,
-        type: userType,
-        ...(userType === "PATIENT" && { mustChangePassword: user.data.mustChangePassword })
+        type: user.type
       }
     });
 
   } catch (err) {
-    console.error(err);
-    return response(500, { error: "Erro interno do servidor" });
+    console.error("Erro no login:", err);
+    return response(500, { error: err.message });
   }
 };
 

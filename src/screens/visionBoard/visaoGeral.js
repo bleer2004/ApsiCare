@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,72 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { LineChart } from 'react-native-chart-kit';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../services/api';
+
+const USAR_MOCK = true; 
 
 const VisaoGeral = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('semana');
   const [searchText, setSearchText] = useState('');
+  const [pacientes, setPacientes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [clinicianId, setClinicianId] = useState(null);
 
   const screenWidth = Dimensions.get('window').width;
 
-  // dAados mock graph
+  useEffect(() => {
+    carregarDados();
+  }, []);
+
+  const carregarDados = async () => {
+    console.log('=== carregarDados chamado ===');
+    console.log('USAR_MOCK:', USAR_MOCK);
+    
+    if (USAR_MOCK) {
+      console.log('Usando mock, saindo...');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Buscando dados reais...');
+    
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      console.log('userStr:', userStr);
+      const user = JSON.parse(userStr);
+      console.log('user:', user);
+      setClinicianId(user.id);
+
+      const token = await AsyncStorage.getItem('token');
+      console.log('token:', token);
+
+      const url = `${API_URL}/clinicians/${user.id}/patients`;
+      console.log('URL:', url);
+
+      const response = await fetch(url, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+      });
+
+      console.log('response status:', response.status);
+      const data = await response.json();
+      console.log('data:', JSON.stringify(data));
+      
+      if (response.ok) {
+        setPacientes(data.patients || []);
+        console.log('pacientes setados:', data.patients?.length);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar pacientes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // dados mock graph
   const chartData = {
     labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Hoje', 'Sem 6', 'Sem 7'],
     datasets: [
@@ -67,13 +125,13 @@ const VisaoGeral = () => {
     },
   ];
 
-  const tendenciaPiora = [
-    'Mariana L.',
-    'Pedro H.',
-    'Julia S.',
-  ];
+const tendenciaPiora = useMemo(() => {
+  return USAR_MOCK
+    ? ['Mariana L.', 'Pedro H.', 'Julia S.']
+    : pacientes.slice(0, 3).map(p => p.name.split(' ')[0]);
+}, [pacientes]);
 
-  const handleVerProntuario = (paciente) => {
+const handleVerProntuario = (paciente) => {
     console.log('Ver prontuário:', paciente.nome);
   };
 
@@ -171,7 +229,6 @@ const VisaoGeral = () => {
           </View>
         </View>
 
-        {/* dados usuário aqui  */}
         <View style={styles.chartContainer}>
           <View style={styles.chartHeader}>
             <Text style={styles.chartTitle}>Humor Geral dos Pacientes</Text>
@@ -224,7 +281,6 @@ const VisaoGeral = () => {
           />
         </View>
 
-        {/* dados usuário aqui */}
         <View style={styles.atencaoContainer}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>ATENÇÃO IMEDIATA</Text>
@@ -242,7 +298,6 @@ const VisaoGeral = () => {
           />
         </View>
 
-        {/* dados usuário aqui  */}
         <View style={styles.urgenciasContainer}>
           <View style={styles.urgenciasHeader}>
             <View style={styles.urgenciasTitleContainer}>

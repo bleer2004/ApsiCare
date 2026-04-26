@@ -1,3 +1,6 @@
+import { API_URL } from '../../services/api';
+import { ActivityIndicator } from 'react-native';
+
 import React, { useState } from 'react';
 import {
   View,
@@ -17,7 +20,8 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
-const Cadastro = () => {
+const Cadastro = ({ navigation }) => {
+  const [loading, setLoading] = useState(false);
   const [nome, setNome] = useState('');
   const [sobrenome, setSobrenome] = useState('');
   const [profissao, setProfissao] = useState('');
@@ -62,42 +66,53 @@ const Cadastro = () => {
     return text;
   };
 
-  const handleCadastro = () => {
-    if (!nome || !sobrenome || !profissao || !registroProfissional || !dataNascimento || !email || !telefone || !password) {
-      Alert.alert('Erro', 'Por favor, preencha todos os campos');
-      return;
-    }
+  const handleCadastro = async () => {
+  if (!nome || !sobrenome || !profissao || !registroProfissional || !dataNascimento || !email || !telefone || !password) {
+    Alert.alert('Erro', 'Preencha todos os campos');
+    return;
+  }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Erro', 'As senhas não coincidem');
-      return;
-    }
+  setLoading(true);
 
-    if (password.length < 6) {
-      Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres');
-      return;
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Erro', 'Digite um e-mail válido');
-      return;
-    }
-
-    const dadosCadastro = {
-      nome,
-      sobrenome,
-      profissao,
-      registroProfissional,
-      dataNascimento,
-      email,
-      telefone,
-      senha: password,
-    };
-
-    console.log('Cadastro:', dadosCadastro);
-    Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+  const formatDate = (date) => {
+    const [day, month, year] = date.split('/');
+    return `${year}-${month}-${day}`;
   };
+
+  try {
+    const response = await fetch(`${API_URL}/clinicians`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: `${nome} ${sobrenome}`,
+        email,
+        password,
+        phone: telefone.replace(/\D/g, ''),
+        councilId: registroProfissional,
+        profession: profissao,
+        birthDate: formatDate(dataNascimento),
+      }),
+    });
+
+    // IMPORTANTE: Leia o corpo da resposta apenas UMA VEZ
+    const responseData = await response.json();
+
+    if (!response.ok) {
+      // Se o status for 500, 409, etc, ele cai aqui
+      Alert.alert('Erro', responseData.error || 'Erro no servidor');
+      return;
+    }
+
+    Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+    navigation.navigate('LoginSignedUp');
+
+  } catch (err) {
+    console.log("Erro de rede:", err);
+    Alert.alert('Erro', 'Falha na conexão com servidor');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const renderProfissaoModal = () => (
     <Modal
@@ -316,16 +331,19 @@ const Cadastro = () => {
                 />
               </View>
             </View>
-
-            <TouchableOpacity style={styles.cadastroButton} onPress={handleCadastro}>
-              <Text style={styles.cadastroButtonText}>Cadastrar →</Text>
+            <TouchableOpacity style={styles.cadastroButton} onPress={handleCadastro} disabled={loading}>
+              {loading
+                ? <ActivityIndicator color="#fff" />
+                : <Text style={styles.cadastroButtonText}>Cadastrar →</Text>
+              }
             </TouchableOpacity>
-
             <View style={styles.loginContainer}>
               <Text style={styles.loginText}>Já possui cadastro? </Text>
-              <TouchableOpacity>
+
+              <TouchableOpacity onPress={() => navigation.navigate('LoginSignedUp')}>
                 <Text style={styles.loginLink}>Faça login</Text>
               </TouchableOpacity>
+
             </View>
           </View>
 
