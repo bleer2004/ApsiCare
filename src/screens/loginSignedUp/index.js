@@ -59,14 +59,19 @@ const LoginSignedUp = ({ navigation }) => {
     }
   };
 
-  const handleForgotPassword = () => {
-    // Navega pra tela de forgot password 
-    // navigation.navigate('ForgotPassword');
-  };
-
   const handleSignUp = () => {
     navigation.navigate('Cadastro');
   };
+  const handleForgotPassword = () => {
+    navigation.navigate('RecuperarSenha');
+  };
+
+  <TouchableOpacity
+    style={styles.forgotPasswordContainer}
+    onPress={handleForgotPassword}
+  >
+    <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+  </TouchableOpacity>
 
   return (
     <SafeAreaView style={styles.container}>
@@ -146,6 +151,8 @@ const LoginSignedUp = ({ navigation }) => {
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
+
+    
   );
 };
 
