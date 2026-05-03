@@ -38,26 +38,58 @@ export const handler = async (event) => {
 
     const body = JSON.parse(event.body);
 
-    const updatedData = {
-      ...existing.Item.data,
-      ...body,
-      updatedAt: new Date().toISOString()
+    let setActions = ["#updatedAt = :updatedAt"];
+    let removeActions = ["#oldData"]; 
+    
+    const exprNames = { 
+      "#updatedAt": "updatedAt",
+      "#oldData": "data" 
+    };
+    const exprValues = { 
+      ":updatedAt": new Date().toISOString() 
     };
 
-    const gsi1pk = body.email ? `EMAIL#${body.email.trim().toLowerCase()}` : existing.Item.GSI1PK;
+    const fields = {
+      name: body.name,
+      phone: body.phone,
+      cellphone: body.cellphone,  
+      councilId: body.councilId,      
+      profession: body.profession,
+      especialidade: body.especialidade,
+      clinica: body.clinica,
+      enderecoClinica: body.enderecoClinica,
+      birthDate: body.birthDate,
+      email: body.email 
+    };
+
+    Object.keys(fields).forEach(key => {
+      if (fields[key] !== undefined) {
+        setActions.push(`#${key} = :${key}`);
+        exprNames[`#${key}`] = key;
+        
+        if (key === 'email') {
+          const emailLower = fields[key].trim().toLowerCase();
+          exprValues[`:email`] = emailLower;
+          
+          setActions.push(`GSI1PK = :gsi1pk`);
+          exprValues[":gsi1pk"] = `EMAIL#${emailLower}`;
+        } else {
+          exprValues[`:${key}`] = fields[key];
+        }
+      }
+    });
+
+    let updateExpr = "SET " + setActions.join(", ");
+    updateExpr += " REMOVE " + removeActions.join(", ");
+
+    console.log("UPDATE EXPRESSION FINAL:", updateExpr);
 
     await dynamo.send(new UpdateCommand({
       TableName: TABLE_NAME,
       Key: key,
-      UpdateExpression: "SET #data = :data, GSI1PK = :gsi1pk, GSI1SK = :gsi1sk",
-      ExpressionAttributeNames: {
-        "#data": "data"
-      },
-      ExpressionAttributeValues: {
-        ":data": updatedData,
-        ":gsi1pk": gsi1pk, // Agora o índice de busca será o email novo
-        ":gsi1sk": "PROFILE"
-      }
+      UpdateExpression: updateExpr,
+      ExpressionAttributeNames: exprNames,
+      ExpressionAttributeValues: exprValues
     }));
 
     return response(200, {

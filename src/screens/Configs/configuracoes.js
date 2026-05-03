@@ -78,51 +78,50 @@ import * as ImagePicker from 'react-native-image-picker';
     carregarDados();
   }, []);
 
-  const carregarDados = async () => {
+ const carregarDados = async () => {
   try {
+    setLoading(true);
     const userStr = await AsyncStorage.getItem('user');
     const token = await AsyncStorage.getItem('token');
+    
+    if (!userStr) return;
     const user = JSON.parse(userStr);
 
-    // Salva o ID que veio do storage no estado para usar depois no PUT
-    if (user && user.id) {
-      setClinicianId(user.id);
-    }
+    setClinicianId(user.id); 
 
     const response = await fetch(`${API_URL}/clinicians/${user.id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
+      headers: { 'Authorization': `Bearer ${token}` }
     });
 
-    const data = await response.json();
-
-    console.log('DATA API:', data);
+    const result = await response.json();
+    console.log("Dados crus vindo da API:", result);
 
     if (response.ok) {
-      const nomeCompleto = data.name || '';
-      const partes = nomeCompleto.trim().split(' ');
-      const primeiroNome = partes[0] || '';
-      const restoDoNome = partes.slice(1).join(' ') || '';
+      // Como o log mostrou que os dados estão na raiz, pegamos direto do result
+      const d = result; 
 
-      setNome(primeiroNome);
-      setSobrenome(restoDoNome); 
-
-      setEmail(data.email || '');
-      setTelefone(formatTelefone(data.phone || ''));
-      setCelular(formatTelefone(data.phone || ''));
-
-      setRegistroProfissional(data.councilId || '');
-      setProfissao(data.profession || '');
-
-      setDataNascimento(formatDate(data.birthDate));
-      setEspecialidade(data.especialidade || '');
-      setClinica(data.clinica || '');
-      setEnderecoClinica(data.enderecoClinica || '');
+      // Atualiza os inputs da tela
+      const partes = (d.name || '').trim().split(' ');
+      setNome(partes[0] || '');
+      setSobrenome(partes.slice(1).join(' ') || '');
+      
+      setEmail(d.email || '');
+      setTelefone(formatTelefone(d.phone || ''));
+      setCelular(formatTelefone(d.phone || ''));
+      setRegistroProfissional(d.councilId || '');
+      setProfissao(d.profession || '');
+      setEspecialidade(d.especialidade || '');
+      setClinica(d.clinica || '');
+      setEnderecoClinica(d.enderecoClinica || '');
+      
+      if (d.birthDate) {
+        setDataNascimento(formatDate(d.birthDate));
+      }
     }
-
   } catch (err) {
-    console.error(err);
+    console.error("Erro ao carregar:", err);
+  } finally {
+    setLoading(false);
   }
 };
 
@@ -207,7 +206,8 @@ const handleSalvarAlteracoes = async () => {
     const profileBody = {
       name: `${nome} ${sobrenome}`.trim(),
       email: email.trim(),
-      phone: telefone.replace(/\D/g, ''),
+      phone: telefone.replace(/\D/g, ''), 
+      cellphone: celular.replace(/\D/g, ''),       
       councilId: registroProfissional,
       profession: profissao,
       birthDate: dataNascimento ? formatDateToAPI(dataNascimento) : null,
@@ -265,26 +265,34 @@ const handleSalvarAlteracoes = async () => {
 
     // --- 3. SUCESSO E ATUALIZAÇÃO LOCAL ---
     Alert.alert('Sucesso', 'As alterações foram salvas!');
-    
-    // Atualiza o AsyncStorage para o e-mail refletir no app todo
-    const userStr = await AsyncStorage.getItem('user');
-    if (userStr) {
-      const userObj = JSON.parse(userStr);
-      const updatedUser = { 
-        ...userObj, 
-        email: email.trim(), 
-        name: `${nome} ${sobrenome}`.trim() 
-      };
-      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-    }
-
-    // Limpa campos de senha para não disparar erro no próximo save
-    setSenhaAtual('');
-    setNovaSenha('');
-    setConfirmarSenha('');
-    
     setEditMode(false);
-    await carregarDados(); // Recarrega da API para garantir que o front está igual ao banco
+    // Dá um tempo para o Dynamo "respirar" antes de ler de novo
+    setTimeout(() => {
+      carregarDados();
+    }, 800);    
+    
+    const novoNomeCompleto = `${nome} ${sobrenome}`.trim();
+
+      // 2. Atualize o AsyncStorage
+      const userStr = await AsyncStorage.getItem('user');
+      if (userStr) {
+          const userObj = JSON.parse(userStr);
+          const updatedUser = { 
+              ...userObj, 
+              email: email.trim(), 
+              name: novoNomeCompleto 
+          };
+          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+      // 3. Limpeza e recarregamento
+      setSenhaAtual('');
+      setNovaSenha('');
+      setConfirmarSenha('');
+      setEditMode(false);
+
+      // IMPORTANTE: Dê um pequeno delay ou use o carregarDados para garantir o sincronismo
+      await carregarDados();
 
   } catch (err) {
     Alert.alert('Erro', err.message);

@@ -9,7 +9,7 @@ const TABLE_NAME = "PsicoCare";
 export const handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
-    const { name, email, password, phone, councilId, profession, birthDate } = body;
+    const { name, email, password, phone, cellphone, councilId, profession, birthDate } = body;
 
     // Validação básica
     if (!name || !email || !password || !councilId) {
@@ -38,26 +38,26 @@ export const handler = async (event) => {
       .update(password)
       .digest("hex");
 
-    const item = {
-        PK: `CLINICIAN#${id}`,
-        SK: "PROFILE",
-        GSI1PK: `EMAIL#${email}`,
-        GSI1SK: `CLINICIAN#${id}`,
-        type: "CLINICIAN",
-        createdAt: now,
-        data: {
-          name,
-          email,
-          phone: phone || null,
-          councilId,
-          profession, 
-          birthDate,  
-          passwordHash,
-          isActive: true,
-          isAdmin: false,
-          createdAt: now
-        }
-      };
+      const item = {
+      PK: `CLINICIAN#${id}`,
+      SK: "PROFILE",
+      GSI1PK: `EMAIL#${email.trim().toLowerCase()}`, 
+      GSI1SK: "PROFILE", 
+      id: id,           
+      type: "CLINICIAN",
+      name,
+      email: email.trim().toLowerCase(),
+      phone: phone || null,
+      cellphone: cellphone || null,    
+      councilId,
+      profession: profession || null, 
+      birthDate: birthDate || null,  
+      passwordHash,
+      isActive: true,
+      isAdmin: false,
+      createdAt: now,
+      updatedAt: now
+    };
 
     await dynamo.send(new PutCommand({
       TableName: TABLE_NAME,
@@ -73,7 +73,7 @@ export const handler = async (event) => {
     });
 
   } catch (err) {
-      console.error("🔥 LAMBDA ERROR COMPLETO:");
+      console.error("LAMBDA ERROR COMPLETO:");
       console.error(err);
       
       return response(500, {

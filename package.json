@@ -9,6 +9,7 @@
     "@react-navigation/stack": "^6.4.1",
     "expo": "~54.0.17",
     "expo-status-bar": "~3.0.9",
+    "nodemailer": "^8.0.7",
     "react": "19.1.0",
     "react-native": "0.81.5",
     "react-native-chart-kit": "^6.12.0",

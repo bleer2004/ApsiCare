@@ -17,28 +17,36 @@ export const handler = async (event) => {
 
     if (!userResult.Item) return response(404, { error: "Profissional não encontrado." });
 
-    const hashNoBanco = userResult.Item.data?.passwordHash;
+    // Pega o hash da raiz
+    const hashNoBanco = userResult.Item.passwordHash;
 
-    // --- LÓGICA DE COMPARAÇÃO SHA-256 (O seu hash d78e...) ---
     const hashedInput = createHash("sha256").update(currentPassword).digest("hex");
     
-    // Compara o hash do que o usuário digitou com o que está no banco
     if (hashedInput !== hashNoBanco) {
       return response(401, { error: "A senha atual está incorreta." });
     }
 
-    // --- GERA O NOVO HASH (Também em SHA-256 para manter o padrão do seu banco) ---
     const newHash = createHash("sha256").update(newPassword).digest("hex");
 
+    // ATUALIZAÇÃO PARA A RAIZ
     await dynamo.send(new UpdateCommand({
       TableName: TABLE_NAME,
       Key: { PK: `CLINICIAN#${clinicianId}`, SK: "PROFILE" },
-      UpdateExpression: "SET #data.passwordHash = :newHash",
-      ExpressionAttributeNames: { "#data": "data" },
-      ExpressionAttributeValues: { ":newHash": newHash }
+      // Removemos o '#data.' da expressão
+      UpdateExpression: "SET #pw = :newHash, #updatedAt = :now",
+      ExpressionAttributeNames: { 
+        "#pw": "passwordHash",
+        "#updatedAt": "updatedAt"
+      },
+      ExpressionAttributeValues: { 
+        ":newHash": newHash,
+        ":now": new Date().toISOString()
+      }
     }));
 
     return response(200, { message: "Senha alterada com sucesso!" });
+
+// ... (resto do código)
 
   } catch (err) {
     console.error(err);

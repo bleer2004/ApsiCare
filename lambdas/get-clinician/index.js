@@ -26,14 +26,26 @@ export const handler = async (event) => {
       return response(404, { error: "Clinician não encontrado" });
     }
 
-    return response(200, {
-      id: clinicianId,
-      ...result.Item.data
-    });
+    const item = result.Item;
+    
+    // Extraímos o 'data' (se existir), mas tratamos ele como secundário
+    const oldNestedData = item.data || {};
+
+    const finalProfile = {
+      ...oldNestedData, // Dados antigos (se existirem)
+      ...item,          // Dados da raiz (SEMPRE ganham a preferência)
+      id: clinicianId   
+    };
+
+    // Faxina final: removemos campos que o Front-end não precisa ver
+    delete finalProfile.data;
+    delete finalProfile.passwordHash; // Nunca envie o hash da senha pro app!
+
+    return response(200, finalProfile);
 
   } catch (err) {
-    console.error(err);
-    return response(500, { error: "Erro interno" });
+    console.error("Erro no Lambda GET:", err);
+    return response(500, { error: "Erro interno no servidor" });
   }
 };
 
@@ -41,7 +53,8 @@ const response = (statusCode, body) => ({
   statusCode,
   headers: {
     "Content-Type": "application/json",
-    "Access-Control-Allow-Origin": "*"
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET,OPTIONS"
   },
   body: JSON.stringify(body)
 });

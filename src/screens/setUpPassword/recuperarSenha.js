@@ -33,22 +33,30 @@ const RecuperarSenha = ({ navigation }) => {
       Alert.alert('Erro', 'Por favor, digite seu e-mail profissional');
       return;
     }
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Erro', 'Digite um e-mail válido');
-      return;
-    }
+    
     setLoading(true);
+    console.log("Tentando enviar para:", `${API_URL}/auth/forgot-password`); // Log da URL
+
     try {
       const response = await fetch(`${API_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
+
+      const data = await response.json();
+      console.log("Resposta do Servidor:", data); 
+
+      if (!response.ok) {
+        Alert.alert('Erro', data.error || 'Erro desconhecido no servidor');
+        return;
+      }
+
       setStep(2);
       Alert.alert('Código enviado!', 'Verifique sua caixa de entrada ou spam.');
     } catch (err) {
-      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+      console.error("Erro na Requisição:", err); // Log do erro técnico
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor. Verifique sua internet.');
     } finally {
       setLoading(false);
     }
@@ -67,6 +75,7 @@ const RecuperarSenha = ({ navigation }) => {
         body: JSON.stringify({ code: codigo }),
       });
       const data = await response.json();
+      console.log(data)
       if (!response.ok) {
         Alert.alert('Erro', data.error || 'Código inválido ou expirado');
         return;

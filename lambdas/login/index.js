@@ -30,12 +30,13 @@ export const handler = async (event) => {
     }));
 
     if (!result.Items || result.Items.length === 0) {
+      console.log(result.Items);
       console.log("Usuário não encontrado no GSI1PK");
       return response(401, { error: "E-mail ou senha incorretos." });
     }
 
     const user = result.Items[0];
-    const hashNoBanco = user.data?.passwordHash;
+    const hashNoBanco = user.passwordHash;
 
     // 2. Valida a senha usando SHA-256 (Padrão que o seu banco já possui)
     const loginPasswordHash = crypto
@@ -58,8 +59,8 @@ export const handler = async (event) => {
       message: "Login realizado com sucesso",
       user: {
         id: userId,
-        name: user.data.name,
-        email: user.data.email,
+        name: user.name,
+        email: user.email,
         type: user.type || "CLINICIAN"
       }
     });
