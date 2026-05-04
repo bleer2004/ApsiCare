@@ -3,7 +3,8 @@ import Cadastro from '../screens/signUpForm/cadastro';
 import VisaoGeral from '../screens/visionBoard/visaoGeral';
 import RecuperarSenha from '../screens/setUpPassword/recuperarSenha';
 import Configuracoes from '../screens/Configs/configuracoes';
-
+import Pacientes from '../screens/allVision/pacientes';
+import DashboardPaciente from '../screens/userPorfile/perfilUsuario';
 import { createStackNavigator } from '@react-navigation/stack';
 
 const Stack = createStackNavigator();
@@ -34,6 +35,16 @@ export default function AppNavigator() {
       <Stack.Screen 
         name="Configuracoes" 
         component={Configuracoes}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen 
+        name="Pacientes" 
+        component={Pacientes}
+        options={{ headerShown: false }}
+      />   
+      <Stack.Screen 
+        name="DashboardPaciente" 
+        component={DashboardPaciente}
         options={{ headerShown: false }}
       />
     </Stack.Navigator>

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_URL } from '../../services/api';
 import {
   View,
   Text,
@@ -12,13 +13,16 @@ import {
   Dimensions,
   Share,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { LineChart } from 'react-native-chart-kit';
 
 const DashboardPaciente = ({ navigation, route }) => {
-  // Dados do paciente (recebidos da navegação ou mock)
-  const paciente = route?.params?.paciente || {
+  const screenWidth = Dimensions.get('window').width;
+  const [loading, setLoading] = useState(true);
+  
+  const [paciente, setPaciente] = useState(route?.params?.paciente || {
     id: '45092',
     nome: 'Ana Carolina',
     idade: 32,
@@ -26,39 +30,10 @@ const DashboardPaciente = ({ navigation, route }) => {
     condicao: 'Anorexia',
     statusEmocional: 'Estável',
     melhoraPercentual: 15,
-  };
+  });
 
-  const [activeTab, setActiveTab] = useState('semana');
-  const screenWidth = Dimensions.get('window').width;
-
-  // Dados do gráfico de correlação
-  const correlacaoData = {
-    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-    datasets: [
-      {
-        data: [65, 70, 68, 72, 75, 78, 80],
-        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-        strokeWidth: 2,
-        legend: 'Humor (%)',
-      },
-      {
-        data: [70, 72, 68, 75, 78, 82, 84],
-        color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-        strokeWidth: 2,
-        legend: 'Sono (%)',
-      },
-    ],
-  };
-
-  // Dados do smartwatch
-  const smartwatchData = {
-    batimentos: 72,
-    qualidadeSono: 84,
-    nivelStress: 'Baixo',
-  };
-
-  // Metas do paciente
-  const metas = [
+  // Mantendo sua lista de metas original como fallback (MOCKS)
+  const [metas, setMetas] = useState([
     {
       id: '1',
       titulo: 'Reduzir episódios de pânico',
@@ -80,7 +55,69 @@ const DashboardPaciente = ({ navigation, route }) => {
       status: 'novo',
       link: 'https://www.google.com/search?q=higiene+do+sono',
     },
-  ];
+  ]);
+
+  const [smartwatchData, setSmartwatchData] = useState({
+    batimentos: 72,
+    qualidadeSono: 84,
+    nivelStress: 'Baixo',
+  });
+
+  const USE_REAL_API = false; 
+
+  useEffect(() => {
+    const loadDashboardData = async () => {
+      if (!USE_REAL_API) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const [resMetas, resPhysio] = await Promise.all([
+          fetch(`${API_URL}/patients/${paciente.id}/goals`),
+          fetch(`${API_URL}/patients/${paciente.id}/physio`)
+        ]);
+
+        const dataMetas = await resMetas.json();
+        const dataPhysio = await resPhysio.json();
+
+        if (dataMetas.goals) setMetas(dataMetas.goals);
+        if (dataPhysio.samples?.length > 0) {
+          const last = dataPhysio.samples[0];
+          setSmartwatchData({
+            batimentos: Math.round(last.hr),
+            qualidadeSono: 84, 
+            nivelStress: last.hr > 100 ? 'Alto' : 'Baixo',
+          });
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [paciente.id]);
+
+  const correlacaoData = {
+    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+    datasets: [
+      {
+        data: [65, 70, 68, 72, 75, 78, 80],
+        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+        strokeWidth: 2,
+        legend: 'Humor (%)',
+      },
+      {
+        data: [70, 72, 68, 75, 78, 82, 84],
+        color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
+        strokeWidth: 2,
+        legend: 'Sono (%)',
+      },
+    ],
+  };
 
   const handleExportarRelatorio = async () => {
     try {
@@ -96,7 +133,7 @@ const DashboardPaciente = ({ navigation, route }) => {
   const handleMetaPress = (meta) => {
     Alert.alert(
       meta.titulo,
-      meta.progresso,
+      `${meta.progresso}\n\nLink: ${meta.link}`, // Incluindo o link no alerta
       [
         { text: 'Fechar', style: 'cancel' },
         { text: 'Ver mais', onPress: () => console.log('Ver mais:', meta) }
@@ -219,27 +256,31 @@ const DashboardPaciente = ({ navigation, route }) => {
         {/* Metas */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Metas</Text>
-          {metas.map((meta) => (
-            <TouchableOpacity 
-              key={meta.id} 
-              style={styles.metaItem}
-              onPress={() => handleMetaPress(meta)}
-            >
-              <View style={styles.metaContent}>
-                <View style={[
-                  styles.metaStatusDot,
-                  meta.status === 'concluido' && styles.metaStatusConcluido,
-                  meta.status === 'andamento' && styles.metaStatusAndamento,
-                  meta.status === 'novo' && styles.metaStatusNovo,
-                ]} />
-                <View style={styles.metaTextContainer}>
-                  <Text style={styles.metaTitulo}>{meta.titulo}</Text>
-                  <Text style={styles.metaProgresso}>{meta.progresso}</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#6366F1" />
+          ) : (
+            metas.map((meta) => (
+              <TouchableOpacity 
+                key={meta.id} 
+                style={styles.metaItem}
+                onPress={() => handleMetaPress(meta)}
+              >
+                <View style={styles.metaContent}>
+                  <View style={[
+                    styles.metaStatusDot,
+                    meta.status === 'concluido' && styles.metaStatusConcluido,
+                    meta.status === 'andamento' && styles.metaStatusAndamento,
+                    meta.status === 'novo' && styles.metaStatusNovo,
+                  ]} />
+                  <View style={styles.metaTextContainer}>
+                    <Text style={styles.metaTitulo}>{meta.titulo}</Text>
+                    <Text style={styles.metaProgresso}>{meta.progresso}</Text>
+                  </View>
                 </View>
-              </View>
-              <Icon name="chevron-right" size={20} color="#D1D5DB" />
-            </TouchableOpacity>
-          ))}
+                <Icon name="chevron-right" size={20} color="#D1D5DB" />
+              </TouchableOpacity>
+            ))
+          )}
         </View>
 
         {/* Correlação Semanal */}
@@ -268,7 +309,6 @@ const DashboardPaciente = ({ navigation, route }) => {
                 r: '5',
                 strokeWidth: '2',
               },
-              formatYLabel: (value) => `${value}%`,
             }}
             bezier
             style={styles.chart}

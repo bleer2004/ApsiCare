@@ -18,10 +18,10 @@ import Icon from 'react-native-vector-icons/Feather';
 
 const Pacientes = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');
-  const [activeFilter, setActiveFilter] = useState('todos'); // todos, ativos, recentes
-
-  //dados mockados do paciente 
-  const pacientesData = [
+  const [activeFilter, setActiveFilter] = useState('todos');
+  const [loading, setLoading] = useState(true);
+  const [clinicianId, setClinicianId] = useState(null);
+  const [pacientesData, setPacientesData] = useState(USAR_MOCK ? [
     {
       id: '1',
       nome: 'Ana Clara Silva',
@@ -78,7 +78,51 @@ const Pacientes = ({ navigation }) => {
       ultimoAcesso: new Date('2024-01-15'),
       avatar: null,
     },
-  ];
+  ] : []);
+
+  const USAR_MOCK = true; 
+
+    useEffect(() => {
+      carregarPacientes();
+    }, []);
+
+    const carregarPacientes = async () => {
+      if (USAR_MOCK) {
+        setLoading(false);
+        return; 
+      }
+
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userStr);
+      setClinicianId(user.id);
+
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/clinicians/${user.id}/patients`, {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        const formatados = (data.patients || []).map(p => ({
+          id: p.id,
+          nome: p.name,
+          ultimaSessao: p.createdAt ? new Date(p.createdAt).toLocaleDateString('pt-BR') : 'Sem sessão',
+          status: p.isActive ? 'ativo' : 'inativo',
+          ultimoAcesso: new Date(p.createdAt || Date.now()),
+          avatar: null,
+        }));
+        setPacientesData(formatados);
+      }
+    } catch (err) {
+      console.error('Erro ao carregar pacientes:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalPacientes = pacientesData.length;
   const novosPacientes = pacientesData.filter(p => p.status === 'recente').length;
@@ -102,9 +146,7 @@ const Pacientes = ({ navigation }) => {
   };
 
   const handlePacientePress = (paciente) => {
-    console.log('Abrir paciente:', paciente.nome);
-    // Navegar para detalhes do paciente
-    // navigation.navigate('DetalhesPaciente', { paciente });
+    navigation.navigate('DashboardPaciente', { paciente });
   };
 
   const formatarDataSessao = (data) => {
@@ -255,7 +297,10 @@ const Pacientes = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <TouchableOpacity style={styles.fabButton}>
+      <TouchableOpacity 
+        style={styles.fabButton}
+        onPress={() => navigation.navigate('CadastroPaciente', { clinicianId })}
+      >
         <Icon name="user-plus" size={24} color="#FFFFFF" />
       </TouchableOpacity>
     </SafeAreaView>

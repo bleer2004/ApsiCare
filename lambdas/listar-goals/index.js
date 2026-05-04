@@ -24,15 +24,11 @@ export const handler = async (event) => {
     }));
 
     const goals = result.Items.map(item => ({
-      id: item.SK.split("#")[1],
-      title: item.data.title,
-      category: item.data.category,
-      status: item.data.status,
-      progress: item.data.progress,
-      streakDays: item.data.streakDays,
-      xpReward: item.data.xpReward,
-      createdBy: item.data.createdBy,
-      completedAt: item.data.completedAt,
+      id: item.SK.split("#")[1], 
+      titulo: item.data.title, 
+      progresso: item.data.progress, 
+      status: item.data.status, 
+      category: item.data.category, 
       createdAt: item.createdAt
     }));
 
