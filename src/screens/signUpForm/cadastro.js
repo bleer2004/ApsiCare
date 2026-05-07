@@ -1,5 +1,6 @@
 import { API_URL } from '../../services/api';
 import { ActivityIndicator } from 'react-native';
+import Icon from 'react-native-vector-icons/Feather';
 
 import React, { useState } from 'react';
 import {
@@ -17,7 +18,6 @@ import {
   Modal,
   FlatList,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Cadastro = ({ navigation }) => {

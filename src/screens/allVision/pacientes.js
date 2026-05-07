@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
+import Icon from 'react-native-vector-icons/Feather';
 
 import {
   View,
@@ -14,7 +15,6 @@ import {
   FlatList,
   Image,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 
 const Pacientes = ({ navigation }) => {
   const [searchText, setSearchText] = useState('');

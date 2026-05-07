@@ -10,8 +10,8 @@ import {
   Share,
   Alert,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 import { LineChart, ProgressChart } from 'react-native-chart-kit';
+import Icon from 'react-native-vector-icons/Feather';
 
 const RelatoriosPaciente = ({ paciente, standalone = false }) => {
   const [periodo, setPeriodo] = useState('semana');

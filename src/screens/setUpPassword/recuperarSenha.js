@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { API_URL } from '../../services/api';
+import Icon from 'react-native-vector-icons/Feather';
 
 import {
   View,
@@ -16,7 +17,6 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 
 const RecuperarSenha = ({ navigation }) => {
   const [email, setEmail] = useState('');

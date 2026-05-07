@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
+import Icon from 'react-native-vector-icons/Feather';
 
 import {
   View,
@@ -18,7 +19,6 @@ import {
   Modal,
   ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'react-native-image-picker';
 

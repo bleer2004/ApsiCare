@@ -15,23 +15,16 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Feather';
 import { LineChart } from 'react-native-chart-kit';
+import Icon from 'react-native-vector-icons/Feather';
 
-  import RelatoriosPaciente from './relatoriosPaciente';
-  import ArquivosPaciente from './arquivosPaciente';
-  import SmartwatchPaciente from './smartwatchPaciente';
-
-
-  const renderAbaRelatorios = () => <RelatoriosPaciente paciente={paciente} standalone={true} />;
-
-  const [abaAtiva, setAbaAtiva] = useState('visao');
-  const [abaAtiva, setAbaAtiva] = useState('perfil'); 
+  import RelatoriosPaciente from '../Files/RelatoriosPaciente';
+  // import ArquivosPaciente from './arquivosPaciente';
+  import SmartwatchPaciente from '../smartwatch/SmartWatchPaciente';
 
 const DashboardPaciente = ({ navigation, route }) => {
-  const screenWidth = Dimensions.get('window').width;
-  const [loading, setLoading] = useState(true);
-  
+  const [abaAtiva, setAbaAtiva] = useState('visao');
+
   const [paciente, setPaciente] = useState(route?.params?.paciente || {
     id: '45092',
     nome: 'Ana Carolina',
@@ -42,6 +35,13 @@ const DashboardPaciente = ({ navigation, route }) => {
     melhoraPercentual: 15,
   });
 
+  const renderAbaRelatorios = () => (
+    <RelatoriosPaciente paciente={paciente} standalone={true} />
+  );
+
+  const renderAbaSmartwatch = () => (
+    <SmartwatchPaciente paciente={paciente} standalone={true} />
+  );
   // Mantendo sua lista de metas original como fallback (MOCKS)
   const [metas, setMetas] = useState([
     {
@@ -163,10 +163,6 @@ const DashboardPaciente = ({ navigation, route }) => {
     );
   };
 
-  const renderAbaRelatorios = () => <RelatoriosPaciente paciente={paciente} standalone={true} />;
-
-  const renderAbaSmartwatch = () => <SmartwatchPaciente paciente={paciente} standalone={true} />;
-  
 
   return (
     <SafeAreaView style={styles.container}>
