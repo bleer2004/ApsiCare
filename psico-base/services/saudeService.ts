@@ -1,5 +1,6 @@
 import { initialize, requestPermission, readRecords, getGrantedPermissions } from 'react-native-health-connect';
 
+// Lista completa de permissões necessárias
 const PERMISSOES = [
   { accessType: 'read' as const, recordType: 'HeartRate' as const },
   { accessType: 'read' as const, recordType: 'RestingHeartRate' as const },
@@ -15,51 +16,33 @@ const PERMISSOES = [
   { accessType: 'read' as const, recordType: 'Height' as const },
 ];
 
-// Normaliza nomes diferentes entre o que o Health Connect retorna e o que pedimos
-function normalizarTipo(tipo: string): string {
-  return tipo
-    .replace('Rmssd', '')
-    .replace('Session', '')
-    .toLowerCase();
-}
-
 export async function solicitarPermissoes() {
   try {
     console.log("1. Inicializando...");
     const isInitialized = await initialize();
-    console.log("2. Inicializado:", isInitialized);
-    if (!isInitialized) throw new Error("Health Connect não disponível");
 
-    console.log("3. Buscando permissões existentes...");
-    const jaTemPermissoes = await getGrantedPermissions();
-    console.log("4. Já tem:", jaTemPermissoes.map((p: any) => p.recordType));
-
-    const tiposJaConcedidos = jaTemPermissoes.map((p: any) => normalizarTipo(p.recordType));
-    const faltando = PERMISSOES.filter(p => !tiposJaConcedidos.includes(normalizarTipo(p.recordType)));
-    console.log("5. Faltando:", faltando.map(p => p.recordType));
-
-    if (faltando.length > 0) {
-      console.log("6. Chamando requestPermission TESTE...");
-      await requestPermission([
-        { accessType: 'read', recordType: 'Steps' }
-      ]);      
-      console.log("7. requestPermission retornou!");
-    } else {
-      console.log("✅ Todas as permissões já concedidas!");
+    if (!isInitialized) {
+      throw new Error("Health Connect não disponível");
     }
+
+    console.log("2. Abrindo tela de permissões para todos os tipos...");
+    // Solicitando a lista completa de uma vez
+    const result = await requestPermission(PERMISSOES);
+
+    console.log("3. Resultado da solicitação:", result);
+    return result;
+
   } catch (err: any) {
-    console.error("ERRO solicitarPermissoes:", err?.message, err);
+    console.error("ERRO requestPermission:", err);
     throw err;
   }
 }
 
 export async function getDadosSaude() {
   try {
-    console.log("Inicializando Health Connect...");
     const isInitialized = await initialize();
-    if (!isInitialized) throw new Error("Health Connect não disponível neste dispositivo");
+    if (!isInitialized) throw new Error("Health Connect não disponível");
 
-    console.log("Lendo dados...");
     const agora = new Date();
     const semanaPassada = new Date(agora.getTime() - 7 * 24 * 60 * 60 * 1000);
 
@@ -69,6 +52,7 @@ export async function getDadosSaude() {
       endTime: agora.toISOString(),
     };
 
+    // Realiza todas as leituras
     const [
       fc, fcRepouso, hrv, passos, sono,
       calorias, distancia, oxigenio,
@@ -88,24 +72,12 @@ export async function getDadosSaude() {
       readRecords('Height',                    { timeRangeFilter: intervalo7d }),
     ]);
 
-    console.log("FC raw:",        JSON.stringify(fc.records.at(-1), null, 2));
-    console.log("HRV raw:",       JSON.stringify(hrv.records.at(-1), null, 2));
-    console.log("Passos raw:",    JSON.stringify(passos.records, null, 2));
-    console.log("Sono raw:",      JSON.stringify(sono.records.at(-1), null, 2));
-    console.log("Pressao raw:",   JSON.stringify(pressao.records.at(-1), null, 2));
-    console.log("Oxigenio raw:",  JSON.stringify(oxigenio.records.at(-1), null, 2));
-    console.log("Distancia raw:", JSON.stringify(distancia.records, null, 2));
-    console.log("Calorias raw:",  JSON.stringify(calorias.records, null, 2));
-    console.log("Peso raw:",      JSON.stringify(peso.records.at(-1), null, 2));
-    console.log("Altura raw:",    JSON.stringify(altura.records.at(-1), null, 2));
-
-    // 💤 Sono total
+    // Processamento de Sono
     const horasSono = sono.records.length > 0
       ? sono.records.reduce((acc, r) =>
           acc + (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / (1000 * 60 * 60), 0)
       : null;
 
-    // 💤 Fases do sono (sessão mais recente)
     let faseSono = null;
     if (sono.records.length > 0) {
       const ultimaSessao: any = sono.records.at(-1);
@@ -132,20 +104,15 @@ export async function getDadosSaude() {
       frequenciaCardiaca: fc.records.at(-1)?.samples?.at(-1)?.beatsPerMinute ?? null,
       fcRepouso:          fcRepouso.records.at(-1)?.beatsPerMinute ?? null,
       hrv:                (hrv.records.at(-1) as any)?.heartRateVariabilityMillis ?? null,
-
       pressaoSistolica:   (pressao.records.at(-1) as any)?.systolic?.inMillimetersOfMercury ?? null,
       pressaoDiastolica:  (pressao.records.at(-1) as any)?.diastolic?.inMillimetersOfMercury ?? null,
-
       oxigenio:           (oxigenio.records.at(-1) as any)?.percentage ?? null,
       temperatura:        (temperatura.records.at(-1) as any)?.temperature?.inCelsius ?? null,
-
       passos:             totalPassos > 0 ? totalPassos : null,
       distancia:          totalDistancia > 0 ? parseFloat((totalDistancia / 1000).toFixed(2)) : null,
       caloriasAtivas:     totalCalorias > 0 ? Math.round(totalCalorias) : null,
-
       sono:               horasSono ? parseFloat(horasSono.toFixed(1)) : null,
       faseSono,
-
       peso:               (peso.records.at(-1) as any)?.weight?.inKilograms ?? null,
       altura:             (altura.records.at(-1) as any)?.height?.inMeters ?? null,
     };
