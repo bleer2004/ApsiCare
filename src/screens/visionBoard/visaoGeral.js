@@ -125,13 +125,13 @@ const VisaoGeral = ({ navigation }) => {
     },
   ];
 
-const tendenciaPiora = useMemo(() => {
-  return USAR_MOCK
-    ? ['Mariana L.', 'Pedro H.', 'Julia S.']
-    : pacientes.slice(0, 3).map(p => p.name.split(' ')[0]);
-}, [pacientes]);
+  const tendenciaPiora = useMemo(() => {
+    return USAR_MOCK
+      ? ['Mariana L.', 'Pedro H.', 'Julia S.']
+      : pacientes.slice(0, 3).map(p => p.name.split(' ')[0]);
+  }, [pacientes]);
 
-const handleVerProntuario = (paciente) => {
+  const handleVerProntuario = (paciente) => {
     console.log('Ver prontuário:', paciente.nome);
   };
 
@@ -207,9 +207,9 @@ const handleVerProntuario = (paciente) => {
               onChangeText={setSearchText}
             />
           </View>
-        <TouchableOpacity style={styles.configButton} onPress={() => navigation.navigate('Configuracoes')}>
-          <Icon name="settings" size={24} color="#4B5563" />
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.configButton} onPress={() => navigation.navigate('Configuracoes')}>
+            <Icon name="settings" size={24} color="#4B5563" />
+          </TouchableOpacity>
         </View>
 
         <View style={styles.titleContainer}>
@@ -320,15 +320,42 @@ const handleVerProntuario = (paciente) => {
           </View>
         </View>
 
-      <View style={styles.configContaContainer}>
-        <TouchableOpacity style={styles.configContaButton} onPress={() => navigation.navigate('Configuracoes')}>            
-          <Icon name="sliders" size={20} color="#6366F1" />
-          <Text style={styles.configContaText}>Configurações</Text>
-          <Text style={styles.configContaSubtext}>AJUSTES DA CONTA</Text>
-          <Icon name="chevron-right" size={20} color="#9CA3AF" style={styles.chevronIcon} />
+        <View style={styles.configContaContainer}>
+          <TouchableOpacity style={styles.configContaButton} onPress={() => navigation.navigate('Configuracoes')}>            
+            <Icon name="sliders" size={20} color="#6366F1" />
+            <Text style={styles.configContaText}>Configurações</Text>
+            <Text style={styles.configContaSubtext}>AJUSTES DA CONTA</Text>
+            <Icon name="chevron-right" size={20} color="#9CA3AF" style={styles.chevronIcon} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+
+      {/* ========== BOTTOM NAVIGATION ========== */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity 
+          style={[styles.navItem, styles.navItemActive]}
+          onPress={() => navigation.navigate('VisaoGeral')}
+        >
+          <Icon name="home" size={24} color="#6366F1" />
+          <Text style={[styles.navText, styles.navTextActive]}>Início</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Pacientes')}
+        >
+          <Icon name="users" size={24} color="#9CA3AF" />
+          <Text style={styles.navText}>Pacientes</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={styles.navItem}
+          onPress={() => navigation.navigate('Relatorios')}
+        >
+          <Icon name="bar-chart-2" size={24} color="#9CA3AF" />
+          <Text style={styles.navText}>Relatórios</Text>
         </TouchableOpacity>
       </View>
-      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -342,7 +369,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 32,
+    paddingBottom: 80, // Aumentado para dar espaço para o bottom nav
   },
   header: {
     flexDirection: 'row',
@@ -629,6 +656,7 @@ const styles = StyleSheet.create({
   },
   configContaContainer: {
     marginHorizontal: 20,
+    marginBottom: 16,
   },
   configContaButton: {
     flexDirection: 'row',
@@ -653,6 +681,31 @@ const styles = StyleSheet.create({
   },
   chevronIcon: {
     marginLeft: 'auto',
+  },
+  bottomNavigation: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  navItemActive: {
+    // Estilo ativo
+  },
+  navText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  navTextActive: {
+    color: '#6366F1',
+    fontWeight: '500',
   },
 });
 
