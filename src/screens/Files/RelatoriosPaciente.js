@@ -1,247 +1,575 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   ScrollView,
   SafeAreaView,
-  Dimensions,
-  Share,
+  StatusBar,
   Alert,
+  Modal,
+  ActivityIndicator,
+  Share,
+  Platform,
 } from 'react-native';
-import { LineChart, ProgressChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
-const RelatoriosPaciente = ({ paciente, standalone = false }) => {
-  const [periodo, setPeriodo] = useState('semana');
-  const screenWidth = Dimensions.get('window').width;
-
-  // Dados do paciente
-  const pacienteData = paciente || {
-    nome: 'Ana Carolina',
-    diagnostico: 'Transtorno de Ansiedade Generalizada (TAG)',
-  };
-
-  // Dados do gráfico de correlação
-  const correlacaoData = {
-    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-    datasets: [
-      {
-        data: [65, 70, 68, 72, 75, 78, 80],
-        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-        strokeWidth: 2,
-        legend: 'Humor (%)',
+const Relatorios = ({ navigation }) => {
+  // ========== ESTADOS ==========
+  const [loading, setLoading] = useState(false);
+  const [modalAnaliseVisible, setModalAnaliseVisible] = useState(false);
+  const [analiseSelecionada, setAnaliseSelecionada] = useState(null);
+  
+  // Estados dos filtros
+  const [selectedPaciente, setSelectedPaciente] = useState('todos');
+  const [dataInicio, setDataInicio] = useState('');
+  const [dataFim, setDataFim] = useState('');
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+  const [tipoRelatorio, setTipoRelatorio] = useState('todos'); // todos, smartwatch, anotacoes
+  
+  // Dropdown de pacientes
+  const [showPacienteDropdown, setShowPacienteDropdown] = useState(false);
+  
+  // Lista de pacientes (mock)
+  const pacientesList = [
+    { id: '1', nome: 'Ana Clara Silva' },
+    { id: '2', nome: 'Marcos Oliveira' },
+    { id: '3', nome: 'Beatriz Santos' },
+    { id: '4', nome: 'Ricardo Pereira' },
+    { id: '5', nome: 'Juliana Farias' },
+  ];
+  
+  // Dados mockados de relatórios
+  const [relatorios, setRelatorios] = useState([
+    {
+      id: '1',
+      pacienteNome: 'Ana Clara Silva',
+      pacienteId: '1',
+      tipo: 'smartwatch',
+      titulo: 'Relatório de Dados do Smartwatch - Semana 21',
+      data: '25/05/2024',
+      descricao: 'Dados de frequência cardíaca, sono e atividade física da semana.',
+      conteudo: {
+        batimentos: { media: 72, max: 89, min: 65 },
+        sono: { qualidade: 84, profundo: '2h40', rem: '3h15' },
+        passos: { total: 58432, media: 8347 },
+        stress: 'Baixo',
       },
-      {
-        data: [70, 72, 68, 75, 78, 82, 84],
-        color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
-        strokeWidth: 2,
-        legend: 'Sono (%)',
+      analiseIA: 'Paciente apresentou melhora na qualidade do sono em 15% comparado à semana anterior. Níveis de stress mantiveram-se baixos, indicando boa resposta ao tratamento. Recomenda-se manter a rotina atual de exercícios.',
+    },
+    {
+      id: '2',
+      pacienteNome: 'Ana Clara Silva',
+      pacienteId: '1',
+      tipo: 'anotacoes',
+      titulo: 'Anotações do Diário - Semana 21',
+      data: '24/05/2024',
+      descricao: 'Registros diários de humor e reflexões do paciente.',
+      conteudo: 'Dia 1: Me senti ansiosa. Dia 2: Melhorei depois da terapia. Dia 3: Consegui sair com amigos!',
+      analiseIA: 'IA identificou padrão de ansiedade no início da semana, com melhora progressiva após a sessão de terapia. Evento social positivo no final de semana indica progresso no engajamento social.',
+    },
+    {
+      id: '3',
+      pacienteNome: 'Marcos Oliveira',
+      pacienteId: '2',
+      tipo: 'smartwatch',
+      titulo: 'Relatório de Dados do Smartwatch - Semana 20',
+      data: '18/05/2024',
+      descricao: 'Dados de frequência cardíaca, sono e atividade física da semana.',
+      conteudo: {
+        batimentos: { media: 78, max: 95, min: 70 },
+        sono: { qualidade: 72, profundo: '1h50', rem: '2h45' },
+        passos: { total: 42100, media: 6014 },
+        stress: 'Médio',
       },
-    ],
-  };
+      analiseIA: 'Paciente apresenta níveis de stress elevados. Qualidade do sono abaixo da média recomendada. Sugere-se revisão das estratégias de relaxamento e aumento da atividade física.',
+    },
+    {
+      id: '4',
+      pacienteNome: 'Beatriz Santos',
+      pacienteId: '3',
+      tipo: 'anotacoes',
+      titulo: 'Anotações do Diário - Semana 19',
+      data: '15/05/2024',
+      descricao: 'Registros diários de humor e reflexões do paciente.',
+      conteudo: 'Semana desafiadora. Consegui aplicar as técnicas de respiração.',
+      analiseIA: 'Paciente demonstra adesão às técnicas de respiração. Relatos indicam melhora no controle da ansiedade. Manter o reforço positivo.',
+    },
+  ]);
 
-  // Dados para o gráfico de evolução mensal
-  const evolucaoData = {
-    labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4'],
-    datasets: [
-      {
-        data: [45, 55, 68, 72],
-        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-        strokeWidth: 2,
-      },
-    ],
-  };
-
-  // Estatísticas
-  const estatisticas = {
-    totalSessoes: 24,
-    mediaHumor: 72,
-    melhoraPercentual: 15,
-    diasAtivo: 180,
-  };
-
-  const handleExportarRelatorio = async () => {
-    try {
-      await Share.share({
-        message: `Relatório do paciente ${pacienteData.nome}\n\nDiagnóstico: ${pacienteData.diagnostico}\nMédia de humor: ${estatisticas.mediaHumor}%\nMelhora: ${estatisticas.melhoraPercentual}%\nTotal de sessões: ${estatisticas.totalSessoes}`,
-        title: `Relatório - ${pacienteData.nome}`,
+  // ========== FUNÇÕES DE FILTRO ==========
+  const getFilteredRelatorios = () => {
+    let filtered = [...relatorios];
+    
+    // Filtro por paciente
+    if (selectedPaciente !== 'todos') {
+      filtered = filtered.filter(r => r.pacienteId === selectedPaciente);
+    }
+    
+    // Filtro por tipo
+    if (tipoRelatorio !== 'todos') {
+      filtered = filtered.filter(r => r.tipo === tipoRelatorio);
+    }
+    
+    // Filtro por data
+    if (dataInicio) {
+      filtered = filtered.filter(r => {
+        const [dia, mes, ano] = r.data.split('/');
+        const dataRelatorio = new Date(`${ano}-${mes}-${dia}`);
+        const dataInicioDate = new Date(dataInicio.split('/').reverse().join('-'));
+        return dataRelatorio >= dataInicioDate;
       });
+    }
+    
+    if (dataFim) {
+      filtered = filtered.filter(r => {
+        const [dia, mes, ano] = r.data.split('/');
+        const dataRelatorio = new Date(`${ano}-${mes}-${dia}`);
+        const dataFimDate = new Date(dataFim.split('/').reverse().join('-'));
+        return dataRelatorio <= dataFimDate;
+      });
+    }
+    
+    return filtered;
+  };
+
+  // ========== AÇÕES DOS RELATÓRIOS ==========
+  const handleBaixarRelatorio = async (relatorio) => {
+    try {
+      let conteudoTexto = '';
+      
+      if (relatorio.tipo === 'smartwatch') {
+        conteudoTexto = `
+📊 RELATÓRIO SMARTWATCH - ${relatorio.pacienteNome}
+📅 Data: ${relatorio.data}
+📝 ${relatorio.titulo}
+
+📈 DADOS DE SAÚDE:
+• Batimentos cardíacos: Média ${relatorio.conteudo.batimentos.media} BPM | Máx ${relatorio.conteudo.batimentos.max} | Mín ${relatorio.conteudo.batimentos.min}
+• Qualidade do sono: ${relatorio.conteudo.sono.qualidade}%
+• Sono profundo: ${relatorio.conteudo.sono.profundo}
+• Sono REM: ${relatorio.conteudo.sono.rem}
+• Passos: ${relatorio.conteudo.passos.total.toLocaleString()} (média ${relatorio.conteudo.passos.media}/dia)
+• Nível de stress: ${relatorio.conteudo.stress}
+
+🤖 ANÁLISE DA IA:
+${relatorio.analiseIA}
+
+---
+Relatório gerado por PsicoCare - Plataforma de Saúde Mental
+`;
+      } else {
+        conteudoTexto = `
+📝 RELATÓRIO DE ANOTAÇÕES - ${relatorio.pacienteNome}
+📅 Data: ${relatorio.data}
+📝 ${relatorio.titulo}
+
+📓 CONTEÚDO:
+${relatorio.conteudo}
+
+🤖 ANÁLISE DA IA:
+${relatorio.analiseIA}
+
+---
+Relatório gerado por PsicoCare - Plataforma de Saúde Mental
+`;
+      }
+      
+      await Share.share({
+        message: conteudoTexto,
+        title: `Relatório_${relatorio.pacienteNome}_${relatorio.data}.txt`,
+      });
+      
+      Alert.alert('Sucesso', 'Relatório compartilhado com sucesso!');
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível compartilhar o relatório');
     }
   };
-
-  const handleExportarPDF = () => {
-    Alert.alert('Exportar PDF', 'Gerando relatório em PDF...');
+  
+  const handleAnalisarIA = (relatorio) => {
+    setAnaliseSelecionada(relatorio);
+    setModalAnaliseVisible(true);
   };
-
+  
+  const handleLimparFiltros = () => {
+    setSelectedPaciente('todos');
+    setDataInicio('');
+    setDataFim('');
+    setTipoRelatorio('todos');
+  };
+  
+  const handleExportarTodos = async () => {
+    const relatoriosFiltrados = getFilteredRelatorios();
+    
+    if (relatoriosFiltrados.length === 0) {
+      Alert.alert('Aviso', 'Nenhum relatório para exportar');
+      return;
+    }
+    
+    let textoExportacao = '📊 RELATÓRIOS PSICOCARE 📊\n';
+    textoExportacao += `Data de geração: ${new Date().toLocaleDateString('pt-BR')}\n`;
+    textoExportacao += `Total de relatórios: ${relatoriosFiltrados.length}\n`;
+    textoExportacao += '='.repeat(50) + '\n\n';
+    
+    relatoriosFiltrados.forEach((relatorio, index) => {
+      textoExportacao += `📄 ${index + 1}. ${relatorio.titulo}\n`;
+      textoExportacao += `Paciente: ${relatorio.pacienteNome}\n`;
+      textoExportacao += `Data: ${relatorio.data}\n`;
+      textoExportacao += `Tipo: ${relatorio.tipo === 'smartwatch' ? 'Smartwatch' : 'Anotações'}\n`;
+      textoExportacao += `Descrição: ${relatorio.descricao}\n`;
+      textoExportacao += `\n🤖 Análise IA: ${relatorio.analiseIA}\n`;
+      textoExportacao += '-'.repeat(50) + '\n\n';
+    });
+    
+    try {
+      await Share.share({
+        message: textoExportacao,
+        title: 'Relatorios_PsicoCare.txt',
+      });
+      Alert.alert('Sucesso', 'Relatórios exportados com sucesso!');
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível exportar os relatórios');
+    }
+  };
+  
+  const formatDate = (event, selectedDate, type) => {
+    if (type === 'start') {
+      setShowStartPicker(false);
+      if (selectedDate) {
+        const formattedDate = `${selectedDate.getDate().toString().padStart(2, '0')}/${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}/${selectedDate.getFullYear()}`;
+        setDataInicio(formattedDate);
+      }
+    } else {
+      setShowEndPicker(false);
+      if (selectedDate) {
+        const formattedDate = `${selectedDate.getDate().toString().padStart(2, '0')}/${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}/${selectedDate.getFullYear()}`;
+        setDataFim(formattedDate);
+      }
+    }
+  };
+  
+  const getTipoIcon = (tipo) => {
+    return tipo === 'smartwatch' ? 'watch' : 'file-text';
+  };
+  
+  const getTipoColor = (tipo) => {
+    return tipo === 'smartwatch' ? '#6366F1' : '#10B981';
+  };
+  
+  const getTipoLabel = (tipo) => {
+    return tipo === 'smartwatch' ? 'Smartwatch' : 'Anotações';
+  };
+  
+  const renderRelatorioCard = (relatorio) => (
+    <View key={relatorio.id} style={styles.relatorioCard}>
+      <View style={styles.relatorioHeader}>
+        <View style={[styles.tipoBadge, { backgroundColor: getTipoColor(relatorio.tipo) + '20' }]}>
+          <Icon name={getTipoIcon(relatorio.tipo)} size={14} color={getTipoColor(relatorio.tipo)} />
+          <Text style={[styles.tipoBadgeText, { color: getTipoColor(relatorio.tipo) }]}>
+            {getTipoLabel(relatorio.tipo)}
+          </Text>
+        </View>
+        <Text style={styles.relatorioData}>{relatorio.data}</Text>
+      </View>
+      
+      <Text style={styles.relatorioTitulo}>{relatorio.titulo}</Text>
+      <Text style={styles.relatorioPaciente}>
+        <Icon name="user" size={12} color="#9CA3AF" /> {relatorio.pacienteNome}
+      </Text>
+      <Text style={styles.relatorioDescricao} numberOfLines={2}>
+        {relatorio.descricao}
+      </Text>
+      
+      <View style={styles.relatorioActions}>
+        <TouchableOpacity style={styles.analisarBtn} onPress={() => handleAnalisarIA(relatorio)}>
+          <Icon name="cpu" size={18} color="#6366F1" />
+          <Text style={styles.analisarBtnText}>Analisar com IA</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.baixarBtn} onPress={() => handleBaixarRelatorio(relatorio)}>
+          <Icon name="download" size={18} color="#10B981" />
+          <Text style={styles.baixarBtnText}>Baixar</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+  
+  const filteredRelatorios = getFilteredRelatorios();
+  
   return (
-    <ScrollView 
-      style={styles.container}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Header com Exportar */}
-      <View style={styles.headerActions}>
-        <TouchableOpacity style={styles.exportButton} onPress={handleExportarRelatorio}>
-          <Icon name="share-2" size={18} color="#6366F1" />
-          <Text style={styles.exportButtonText}>Compartilhar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.exportButton} onPress={handleExportarPDF}>
-          <Icon name="download" size={18} color="#6366F1" />
-          <Text style={styles.exportButtonText}>Exportar PDF</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Cards de estatísticas */}
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
-            <Icon name="calendar" size={20} color="#6366F1" />
-          </View>
-          <Text style={styles.statValue}>{estatisticas.totalSessoes}</Text>
-          <Text style={styles.statLabel}>Total de sessões</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
-            <Icon name="smile" size={20} color="#10B981" />
-          </View>
-          <Text style={styles.statValue}>{estatisticas.mediaHumor}%</Text>
-          <Text style={styles.statLabel}>Média de humor</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
-            <Icon name="trending-up" size={20} color="#F59E0B" />
-          </View>
-          <Text style={styles.statValue}>+{estatisticas.melhoraPercentual}%</Text>
-          <Text style={styles.statLabel}>Melhora total</Text>
-        </View>
-      </View>
-
-      {/* Gráfico: Correlação Semanal */}
-      <View style={styles.chartCard}>
-        <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>Correlação Semanal</Text>
-          <Text style={styles.chartSubtitle}>Humor vs Qualidade do Sono</Text>
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        {/* Header */}
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Relatórios</Text>
+          <TouchableOpacity style={styles.exportAllButton} onPress={handleExportarTodos}>
+            <Icon name="download" size={20} color="#6366F1" />
+            <Text style={styles.exportAllText}>Exportar Tudo</Text>
+          </TouchableOpacity>
         </View>
         
-        <LineChart
-          data={correlacaoData}
-          width={screenWidth - 64}
-          height={220}
-          chartConfig={{
-            backgroundColor: '#FFFFFF',
-            backgroundGradientFrom: '#FFFFFF',
-            backgroundGradientTo: '#FFFFFF',
-            decimalPlaces: 0,
-            color: (opacity = 1, index) => {
-              if (index === 0) return `rgba(99, 102, 241, ${opacity})`;
-              return `rgba(16, 185, 129, ${opacity})`;
-            },
-            labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: '5',
-              strokeWidth: '2',
-              stroke: '#FFFFFF',
-            },
-            formatYLabel: (value) => `${value}%`,
-          }}
-          bezier
-          style={styles.chart}
-          legend={['Humor', 'Sono']}
+        {/* Filtros */}
+        <View style={styles.filtersContainer}>
+          <Text style={styles.filtersTitle}>Filtros</Text>
+          
+          {/* Filtro por Paciente */}
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Paciente</Text>
+            <TouchableOpacity 
+              style={styles.filterSelect}
+              onPress={() => setShowPacienteDropdown(!showPacienteDropdown)}
+            >
+              <Text style={styles.filterSelectText}>
+                {selectedPaciente === 'todos' ? 'Todos os pacientes' : pacientesList.find(p => p.id === selectedPaciente)?.nome}
+              </Text>
+              <Icon name="chevron-down" size={20} color="#6B7280" />
+            </TouchableOpacity>
+            
+            {showPacienteDropdown && (
+              <View style={styles.dropdown}>
+                <TouchableOpacity style={styles.dropdownItem} onPress={() => { setSelectedPaciente('todos'); setShowPacienteDropdown(false); }}>
+                  <Text style={styles.dropdownItemText}>Todos os pacientes</Text>
+                </TouchableOpacity>
+                {pacientesList.map(paciente => (
+                  <TouchableOpacity 
+                    key={paciente.id} 
+                    style={styles.dropdownItem} 
+                    onPress={() => { setSelectedPaciente(paciente.id); setShowPacienteDropdown(false); }}
+                  >
+                    <Text style={styles.dropdownItemText}>{paciente.nome}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+          
+          {/* Filtro por Data */}
+          <View style={styles.filterRow}>
+            <View style={[styles.filterGroup, { flex: 1, marginRight: 8 }]}>
+              <Text style={styles.filterLabel}>Data Início</Text>
+              <TouchableOpacity style={styles.filterSelect} onPress={() => setShowStartPicker(true)}>
+                <Text style={[styles.filterSelectText, !dataInicio && styles.placeholderText]}>
+                  {dataInicio || 'Selecionar data'}
+                </Text>
+                <Icon name="calendar" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={[styles.filterGroup, { flex: 1 }]}>
+              <Text style={styles.filterLabel}>Data Fim</Text>
+              <TouchableOpacity style={styles.filterSelect} onPress={() => setShowEndPicker(true)}>
+                <Text style={[styles.filterSelectText, !dataFim && styles.placeholderText]}>
+                  {dataFim || 'Selecionar data'}
+                </Text>
+                <Icon name="calendar" size={18} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* Filtro por Tipo */}
+          <View style={styles.filterGroup}>
+            <Text style={styles.filterLabel}>Tipo de Relatório</Text>
+            <View style={styles.tipoFilterRow}>
+              <TouchableOpacity 
+                style={[styles.tipoFilterBtn, tipoRelatorio === 'todos' && styles.tipoFilterBtnActive]}
+                onPress={() => setTipoRelatorio('todos')}
+              >
+                <Text style={[styles.tipoFilterText, tipoRelatorio === 'todos' && styles.tipoFilterTextActive]}>Todos</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tipoFilterBtn, tipoRelatorio === 'smartwatch' && styles.tipoFilterBtnActive]}
+                onPress={() => setTipoRelatorio('smartwatch')}
+              >
+                <Icon name="watch" size={14} color={tipoRelatorio === 'smartwatch' ? '#FFFFFF' : '#6B7280'} />
+                <Text style={[styles.tipoFilterText, tipoRelatorio === 'smartwatch' && styles.tipoFilterTextActive]}>Smartwatch</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.tipoFilterBtn, tipoRelatorio === 'anotacoes' && styles.tipoFilterBtnActive]}
+                onPress={() => setTipoRelatorio('anotacoes')}
+              >
+                <Icon name="file-text" size={14} color={tipoRelatorio === 'anotacoes' ? '#FFFFFF' : '#6B7280'} />
+                <Text style={[styles.tipoFilterText, tipoRelatorio === 'anotacoes' && styles.tipoFilterTextActive]}>Anotações</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          
+          {/* Botão Limpar Filtros */}
+          <TouchableOpacity style={styles.clearFiltersBtn} onPress={handleLimparFiltros}>
+            <Icon name="x" size={16} color="#6366F1" />
+            <Text style={styles.clearFiltersText}>Limpar filtros</Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Estatísticas */}
+        <View style={styles.statsContainer}>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>{filteredRelatorios.length}</Text>
+            <Text style={styles.statLabel}>Relatórios encontrados</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {filteredRelatorios.filter(r => r.tipo === 'smartwatch').length}
+            </Text>
+            <Text style={styles.statLabel}>Smartwatch</Text>
+          </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statNumber}>
+              {filteredRelatorios.filter(r => r.tipo === 'anotacoes').length}
+            </Text>
+            <Text style={styles.statLabel}>Anotações</Text>
+          </View>
+        </View>
+        
+        {/* Lista de Relatórios */}
+        <View style={styles.relatoriosContainer}>
+          <Text style={styles.relatoriosTitle}>
+            Histórico de Relatórios
+            {filteredRelatorios.length > 0 && <Text style={styles.relatoriosCount}> ({filteredRelatorios.length})</Text>}
+          </Text>
+          
+          {filteredRelatorios.length === 0 ? (
+            <View style={styles.emptyState}>
+              <Icon name="file-text" size={64} color="#D1D5DB" />
+              <Text style={styles.emptyStateTitle}>Nenhum relatório encontrado</Text>
+              <Text style={styles.emptyStateText}>
+                Tente ajustar os filtros para encontrar mais resultados
+              </Text>
+            </View>
+          ) : (
+            filteredRelatorios.map(renderRelatorioCard)
+          )}
+        </View>
+      </ScrollView>
+      
+      {/* DatePickers */}
+      {showStartPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, date) => formatDate(event, date, 'start')}
         />
-        
-        <View style={styles.legendContainer}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#6366F1' }]} />
-            <Text style={styles.legendText}>Humor</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendColor, { backgroundColor: '#10B981' }]} />
-            <Text style={styles.legendText}>Qualidade do Sono</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Gráfico: Evolução Mensal */}
-      <View style={styles.chartCard}>
-        <View style={styles.chartHeader}>
-          <Text style={styles.chartTitle}>Evolução do Humor</Text>
-          <Text style={styles.chartSubtitle}>Últimas 4 semanas</Text>
-        </View>
-        
-        <LineChart
-          data={evolucaoData}
-          width={screenWidth - 64}
-          height={200}
-          chartConfig={{
-            backgroundColor: '#FFFFFF',
-            backgroundGradientFrom: '#FFFFFF',
-            backgroundGradientTo: '#FFFFFF',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            formatYLabel: (value) => `${value}%`,
-          }}
-          bezier
-          style={styles.chart}
+      )}
+      {showEndPicker && (
+        <DateTimePicker
+          value={new Date()}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={(event, date) => formatDate(event, date, 'end')}
         />
-      </View>
-
-      {/* Resumo Clínico */}
-      <View style={styles.resumoCard}>
-        <Text style={styles.resumoTitle}>Resumo Clínico</Text>
-        <Text style={styles.resumoText}>
-          Paciente apresenta melhora significativa nos episódios de ansiedade nas últimas 4 semanas. 
-          A adesão ao tratamento tem sido consistente, com relatos de melhor qualidade do sono 
-          e redução de crises noturnas.
-        </Text>
+      )}
+      
+      {/* Modal de Análise da IA */}
+      <Modal animationType="fade" transparent={true} visible={modalAnaliseVisible} onRequestClose={() => setModalAnaliseVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.analiseModalContainer}>
+            <View style={styles.analiseModalHeader}>
+              <View style={styles.analiseIcon}>
+                <Icon name="cpu" size={24} color="#6366F1" />
+              </View>
+              <View style={styles.analiseHeaderText}>
+                <Text style={styles.analiseModalTitle}>Análise da IA</Text>
+                <Text style={styles.analiseModalSubtitle}>
+                  {analiseSelecionada?.pacienteNome} - {analiseSelecionada?.data}
+                </Text>
+              </View>
+              <TouchableOpacity onPress={() => setModalAnaliseVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.analiseModalContent}>
+              <View style={styles.analiseTipoBadge}>
+                <Icon name={getTipoIcon(analiseSelecionada?.tipo)} size={14} color={getTipoColor(analiseSelecionada?.tipo)} />
+                <Text style={[styles.analiseTipoText, { color: getTipoColor(analiseSelecionada?.tipo) }]}>
+                  {getTipoLabel(analiseSelecionada?.tipo)}
+                </Text>
+              </View>
+              
+              <Text style={styles.analiseTitulo}>{analiseSelecionada?.titulo}</Text>
+              <Text style={styles.analiseDescricao}>{analiseSelecionada?.descricao}</Text>
+              
+              <View style={styles.analiseDivider} />
+              
+              <Text style={styles.analiseSectionTitle}>
+                <Icon name="brain" size={16} color="#6366F1" /> Análise Inteligente
+              </Text>
+              <Text style={styles.analiseText}>{analiseSelecionada?.analiseIA}</Text>
+              
+              {analiseSelecionada?.tipo === 'smartwatch' && analiseSelecionada?.conteudo && (
+                <View style={styles.detalhesContainer}>
+                  <Text style={styles.detalhesTitle}>📊 Dados Detalhados</Text>
+                  <View style={styles.detalhesRow}>
+                    <Text style={styles.detalhesLabel}>Batimentos:</Text>
+                    <Text style={styles.detalhesValue}>
+                      Média {analiseSelecionada.conteudo.batimentos.media} BPM | 
+                      Máx {analiseSelecionada.conteudo.batimentos.max} | 
+                      Mín {analiseSelecionada.conteudo.batimentos.min}
+                    </Text>
+                  </View>
+                  <View style={styles.detalhesRow}>
+                    <Text style={styles.detalhesLabel}>Sono:</Text>
+                    <Text style={styles.detalhesValue}>
+                      Qualidade {analiseSelecionada.conteudo.sono.qualidade}% | 
+                      Profundo {analiseSelecionada.conteudo.sono.profundo} | 
+                      REM {analiseSelecionada.conteudo.sono.rem}
+                    </Text>
+                  </View>
+                  <View style={styles.detalhesRow}>
+                    <Text style={styles.detalhesLabel}>Atividade:</Text>
+                    <Text style={styles.detalhesValue}>
+                      {analiseSelecionada.conteudo.passos.total.toLocaleString()} passos (média {analiseSelecionada.conteudo.passos.media}/dia)
+                    </Text>
+                  </View>
+                  <View style={styles.detalhesRow}>
+                    <Text style={styles.detalhesLabel}>Stress:</Text>
+                    <Text style={[styles.detalhesValue, { color: analiseSelecionada.conteudo.stress === 'Baixo' ? '#10B981' : '#F59E0B' }]}>
+                      {analiseSelecionada.conteudo.stress}
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+            <View style={styles.analiseModalFooter}>
+              <TouchableOpacity style={styles.analiseCloseButton} onPress={() => setModalAnaliseVisible(false)}>
+                <Text style={styles.analiseCloseButtonText}>Fechar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.analiseExportButton} onPress={() => {
+                if (analiseSelecionada) {
+                  handleBaixarRelatorio(analiseSelecionada);
+                  setModalAnaliseVisible(false);
+                }
+              }}>
+                <Icon name="download" size={18} color="#FFFFFF" />
+                <Text style={styles.analiseExportButtonText}>Exportar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+      
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
+          <Icon name="home" size={24} color="#9CA3AF" />
+          <Text style={styles.navText}>Início</Text>
+        </TouchableOpacity>
         
-        <View style={styles.resumoTags}>
-          <View style={styles.resumoTag}>
-            <Icon name="check-circle" size={14} color="#10B981" />
-            <Text style={styles.resumoTagText}>Adesão: 92%</Text>
-          </View>
-          <View style={styles.resumoTag}>
-            <Icon name="activity" size={14} color="#6366F1" />
-            <Text style={styles.resumoTagText}>Evolução positiva</Text>
-          </View>
-          <View style={styles.resumoTag}>
-            <Icon name="calendar" size={14} color="#F59E0B" />
-            <Text style={styles.resumoTagText}>Meta: reduzir crises</Text>
-          </View>
-        </View>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Pacientes')}>
+          <Icon name="users" size={24} color="#9CA3AF" />
+          <Text style={styles.navText}>Pacientes</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={[styles.navItem, styles.navItemActive]} onPress={() => navigation.navigate('Relatorios')}>
+          <Icon name="bar-chart-2" size={24} color="#6366F1" />
+          <Text style={[styles.navText, styles.navTextActive]}>Relatórios</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* Indicadores */}
-      <View style={styles.indicadoresGrid}>
-        <View style={styles.indicadorCard}>
-          <Text style={styles.indicadorLabel}>Melhor dia da semana</Text>
-          <Text style={styles.indicadorValor}>Sexta-feira</Text>
-          <Text style={styles.indicadorTrend}>Média: 78% 😊</Text>
-        </View>
-        <View style={styles.indicadorCard}>
-          <Text style={styles.indicadorLabel}>Pior dia da semana</Text>
-          <Text style={styles.indicadorValor}>Segunda-feira</Text>
-          <Text style={styles.indicadorTrend}>Média: 65% 😟</Text>
-        </View>
-      </View>
-
-      {/* Botão para relatório completo */}
-      <TouchableOpacity style={styles.relatorioCompletoBtn} onPress={handleExportarPDF}>
-        <Icon name="file-text" size={20} color="#6366F1" />
-        <Text style={styles.relatorioCompletoText}>Gerar relatório completo</Text>
-        <Icon name="chevron-right" size={18} color="#6366F1" />
-      </TouchableOpacity>
-    </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -250,17 +578,26 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F9FAFB',
   },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 32,
+  scrollView: {
+    flex: 1,
   },
-  headerActions: {
+  header: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  exportButton: {
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1F2937',
+  },
+  exportAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#EEF2FF',
@@ -269,15 +606,131 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     gap: 6,
   },
-  exportButtonText: {
-    fontSize: 12,
+  exportAllText: {
+    fontSize: 13,
     fontWeight: '500',
     color: '#6366F1',
   },
-  statsGrid: {
+  filtersContainer: {
+    backgroundColor: '#FFFFFF',
+    margin: 16,
+    marginBottom: 8,
+    padding: 16,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  filtersTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  filterGroup: {
+    marginBottom: 16,
+  },
+  filterLabel: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 6,
+  },
+  filterSelect: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  filterSelectText: {
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  placeholderText: {
+    color: '#9CA3AF',
+  },
+  filterRow: {
     flexDirection: 'row',
     gap: 12,
-    marginBottom: 20,
+  },
+  tipoFilterRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  tipoFilterBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 10,
+    backgroundColor: '#F3F4F6',
+  },
+  tipoFilterBtnActive: {
+    backgroundColor: '#6366F1',
+  },
+  tipoFilterText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  tipoFilterTextActive: {
+    color: '#FFFFFF',
+  },
+  clearFiltersBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    marginTop: 8,
+  },
+  clearFiltersText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#6366F1',
+  },
+  dropdown: {
+    position: 'absolute',
+    top: 70,
+    left: 0,
+    right: 0,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    zIndex: 10,
+  },
+  dropdownItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  dropdownItemText: {
+    fontSize: 14,
+    color: '#1F2937',
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
+    gap: 12,
+    marginBottom: 16,
   },
   statCard: {
     flex: 1,
@@ -289,152 +742,310 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
     shadowRadius: 4,
-    elevation: 2,
+    elevation: 1,
   },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#EEF2FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  statValue: {
-    fontSize: 20,
+  statNumber: {
+    fontSize: 24,
     fontWeight: 'bold',
-    color: '#1F2937',
+    color: '#6366F1',
   },
   statLabel: {
     fontSize: 11,
     color: '#6B7280',
     marginTop: 4,
   },
-  chartCard: {
+  relatoriosContainer: {
+    marginHorizontal: 16,
+    marginBottom: 80,
+  },
+  relatoriosTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
+  },
+  relatoriosCount: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontWeight: '400',
+  },
+  relatorioCard: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
-    marginBottom: 20,
+    marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 6,
     elevation: 2,
   },
-  chartHeader: {
-    marginBottom: 16,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 4,
-  },
-  chartSubtitle: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  chart: {
-    marginLeft: -24,
-    borderRadius: 16,
-  },
-  legendContainer: {
+  relatorioHeader: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 20,
-    marginTop: 12,
-  },
-  legendItem: {
-    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
-  },
-  legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  legendText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  resumoCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-  },
-  resumoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 12,
   },
-  resumoText: {
-    fontSize: 14,
-    color: '#4B5563',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  resumoTags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  resumoTag: {
+  tipoBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
     gap: 6,
   },
-  resumoTagText: {
-    fontSize: 12,
-    color: '#4B5563',
+  tipoBadgeText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
-  indicadoresGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 20,
+  relatorioData: {
+    fontSize: 11,
+    color: '#9CA3AF',
   },
-  indicadorCard: {
-    flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 14,
-  },
-  indicadorLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 6,
-  },
-  indicadorValor: {
+  relatorioTitulo: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1F2937',
-    marginBottom: 4,
+    marginBottom: 6,
   },
-  indicadorTrend: {
-    fontSize: 11,
-    color: '#6366F1',
+  relatorioPaciente: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginBottom: 8,
   },
-  relatorioCompletoBtn: {
+  relatorioDescricao: {
+    fontSize: 13,
+    color: '#4B5563',
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  relatorioActions: {
+    flexDirection: 'row',
+    gap: 12,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+  },
+  analisarBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: '#EEF2FF',
-    padding: 14,
+    paddingVertical: 10,
     borderRadius: 12,
-    marginBottom: 16,
   },
-  relatorioCompletoText: {
-    fontSize: 14,
+  analisarBtnText: {
+    fontSize: 13,
     fontWeight: '500',
     color: '#6366F1',
   },
+  baixarBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  baixarBtnText: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#10B981',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 60,
+  },
+  emptyStateTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateText: {
+    fontSize: 14,
+    color: '#6B7280',
+    textAlign: 'center',
+    paddingHorizontal: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  analiseModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 28,
+    width: '90%',
+    maxHeight: '80%',
+  },
+  analiseModalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    gap: 12,
+  },
+  analiseIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#EEF2FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  analiseHeaderText: {
+    flex: 1,
+  },
+  analiseModalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+  },
+  analiseModalSubtitle: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  analiseModalContent: {
+    padding: 20,
+  },
+  analiseTipoBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    backgroundColor: '#F3F4F6',
+    gap: 6,
+    marginBottom: 12,
+  },
+  analiseTipoText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  analiseTitulo: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  analiseDescricao: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  analiseDivider: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginVertical: 16,
+  },
+  analiseSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  analiseText: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 22,
+  },
+  detalhesContainer: {
+    backgroundColor: '#F8FAFF',
+    borderRadius: 16,
+    padding: 16,
+    marginTop: 16,
+  },
+  detalhesTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 12,
+  },
+  detalhesRow: {
+    marginBottom: 10,
+  },
+  detalhesLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6B7280',
+    marginBottom: 2,
+  },
+  detalhesValue: {
+    fontSize: 13,
+    color: '#1F2937',
+  },
+  analiseModalFooter: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#F3F4F6',
+    gap: 12,
+  },
+  analiseCloseButton: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  analiseCloseButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#6B7280',
+  },
+  analiseExportButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#6366F1',
+    paddingVertical: 12,
+    borderRadius: 12,
+    gap: 8,
+  },
+  analiseExportButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#FFFFFF',
+  },
+  bottomNavigation: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  navItemActive: {},
+  navText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+  },
+  navTextActive: {
+    color: '#6366F1',
+    fontWeight: '500',
+  },
 });
 
-export default RelatoriosPaciente;
+export default Relatorios;
