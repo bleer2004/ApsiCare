@@ -2,3 +2,7 @@ dataset/
 .venv/
 lambdas/**/node_modules/
 node_modules/
+*.json
+node_modules/.package-lock.json
+package.json
+package.json

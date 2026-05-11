@@ -14,16 +14,45 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  Modal,
+  FlatList,
+  Switch,
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
 
-  import RelatoriosPaciente from '../Files/RelatoriosPaciente';
-  // import ArquivosPaciente from './arquivosPaciente';
-  import SmartwatchPaciente from '../smartwatch/SmartWatchPaciente';
+import RelatoriosPaciente from '../Files/RelatoriosPaciente';
+import SmartwatchPaciente from '../smartwatch/SmartWatchPaciente';
 
 const DashboardPaciente = ({ navigation, route }) => {
-  const [abaAtiva, setAbaAtiva] = useState('visao');
+  const screenWidth = Dimensions.get('window').width;
+  
+  // ========== ESTADOS ==========
+  const [abaAtiva, setAbaAtiva] = useState('perfil');
+  const [loading, setLoading] = useState(true);
+
+  // Estado para o Modal de Metas
+  const [modalMetasVisible, setModalMetasVisible] = useState(false);
+  const [novaMeta, setNovaMeta] = useState('');
+  const [novaMetaPrazo, setNovaMetaPrazo] = useState('');
+
+  // Estado para o Modal de Insights
+  const [modalInsightVisible, setModalInsightVisible] = useState(false);
+  const [novoInsight, setNovoInsight] = useState('');
+
+  // Estado para o Modal de Lembretes
+  const [modalLembreteVisible, setModalLembreteVisible] = useState(false);
+  const [novoLembrete, setNovoLembrete] = useState('');
+  const [lembreteDia, setLembreteDia] = useState('segunda');
+
+  // Estado para o Modal de Arquivos
+  const [modalArquivoVisible, setModalArquivoVisible] = useState(false);
+  const [modalAnaliseVisible, setModalAnaliseVisible] = useState(false);
+  const [analiseSelecionada, setAnaliseSelecionada] = useState(null);
+
+  // Estado para o Modal de Anotações do Paciente
+  const [modalAnotacaoVisible, setModalAnotacaoVisible] = useState(false);
+  const [anotacaoSelecionada, setAnotacaoSelecionada] = useState(null);
 
   const [paciente, setPaciente] = useState(route?.params?.paciente || {
     id: '45092',
@@ -35,35 +64,114 @@ const DashboardPaciente = ({ navigation, route }) => {
     melhoraPercentual: 15,
   });
 
-  const renderAbaRelatorios = () => (
-    <RelatoriosPaciente paciente={paciente} standalone={true} />
-  );
-
-  const renderAbaSmartwatch = () => (
-    <SmartwatchPaciente paciente={paciente} standalone={true} />
-  );
-  // Mantendo sua lista de metas original como fallback (MOCKS)
-  const [metas, setMetas] = useState([
+  // Lista de Metas
+  const [metasList, setMetasList] = useState([
     {
       id: '1',
       titulo: 'Reduzir episódios de pânico',
       progresso: 'Frequência caiu 40% este mês',
       status: 'concluido',
-      link: 'https://www.google.com/search?q=reduzir+episodios+de+pânico',
+      prazo: '30/04/2024',
     },
     {
       id: '2',
       titulo: 'Exercício 3x por semana',
       progresso: 'Em andamento - 1/3 concluído',
       status: 'andamento',
-      link: 'https://www.google.com/search?q=exercicio+3x+por+semana',
+      prazo: '15/05/2024',
     },
     {
       id: '3',
       titulo: 'Higiene do sono (Desligar telas)',
       progresso: 'Novo objetivo estabelecido',
       status: 'novo',
-      link: 'https://www.google.com/search?q=higiene+do+sono',
+      prazo: '01/06/2024',
+    },
+  ]);
+
+  // Lista de Insights
+  const [insightsList, setInsightsList] = useState([
+    {
+      id: '1',
+      texto: 'Paciente responde bem a exercícios de respiração pela manhã',
+      data: '20/05/2024',
+    },
+    {
+      id: '2',
+      texto: 'Identificado padrão de piora do humor aos finais de semana',
+      data: '15/05/2024',
+    },
+    {
+      id: '3',
+      texto: 'Melhora significativa quando mantém rotina de sono regular',
+      data: '10/05/2024',
+    },
+  ]);
+
+  // Lista de Lembretes Semanais
+  const [lembretesList, setLembretesList] = useState([
+    {
+      id: '1',
+      texto: 'Praticar 10 minutos de mindfulness antes de dormir',
+      dia: 'segunda',
+      enviado: false,
+    },
+    {
+      id: '2',
+      texto: 'Realizar o diário emocional',
+      dia: 'quarta',
+      enviado: false,
+    },
+    {
+      id: '3',
+      texto: 'Exercício físico de 30 minutos',
+      dia: 'sexta',
+      enviado: false,
+    },
+  ]);
+
+  // Lista de Arquivos (sem dependência externa)
+  const [arquivosList, setArquivosList] = useState([
+    {
+      id: '1',
+      nome: 'Laudo_Psicologico_V1.pdf',
+      tipo: 'PDF',
+      tamanho: '1.2 MB',
+      data: '15/05/2024',
+      analise: 'O documento apresenta informações sobre o diagnóstico do paciente. Recomenda-se acompanhamento psicológico contínuo. Padrões de ansiedade identificados com base nas escalas aplicadas.',
+    },
+    {
+      id: '2',
+      nome: 'Exame_Neurologico.pdf',
+      tipo: 'PDF',
+      tamanho: '2.1 MB',
+      data: '10/05/2024',
+      analise: 'Exame neurológico dentro dos parâmetros normais. Não foram identificadas alterações significativas. Sugere-se repetir em 6 meses para acompanhamento.',
+    },
+  ]);
+
+  // Lista de Anotações do Paciente
+  const [anotacoesList, setAnotacoesList] = useState([
+    {
+      id: '1',
+      titulo: 'Diário - Semana 1',
+      texto: 'Hoje me senti mais ansiosa do que o normal. Tive dificuldade para dormir. Mas consegui fazer os exercícios de respiração e me ajudou um pouco.',
+      data: '18/05/2024',
+      analise: 'IA detectou padrão de ansiedade noturna. O nível de ansiedade relatado está 15% acima da média do paciente. Sugerir técnicas de relaxamento antes de dormir.',
+    },
+    {
+      id: '2',
+      titulo: 'Reflexão sobre a terapia',
+      texto: 'A sessão de hoje me fez pensar muito sobre meus gatilhos emocionais. Acho que estou começando a entender melhor meus limites.',
+      data: '15/05/2024',
+      analise: 'Paciente demonstrando autoconhecimento. Progresso significativo na identificação de gatilhos emocionais. Manter o foco nas estratégias de enfrentamento.',
+    },
+    {
+      id: '3',
+      titulo: 'Desafio da semana',
+      texto: 'Consegui sair com amigos no fim de semana! Foi difícil no começo, mas foi bom. Me senti mais leve depois.',
+      data: '12/05/2024',
+      analise: 'Evento social positivo relatado. Isso indica melhora no engajamento social. Reforçar comportamentos de exposição gradual a situações sociais.',
     },
   ]);
 
@@ -73,44 +181,240 @@ const DashboardPaciente = ({ navigation, route }) => {
     nivelStress: 'Baixo',
   });
 
-  const USE_REAL_API = false; 
+  const USE_REAL_API = false;
 
-  useEffect(() => {
-    const loadDashboardData = async () => {
-      if (!USE_REAL_API) {
-        setLoading(false);
-        return;
-      }
+  const diasSemana = [
+    { id: 'segunda', label: 'Segunda' },
+    { id: 'terca', label: 'Terça' },
+    { id: 'quarta', label: 'Quarta' },
+    { id: 'quinta', label: 'Quinta' },
+    { id: 'sexta', label: 'Sexta' },
+    { id: 'sabado', label: 'Sábado' },
+    { id: 'domingo', label: 'Domingo' },
+  ];
 
-      setLoading(true);
-      try {
-        const [resMetas, resPhysio] = await Promise.all([
-          fetch(`${API_URL}/patients/${paciente.id}/goals`),
-          fetch(`${API_URL}/patients/${paciente.id}/physio`)
-        ]);
-
-        const dataMetas = await resMetas.json();
-        const dataPhysio = await resPhysio.json();
-
-        if (dataMetas.goals) setMetas(dataMetas.goals);
-        if (dataPhysio.samples?.length > 0) {
-          const last = dataPhysio.samples[0];
-          setSmartwatchData({
-            batimentos: Math.round(last.hr),
-            qualidadeSono: 84, 
-            nivelStress: last.hr > 100 ? 'Alto' : 'Baixo',
-          });
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      } finally {
-        setLoading(false);
-      }
+  // ========== FUNÇÕES DAS METAS ==========
+  const handleAdicionarMeta = () => {
+    if (!novaMeta.trim()) {
+      Alert.alert('Erro', 'Digite uma meta válida');
+      return;
+    }
+    
+    const novaMetaObj = {
+      id: String(Date.now()),
+      titulo: novaMeta,
+      progresso: 'Em andamento',
+      status: 'novo',
+      prazo: novaMetaPrazo || 'Sem prazo definido',
     };
+    
+    setMetasList([novaMetaObj, ...metasList]);
+    setNovaMeta('');
+    setNovaMetaPrazo('');
+    setModalMetasVisible(false);
+    Alert.alert('Sucesso', 'Meta adicionada com sucesso!');
+  };
 
-    loadDashboardData();
-  }, [paciente.id]);
+  const handleAtualizarStatusMeta = (id, novoStatus) => {
+    setMetasList(metasList.map(meta => 
+      meta.id === id ? { ...meta, status: novoStatus } : meta
+    ));
+    Alert.alert('Status atualizado', `Meta marcada como ${novoStatus}`);
+  };
 
+  const handleRemoverMeta = (id) => {
+    Alert.alert(
+      'Remover meta',
+      'Tem certeza que deseja remover esta meta?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: () => {
+          setMetasList(metasList.filter(meta => meta.id !== id));
+          Alert.alert('Removida', 'Meta removida com sucesso');
+        }}
+      ]
+    );
+  };
+
+  // ========== FUNÇÕES DOS INSIGHTS ==========
+  const handleAdicionarInsight = () => {
+    if (!novoInsight.trim()) {
+      Alert.alert('Erro', 'Digite um insight válido');
+      return;
+    }
+    
+    const dataAtual = new Date().toLocaleDateString('pt-BR');
+    const novoInsightObj = {
+      id: String(Date.now()),
+      texto: novoInsight,
+      data: dataAtual,
+    };
+    
+    setInsightsList([novoInsightObj, ...insightsList]);
+    setNovoInsight('');
+    setModalInsightVisible(false);
+    Alert.alert('Sucesso', 'Insight adicionado com sucesso!');
+  };
+
+  const handleRemoverInsight = (id) => {
+    Alert.alert(
+      'Remover insight',
+      'Tem certeza que deseja remover este insight?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: () => {
+          setInsightsList(insightsList.filter(insight => insight.id !== id));
+        }}
+      ]
+    );
+  };
+
+  // ========== FUNÇÕES DOS LEMBRETES ==========
+  const handleAdicionarLembrete = () => {
+    if (!novoLembrete.trim()) {
+      Alert.alert('Erro', 'Digite um lembrete válido');
+      return;
+    }
+    
+    const novoLembreteObj = {
+      id: String(Date.now()),
+      texto: novoLembrete,
+      dia: lembreteDia,
+      enviado: false,
+    };
+    
+    setLembretesList([novoLembreteObj, ...lembretesList]);
+    setNovoLembrete('');
+    setLembreteDia('segunda');
+    setModalLembreteVisible(false);
+    Alert.alert('Sucesso', 'Lembrete adicionado com sucesso!');
+  };
+
+  const handleRemoverLembrete = (id) => {
+    Alert.alert(
+      'Remover lembrete',
+      'Tem certeza que deseja remover este lembrete?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: () => {
+          setLembretesList(lembretesList.filter(lembrete => lembrete.id !== id));
+        }}
+      ]
+    );
+  };
+
+  const handleEnviarLembrete = (lembrete) => {
+    Alert.alert(
+      'Enviar lembrete',
+      `Enviar "${lembrete.texto}" para o paciente?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Enviar', onPress: () => {
+          setLembretesList(lembretesList.map(l => 
+            l.id === lembrete.id ? { ...l, enviado: true } : l
+          ));
+          Alert.alert('Enviado!', 'Lembrete enviado para o paciente');
+        }}
+      ]
+    );
+  };
+
+  const handleEnviarLembretesSemanais = () => {
+    Alert.alert(
+      'Enviar lembretes semanais',
+      'Deseja enviar todos os lembretes da semana para o paciente?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Enviar todos', onPress: () => {
+          setLembretesList(lembretesList.map(l => ({ ...l, enviado: true })));
+          Alert.alert('Enviado!', 'Lembretes semanais enviados com sucesso');
+        }}
+      ]
+    );
+  };
+
+  // ========== FUNÇÕES DOS ARQUIVOS (SEM DEPENDÊNCIA EXTERNA) ==========
+  const handleAdicionarArquivo = () => {
+    Alert.alert(
+      'Adicionar Arquivo',
+      'Escolha o tipo de arquivo:',
+      [
+        { text: '📄 PDF', onPress: () => adicionarArquivoSimulado('PDF') },
+        { text: '🖼️ Imagem', onPress: () => adicionarArquivoSimulado('Imagem') },
+        { text: '📝 Documento Word', onPress: () => adicionarArquivoSimulado('DOCX') },
+        { text: 'Cancelar', style: 'cancel' }
+      ]
+    );
+  };
+
+  const adicionarArquivoSimulado = (tipo) => {
+    const extensao = tipo === 'PDF' ? 'pdf' : tipo === 'Imagem' ? 'jpg' : 'docx';
+    const nomeArquivo = `Documento_${new Date().toLocaleDateString('pt-BR').replace(/\//g, '_')}_${Math.floor(Math.random() * 1000)}.${extensao}`;
+    
+    const analises = {
+      PDF: 'Documento analisado com sucesso. IA identificou que o conteúdo está relacionado ao histórico médico do paciente. Recomenda-se revisão do plano terapêutico.',
+      Imagem: 'Imagem analisada. IA identificou padrões visuais relevantes para o acompanhamento. Nenhuma anormalidade detectada.',
+      DOCX: 'Documento de texto analisado. IA extraiu informações relevantes sobre o progresso do paciente. Sugere-se continuidade do tratamento atual.',
+    };
+    
+    const novoArquivo = {
+      id: String(Date.now()),
+      nome: nomeArquivo,
+      tipo: extensao.toUpperCase(),
+      tamanho: `${Math.floor(Math.random() * 2000 + 100)} KB`,
+      data: new Date().toLocaleDateString('pt-BR'),
+      analise: analises[tipo] || `Documento ${tipo} processado. IA irá analisar o conteúdo detalhadamente em breve.`,
+    };
+    
+    setArquivosList([novoArquivo, ...arquivosList]);
+    setModalArquivoVisible(false);
+    Alert.alert('Sucesso', `${tipo} adicionado com sucesso!`);
+  };
+
+  const handleRemoverArquivo = (id) => {
+    Alert.alert(
+      'Remover arquivo',
+      'Tem certeza que deseja remover este arquivo?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Remover', style: 'destructive', onPress: () => {
+          setArquivosList(arquivosList.filter(arquivo => arquivo.id !== id));
+          Alert.alert('Removido', 'Arquivo removido com sucesso');
+        }}
+      ]
+    );
+  };
+
+  const handleBaixarArquivo = (arquivo) => {
+    Alert.alert('Download', `Iniciando download de ${arquivo.nome}\n\nEm breve o arquivo estará disponível em seus downloads.`);
+  };
+
+  const handleVerAnalise = (item, tipo) => {
+    setAnaliseSelecionada({
+      titulo: item.nome || item.titulo,
+      analise: item.analise,
+      tipo: tipo,
+    });
+    setModalAnaliseVisible(true);
+  };
+
+  const handleVerAnotacao = (anotacao) => {
+    setAnotacaoSelecionada(anotacao);
+    setModalAnotacaoVisible(true);
+  };
+
+  const getIconByType = (tipo) => {
+    switch(tipo) {
+      case 'PDF': return <Icon name="file-text" size={24} color="#EF4444" />;
+      case 'DOCX': return <Icon name="file" size={24} color="#3B82F6" />;
+      case 'JPG':
+      case 'JPEG':
+      case 'PNG': return <Icon name="image" size={24} color="#10B981" />;
+      default: return <Icon name="file" size={24} color="#6366F1" />;
+    }
+  };
+
+  // ========== DADOS DO GRÁFICO ==========
   const correlacaoData = {
     labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
     datasets: [
@@ -129,6 +433,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     ],
   };
 
+  // ========== FUNÇÕES EXISTENTES ==========
   const handleExportarRelatorio = async () => {
     try {
       await Share.share({
@@ -138,17 +443,6 @@ const DashboardPaciente = ({ navigation, route }) => {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível compartilhar o relatório');
     }
-  };
-
-  const handleMetaPress = (meta) => {
-    Alert.alert(
-      meta.titulo,
-      `${meta.progresso}\n\nLink: ${meta.link}`, // Incluindo o link no alerta
-      [
-        { text: 'Fechar', style: 'cancel' },
-        { text: 'Ver mais', onPress: () => console.log('Ver mais:', meta) }
-      ]
-    );
   };
 
   const renderStatusBadge = () => {
@@ -163,7 +457,356 @@ const DashboardPaciente = ({ navigation, route }) => {
     );
   };
 
+  const getStatusColor = (status) => {
+    switch(status) {
+      case 'concluido': return '#10B981';
+      case 'andamento': return '#F59E0B';
+      default: return '#6366F1';
+    }
+  };
 
+  const getDiaLabel = (dia) => {
+    const diaMap = {
+      'segunda': 'Segunda',
+      'terca': 'Terça',
+      'quarta': 'Quarta',
+      'quinta': 'Quinta',
+      'sexta': 'Sexta',
+      'sabado': 'Sábado',
+      'domingo': 'Domingo',
+    };
+    return diaMap[dia] || dia;
+  };
+
+  // ========== RENDERIZAÇÃO DA ABA PERFIL ==========
+  const renderAbaPerfil = () => (
+    <>
+      <View style={styles.pacienteInfo}>
+        <View style={styles.pacienteHeader}>
+          <Text style={styles.pacienteNome}>{paciente.nome}</Text>
+          <View style={styles.idBadge}>
+            <Text style={styles.idText}>ID: {paciente.id}</Text>
+          </View>
+        </View>
+        <Text style={styles.pacienteIdade}> {paciente.idade} anos</Text>
+        
+        <View style={styles.condicaoContainer}>
+          <Text style={styles.condicaoLabel}>CONDIÇÃO</Text>
+          <Text style={styles.condicaoValor}>{paciente.condicao}</Text>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Status Emocional (Semana)</Text>
+          {renderStatusBadge()}
+        </View>
+        <Text style={styles.melhoraText}>
+          Melhora de {paciente.melhoraPercentual}% em relação à semana anterior
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
+        <Text style={styles.diagnosticoCodigo}>{paciente.diagnosticoPrincipal}</Text>
+        <Text style={styles.diagnosticoDescricao}>
+          Paciente apresenta sintomas persistentes de preocupação excessiva, 
+          tensão muscular e distúrbios de sono há mais de 6 meses.
+        </Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Resumo Clínico</Text>
+        <Text style={styles.resumoTexto}>
+          O paciente apresenta melhora nos episódios depressivos, com maior engajamento 
+          em atividades sociais. Sono permanece como fator crítico de oscilação emocional.
+        </Text>
+        <View style={styles.tagsContainer}>
+          <View style={styles.tag}>
+            <Icon name="check-circle" size={14} color="#10B981" />
+            <Text style={styles.tagText}>ADESÃO MEDICAMENTOSA</Text>
+          </View>
+          <View style={styles.tag}>
+            <Icon name="heart" size={14} color="#6366F1" />
+            <Text style={styles.tagText}>MINDFULNESS SEMANAL</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Smartwatch</Text>
+        <View style={styles.smartwatchRow}>
+          <View style={styles.smartwatchItem}>
+            <Icon name="activity" size={24} color="#6366F1" />
+            <Text style={styles.smartwatchValue}>{smartwatchData.batimentos}</Text>
+            <Text style={styles.smartwatchLabel}>BPM</Text>
+          </View>
+          <View style={styles.smartwatchDivider} />
+          <View style={styles.smartwatchItem}>
+            <Icon name="moon" size={24} color="#6366F1" />
+            <Text style={styles.smartwatchValue}>{smartwatchData.qualidadeSono}%</Text>
+            <Text style={styles.smartwatchLabel}>Qualidade Sono</Text>
+          </View>
+          <View style={styles.smartwatchDivider} />
+          <View style={styles.smartwatchItem}>
+            <Icon name="zap" size={24} color="#10B981" />
+            <Text style={[styles.smartwatchValue, { color: '#10B981' }]}>{smartwatchData.nivelStress}</Text>
+            <Text style={styles.smartwatchLabel}>Nível de Stress</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Correlação Semanal</Text>
+        <Text style={styles.correlacaoSubtitle}>Humor vs Qualidade do Sono</Text>
+        
+        <LineChart
+          data={correlacaoData}
+          width={screenWidth - 64}
+          height={220}
+          chartConfig={{
+            backgroundColor: '#FFFFFF',
+            backgroundGradientFrom: '#FFFFFF',
+            backgroundGradientTo: '#FFFFFF',
+            decimalPlaces: 0,
+            color: (opacity = 1, index) => {
+              if (index === 0) return `rgba(99, 102, 241, ${opacity})`;
+              return `rgba(16, 185, 129, ${opacity})`;
+            },
+            labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+            style: { borderRadius: 16 },
+            propsForDots: { r: '5', strokeWidth: '2' },
+          }}
+          bezier
+          style={styles.chart}
+          legend={['Humor', 'Sono']}
+          formatYLabel={(value) => `${value}%`}
+        />
+      </View>
+    </>
+  );
+
+  // ========== RENDERIZAÇÃO DA ABA METAS E INSIGHTS ==========
+  const renderAbaMetasInsights = () => (
+    <ScrollView style={styles.abaContainer} showsVerticalScrollIndicator={false}>
+      {/* Seção de Metas */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>🎯 Metas do Paciente</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalMetasVisible(true)}>
+          <Icon name="plus" size={20} color="#6366F1" />
+          <Text style={styles.addButtonText}>Nova Meta</Text>
+        </TouchableOpacity>
+      </View>
+
+      {metasList.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Icon name="target" size={40} color="#D1D5DB" />
+          <Text style={styles.emptyText}>Nenhuma meta cadastrada</Text>
+          <Text style={styles.emptySubtext}>Clique em "Nova Meta" para adicionar</Text>
+        </View>
+      ) : (
+        metasList.map((meta) => (
+          <View key={meta.id} style={styles.metaCard}>
+            <View style={styles.metaHeader}>
+              <View style={[styles.metaStatus, { backgroundColor: getStatusColor(meta.status) + '20' }]}>
+                <View style={[styles.metaStatusDot, { backgroundColor: getStatusColor(meta.status) }]} />
+                <Text style={[styles.metaStatusText, { color: getStatusColor(meta.status) }]}>
+                  {meta.status === 'concluido' ? 'Concluído' : meta.status === 'andamento' ? 'Em andamento' : 'Nova'}
+                </Text>
+              </View>
+              <View style={styles.metaActions}>
+                <TouchableOpacity onPress={() => handleAtualizarStatusMeta(meta.id, 'andamento')}>
+                  <Icon name="clock" size={18} color="#9CA3AF" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleAtualizarStatusMeta(meta.id, 'concluido')}>
+                  <Icon name="check-circle" size={18} color="#10B981" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleRemoverMeta(meta.id)}>
+                  <Icon name="trash-2" size={18} color="#EF4444" />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <Text style={styles.metaTitulo}>{meta.titulo}</Text>
+            <Text style={styles.metaProgresso}>{meta.progresso}</Text>
+            <View style={styles.metaPrazo}>
+              <Icon name="calendar" size={12} color="#9CA3AF" />
+              <Text style={styles.metaPrazoText}>Prazo: {meta.prazo}</Text>
+            </View>
+          </View>
+        ))
+      )}
+
+      {/* Seção de Insights */}
+      <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+        <Text style={styles.sectionTitle}>💡 Insights Clínicos</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalInsightVisible(true)}>
+          <Icon name="plus" size={20} color="#6366F1" />
+          <Text style={styles.addButtonText}>Novo Insight</Text>
+        </TouchableOpacity>
+      </View>
+
+      {insightsList.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Icon name="lightbulb" size={40} color="#D1D5DB" />
+          <Text style={styles.emptyText}>Nenhum insight registrado</Text>
+        </View>
+      ) : (
+        insightsList.map((insight) => (
+          <View key={insight.id} style={styles.insightCard}>
+            <View style={styles.insightHeader}>
+              <Text style={styles.insightData}>{insight.data}</Text>
+              <TouchableOpacity onPress={() => handleRemoverInsight(insight.id)}>
+                <Icon name="x" size={16} color="#9CA3AF" />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.insightTexto}>{insight.texto}</Text>
+          </View>
+        ))
+      )}
+
+      {/* Seção de Lembretes Semanais */}
+      <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+        <Text style={styles.sectionTitle}>📅 Lembretes para a Semana</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalLembreteVisible(true)}>
+          <Icon name="plus" size={20} color="#6366F1" />
+          <Text style={styles.addButtonText}>Novo Lembrete</Text>
+        </TouchableOpacity>
+      </View>
+
+      {lembretesList.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Icon name="bell" size={40} color="#D1D5DB" />
+          <Text style={styles.emptyText}>Nenhum lembrete programado</Text>
+        </View>
+      ) : (
+        <>
+          {lembretesList.map((lembrete) => (
+            <View key={lembrete.id} style={styles.lembreteCard}>
+              <View style={styles.lembreteHeader}>
+                <View style={styles.lembreteDia}>
+                  <Icon name="calendar" size={14} color="#6366F1" />
+                  <Text style={styles.lembreteDiaText}>{getDiaLabel(lembrete.dia)}</Text>
+                </View>
+                {lembrete.enviado && (
+                  <View style={styles.enviadoBadge}>
+                    <Icon name="check" size={10} color="#10B981" />
+                    <Text style={styles.enviadoText}>Enviado</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.lembreteTexto}>{lembrete.texto}</Text>
+              <View style={styles.lembreteActions}>
+                <TouchableOpacity style={styles.enviarBtn} onPress={() => handleEnviarLembrete(lembrete)}>
+                  <Icon name="send" size={16} color="#6366F1" />
+                  <Text style={styles.enviarBtnText}>Enviar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.removerBtn} onPress={() => handleRemoverLembrete(lembrete.id)}>
+                  <Icon name="trash-2" size={16} color="#EF4444" />
+                  <Text style={styles.removerBtnText}>Remover</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ))}
+          <TouchableOpacity style={styles.enviarTodosBtn} onPress={handleEnviarLembretesSemanais}>
+            <Icon name="send" size={18} color="#FFFFFF" />
+            <Text style={styles.enviarTodosBtnText}>Enviar todos os lembretes</Text>
+          </TouchableOpacity>
+        </>
+      )}
+    </ScrollView>
+  );
+
+  // ========== RENDERIZAÇÃO DA ABA ARQUIVOS ==========
+  const renderAbaArquivos = () => (
+    <ScrollView style={styles.abaContainer} showsVerticalScrollIndicator={false}>
+      {/* Seção de Arquivos do Psicólogo */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>📄 Arquivos Compartilhados</Text>
+        <TouchableOpacity style={styles.addButton} onPress={() => setModalArquivoVisible(true)}>
+          <Icon name="plus" size={20} color="#6366F1" />
+          <Text style={styles.addButtonText}>Anexar Arquivo</Text>
+        </TouchableOpacity>
+      </View>
+
+      {arquivosList.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Icon name="folder" size={40} color="#D1D5DB" />
+          <Text style={styles.emptyText}>Nenhum arquivo anexado</Text>
+          <Text style={styles.emptySubtext}>Clique em "Anexar Arquivo" para adicionar</Text>
+        </View>
+      ) : (
+        arquivosList.map((arquivo) => (
+          <View key={arquivo.id} style={styles.arquivoCard}>
+            <View style={styles.arquivoHeader}>
+              <View style={styles.arquivoIcon}>
+                {getIconByType(arquivo.tipo)}
+              </View>
+              <View style={styles.arquivoInfo}>
+                <Text style={styles.arquivoNome}>{arquivo.nome}</Text>
+                <Text style={styles.arquivoMeta}>{arquivo.tipo} • {arquivo.tamanho} • {arquivo.data}</Text>
+              </View>
+            </View>
+            <View style={styles.arquivoActions}>
+              <TouchableOpacity style={styles.analiseBtn} onPress={() => handleVerAnalise(arquivo, 'arquivo')}>
+                <Icon name="cpu" size={16} color="#6366F1" />
+                <Text style={styles.analiseBtnText}>Análise da IA</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.downloadBtn} onPress={() => handleBaixarArquivo(arquivo)}>
+                <Icon name="download" size={16} color="#10B981" />
+                <Text style={styles.downloadBtnText}>Baixar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleRemoverArquivo(arquivo.id)}>
+                <Icon name="trash-2" size={18} color="#EF4444" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        ))
+      )}
+
+      {/* Seção de Anotações do Paciente */}
+      <View style={[styles.sectionHeader, { marginTop: 24 }]}>
+        <Text style={styles.sectionTitle}>📝 Anotações do Paciente</Text>
+        <Text style={styles.sectionSubtitle}>Compartilhadas com o psicólogo</Text>
+      </View>
+
+      {anotacoesList.length === 0 ? (
+        <View style={styles.emptyCard}>
+          <Icon name="edit-2" size={40} color="#D1D5DB" />
+          <Text style={styles.emptyText}>Nenhuma anotação compartilhada</Text>
+        </View>
+      ) : (
+        anotacoesList.map((anotacao) => (
+          <TouchableOpacity key={anotacao.id} onPress={() => handleVerAnotacao(anotacao)}>
+            <View style={styles.anotacaoCard}>
+              <View style={styles.anotacaoHeader}>
+                <View>
+                  <Text style={styles.anotacaoTitulo}>{anotacao.titulo}</Text>
+                  <Text style={styles.anotacaoData}>{anotacao.data}</Text>
+                </View>
+                <Icon name="chevron-right" size={20} color="#9CA3AF" />
+              </View>
+              <Text style={styles.anotacaoTexto} numberOfLines={2}>{anotacao.texto}</Text>
+              <TouchableOpacity style={styles.analiseBtn} onPress={() => handleVerAnalise(anotacao, 'anotacao')}>
+                <Icon name="cpu" size={14} color="#6366F1" />
+                <Text style={styles.analiseBtnText}>Ver análise da IA</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        ))
+      )}
+    </ScrollView>
+  );
+
+  // ========== RENDERIZAÇÃO DAS OUTRAS ABAS ==========
+  const renderAbaRelatorios = () => (
+    <RelatoriosPaciente paciente={paciente} standalone={true} />
+  );
+
+  const renderAbaSmartwatch = () => (
+    <SmartwatchPaciente paciente={paciente} standalone={true} />
+  );
+
+  // ========== RENDER PRINCIPAL ==========
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
@@ -173,7 +816,7 @@ const DashboardPaciente = ({ navigation, route }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header com Voltar */}
+        {/* Header com Voltar e Exportar */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Icon name="arrow-left" size={24} color="#4B5563" />
@@ -184,15 +827,30 @@ const DashboardPaciente = ({ navigation, route }) => {
           </TouchableOpacity>
         </View>
 
+        {/* Tabs */}
         <View style={styles.tabsContainer}>
           <TouchableOpacity 
             style={[styles.tab, abaAtiva === 'perfil' && styles.tabActive]}
             onPress={() => setAbaAtiva('perfil')}
           >
             <Icon name="user" size={18} color={abaAtiva === 'perfil' ? '#6366F1' : '#9CA3AF'} />
-            <Text style={[styles.tabText, abaAtiva === 'perfil' && styles.tabTextActive]}>
-              Perfil
-            </Text>
+            <Text style={[styles.tabText, abaAtiva === 'perfil' && styles.tabTextActive]}>Perfil</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.tab, abaAtiva === 'metas' && styles.tabActive]}
+            onPress={() => setAbaAtiva('metas')}
+          >
+            <Icon name="target" size={18} color={abaAtiva === 'metas' ? '#6366F1' : '#9CA3AF'} />
+            <Text style={[styles.tabText, abaAtiva === 'metas' && styles.tabTextActive]}>Metas</Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={[styles.tab, abaAtiva === 'arquivos' && styles.tabActive]}
+            onPress={() => setAbaAtiva('arquivos')}
+          >
+            <Icon name="folder" size={18} color={abaAtiva === 'arquivos' ? '#6366F1' : '#9CA3AF'} />
+            <Text style={[styles.tabText, abaAtiva === 'arquivos' && styles.tabTextActive]}>Arquivos</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -200,9 +858,7 @@ const DashboardPaciente = ({ navigation, route }) => {
             onPress={() => setAbaAtiva('relatorios')}
           >
             <Icon name="bar-chart-2" size={18} color={abaAtiva === 'relatorios' ? '#6366F1' : '#9CA3AF'} />
-            <Text style={[styles.tabText, abaAtiva === 'relatorios' && styles.tabTextActive]}>
-              Relatórios
-            </Text>
+            <Text style={[styles.tabText, abaAtiva === 'relatorios' && styles.tabTextActive]}>Relatórios</Text>
           </TouchableOpacity>
           
           <TouchableOpacity 
@@ -210,472 +866,345 @@ const DashboardPaciente = ({ navigation, route }) => {
             onPress={() => setAbaAtiva('smartwatch')}
           >
             <Icon name="watch" size={18} color={abaAtiva === 'smartwatch' ? '#6366F1' : '#9CA3AF'} />
-            <Text style={[styles.tabText, abaAtiva === 'smartwatch' && styles.tabTextActive]}>
-              Smartwatch
-            </Text>
+            <Text style={[styles.tabText, abaAtiva === 'smartwatch' && styles.tabTextActive]}>Smartwatch</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Informações do Paciente */}
-        <View style={styles.pacienteInfo}>
-          <View style={styles.pacienteHeader}>
-            <Text style={styles.pacienteNome}>{paciente.nome}</Text>
-            <View style={styles.idBadge}>
-              <Text style={styles.idText}>ID: {paciente.id}</Text>
-            </View>
-          </View>
-          <Text style={styles.pacienteIdade}> {paciente.idade} anos</Text>
-          
-          <View style={styles.condicaoContainer}>
-            <Text style={styles.condicaoLabel}>CONDIÇÃO</Text>
-            <Text style={styles.condicaoValor}>{paciente.condicao}</Text>
-          </View>
-        </View>
-
-        {/* Status Emocional */}
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <Text style={styles.cardTitle}>Status Emocional (Semana)</Text>
-            {renderStatusBadge()}
-          </View>
-          <Text style={styles.melhoraText}>
-            Melhora de {paciente.melhoraPercentual}% em relação à semana anterior
-          </Text>
-        </View>
-
-        {/* Diagnóstico Principal */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
-          <Text style={styles.diagnosticoCodigo}>{paciente.diagnosticoPrincipal}</Text>
-          <Text style={styles.diagnosticoDescricao}>
-            Paciente apresenta sintomas persistentes de preocupação excessiva, 
-            tensão muscular e distúrbios de sono há mais de 6 meses.
-          </Text>
-        </View>
-
-        {/* Resumo Clínico */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Resumo Clínico</Text>
-          <Text style={styles.resumoTexto}>
-            O paciente apresenta melhora nos episódios depressivos, com maior engajamento 
-            em atividades sociais. Sono permanece como fator crítico de oscilação emocional.
-          </Text>
-          <View style={styles.tagsContainer}>
-            <View style={styles.tag}>
-              <Icon name="check-circle" size={14} color="#10B981" />
-              <Text style={styles.tagText}>ADESÃO MEDICAMENTOSA</Text>
-            </View>
-            <View style={styles.tag}>
-              <Icon name="heart" size={14} color="#6366F1" />
-              <Text style={styles.tagText}>MINDFULNESS SEMANAL</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Smartwatch */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Smartwatch</Text>
-          <View style={styles.smartwatchRow}>
-            <View style={styles.smartwatchItem}>
-              <Icon name="activity" size={24} color="#6366F1" />
-              <Text style={styles.smartwatchValue}>{smartwatchData.batimentos}</Text>
-              <Text style={styles.smartwatchLabel}>BPM</Text>
-            </View>
-            <View style={styles.smartwatchDivider} />
-            <View style={styles.smartwatchItem}>
-              <Icon name="moon" size={24} color="#6366F1" />
-              <Text style={styles.smartwatchValue}>{smartwatchData.qualidadeSono}%</Text>
-              <Text style={styles.smartwatchLabel}>Qualidade Sono</Text>
-            </View>
-            <View style={styles.smartwatchDivider} />
-            <View style={styles.smartwatchItem}>
-              <Icon name="zap" size={24} color="#10B981" />
-              <Text style={[styles.smartwatchValue, { color: '#10B981' }]}>{smartwatchData.nivelStress}</Text>
-              <Text style={styles.smartwatchLabel}>Nível de Stress</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Metas */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Metas</Text>
-          {loading ? (
-            <ActivityIndicator size="small" color="#6366F1" />
-          ) : (
-            metas.map((meta) => (
-              <TouchableOpacity 
-                key={meta.id} 
-                style={styles.metaItem}
-                onPress={() => handleMetaPress(meta)}
-              >
-                <View style={styles.metaContent}>
-                  <View style={[
-                    styles.metaStatusDot,
-                    meta.status === 'concluido' && styles.metaStatusConcluido,
-                    meta.status === 'andamento' && styles.metaStatusAndamento,
-                    meta.status === 'novo' && styles.metaStatusNovo,
-                  ]} />
-                  <View style={styles.metaTextContainer}>
-                    <Text style={styles.metaTitulo}>{meta.titulo}</Text>
-                    <Text style={styles.metaProgresso}>{meta.progresso}</Text>
-                  </View>
-                </View>
-                <Icon name="chevron-right" size={20} color="#D1D5DB" />
-              </TouchableOpacity>
-            ))
-          )}
-        </View>
-
-        {/* Correlação Semanal */}
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>Correlação Semanal</Text>
-          <Text style={styles.correlacaoSubtitle}>Humor vs Qualidade do Sono</Text>
-          
-          <LineChart
-            data={correlacaoData}
-            width={screenWidth - 64}
-            height={220}
-            chartConfig={{
-              backgroundColor: '#FFFFFF',
-              backgroundGradientFrom: '#FFFFFF',
-              backgroundGradientTo: '#FFFFFF',
-              decimalPlaces: 0,
-              color: (opacity = 1, index) => {
-                if (index === 0) return `rgba(99, 102, 241, ${opacity})`;
-                return `rgba(16, 185, 129, ${opacity})`;
-              },
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: '5',
-                strokeWidth: '2',
-              },
-            }}
-            bezier
-            style={styles.chart}
-            legend={['Humor', 'Sono']}
-            formatYLabel={(value) => `${value}%`}
-          />
-        </View>
-
-        {/* Bottom Navigation */}
-        <View style={styles.bottomNavigation}>
-          <TouchableOpacity 
-            style={styles.navItem}
-            onPress={() => navigation.navigate('VisaoGeral')}
-          >
-            <Icon name="home" size={24} color="#9CA3AF" />
-            <Text style={styles.navText}>Início</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.navItem}
-            onPress={() => navigation.navigate('Pacientes')}
-          >
-            <Icon name="users" size={24} color="#9CA3AF" />
-            <Text style={styles.navText}>Pacientes</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.navItem}
-            onPress={() => navigation.navigate('Relatorios')}
-          >
-            <Icon name="bar-chart-2" size={24} color="#9CA3AF" />
-            <Text style={styles.navText}>Relatórios</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Conteúdo da ABA ativa */}
+        {abaAtiva === 'perfil' && renderAbaPerfil()}
+        {abaAtiva === 'metas' && renderAbaMetasInsights()}
+        {abaAtiva === 'arquivos' && renderAbaArquivos()}
+        {abaAtiva === 'relatorios' && renderAbaRelatorios()}
+        {abaAtiva === 'smartwatch' && renderAbaSmartwatch()}
       </ScrollView>
-    </SafeAreaView>
 
-    
+      {/* ========== MODAL DE ADICIONAR META ========== */}
+      <Modal animationType="slide" transparent={true} visible={modalMetasVisible} onRequestClose={() => setModalMetasVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Nova Meta</Text>
+              <TouchableOpacity onPress={() => setModalMetasVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.inputLabel}>Descrição da Meta</Text>
+              <TextInput style={styles.modalInput} placeholder="Ex: Praticar meditação diariamente" value={novaMeta} onChangeText={setNovaMeta} multiline />
+              
+              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Prazo (opcional)</Text>
+              <TextInput style={styles.modalInput} placeholder="Ex: 30/06/2024" value={novaMetaPrazo} onChangeText={setNovaMetaPrazo} />
+              
+              <TouchableOpacity style={styles.modalButton} onPress={handleAdicionarMeta}>
+                <Text style={styles.modalButtonText}>Adicionar Meta</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========== MODAL DE ADICIONAR INSIGHT ========== */}
+      <Modal animationType="slide" transparent={true} visible={modalInsightVisible} onRequestClose={() => setModalInsightVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Novo Insight</Text>
+              <TouchableOpacity onPress={() => setModalInsightVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.inputLabel}>Insight Clínico</Text>
+              <TextInput style={[styles.modalInput, styles.textArea]} placeholder="Digite seu insight sobre o paciente..." value={novoInsight} onChangeText={setNovoInsight} multiline numberOfLines={4} textAlignVertical="top" />
+              
+              <TouchableOpacity style={styles.modalButton} onPress={handleAdicionarInsight}>
+                <Text style={styles.modalButtonText}>Adicionar Insight</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========== MODAL DE ADICIONAR LEMBRETE ========== */}
+      <Modal animationType="slide" transparent={true} visible={modalLembreteVisible} onRequestClose={() => setModalLembreteVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Novo Lembrete</Text>
+              <TouchableOpacity onPress={() => setModalLembreteVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.inputLabel}>Dia da semana</Text>
+              <View style={styles.diasContainer}>
+                {diasSemana.map((dia) => (
+                  <TouchableOpacity key={dia.id} style={[styles.diaButton, lembreteDia === dia.id && styles.diaButtonActive]} onPress={() => setLembreteDia(dia.id)}>
+                    <Text style={[styles.diaButtonText, lembreteDia === dia.id && styles.diaButtonTextActive]}>{dia.label.substring(0, 3)}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              
+              <Text style={[styles.inputLabel, { marginTop: 16 }]}>Lembrete</Text>
+              <TextInput style={styles.modalInput} placeholder="Digite o lembrete..." value={novoLembrete} onChangeText={setNovoLembrete} multiline />
+              
+              <TouchableOpacity style={styles.modalButton} onPress={handleAdicionarLembrete}>
+                <Text style={styles.modalButtonText}>Adicionar Lembrete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========== MODAL PARA ESCOLHER TIPO DE ARQUIVO ========== */}
+      <Modal animationType="slide" transparent={true} visible={modalArquivoVisible} onRequestClose={() => setModalArquivoVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Anexar Arquivo</Text>
+              <TouchableOpacity onPress={() => setModalArquivoVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.modalContent}>
+              <Text style={styles.inputLabel}>Escolha o tipo de arquivo:</Text>
+              
+              <TouchableOpacity style={styles.tipoArquivoBtn} onPress={() => adicionarArquivoSimulado('PDF')}>
+                <Icon name="file-text" size={24} color="#EF4444" />
+                <Text style={styles.tipoArquivoBtnText}>📄 Documento PDF</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.tipoArquivoBtn} onPress={() => adicionarArquivoSimulado('Imagem')}>
+                <Icon name="image" size={24} color="#10B981" />
+                <Text style={styles.tipoArquivoBtnText}>🖼️ Imagem (JPG, PNG)</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.tipoArquivoBtn} onPress={() => adicionarArquivoSimulado('DOCX')}>
+                <Icon name="file" size={24} color="#3B82F6" />
+                <Text style={styles.tipoArquivoBtnText}>📝 Documento Word</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========== MODAL DE ANÁLISE DA IA ========== */}
+      <Modal animationType="fade" transparent={true} visible={modalAnaliseVisible} onRequestClose={() => setModalAnaliseVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.analiseModalContainer}>
+            <View style={styles.analiseModalHeader}>
+              <View style={styles.analiseIcon}>
+                <Icon name="cpu" size={24} color="#6366F1" />
+              </View>
+              <Text style={styles.analiseModalTitle}>Análise da IA</Text>
+              <TouchableOpacity onPress={() => setModalAnaliseVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.analiseModalContent}>
+              <Text style={styles.analiseItemTitle}>{analiseSelecionada?.titulo}</Text>
+              <View style={styles.analiseDivider} />
+              <Text style={styles.analiseText}>{analiseSelecionada?.analise}</Text>
+            </ScrollView>
+            <TouchableOpacity style={styles.analiseCloseButton} onPress={() => setModalAnaliseVisible(false)}>
+              <Text style={styles.analiseCloseButtonText}>Fechar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* ========== MODAL DE VER ANOTAÇÃO COMPLETA ========== */}
+      <Modal animationType="slide" transparent={true} visible={modalAnotacaoVisible} onRequestClose={() => setModalAnotacaoVisible(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{anotacaoSelecionada?.titulo}</Text>
+              <TouchableOpacity onPress={() => setModalAnotacaoVisible(false)}>
+                <Icon name="x" size={24} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.modalContent}>
+              <Text style={styles.anotacaoDataModal}>{anotacaoSelecionada?.data}</Text>
+              <Text style={styles.anotacaoTextoModal}>{anotacaoSelecionada?.texto}</Text>
+              
+              <View style={styles.analiseSection}>
+                <View style={styles.analiseSectionHeader}>
+                  <Icon name="cpu" size={18} color="#6366F1" />
+                  <Text style={styles.analiseSectionTitle}>Análise da IA</Text>
+                </View>
+                <Text style={styles.analiseSectionText}>{anotacaoSelecionada?.analise}</Text>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 };
 
+// ========== ESTILOS ==========
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F9FAFB',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingBottom: 80,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 8,
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  exportButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#EEF2FF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 8,
-  },
-  exportText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6366F1',
-  },
-  pacienteInfo: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  pacienteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  pacienteNome: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  idBadge: {
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  idText: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  pacienteIdade: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  condicaoContainer: {
-    marginTop: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  condicaoLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#EF4444',
-    letterSpacing: 0.5,
-  },
-  condicaoValor: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 12,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  statusEstavel: {
-    backgroundColor: '#D1FAE5',
-  },
-  statusInstavel: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  statusTextEstavel: {
-    color: '#10B981',
-  },
-  statusTextInstavel: {
-    color: '#F59E0B',
-  },
-  melhoraText: {
-    fontSize: 14,
-    color: '#10B981',
-    fontWeight: '500',
-  },
-  diagnosticoCodigo: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 8,
-  },
-  diagnosticoDescricao: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  resumoTexto: {
-    fontSize: 14,
-    color: '#4B5563',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    gap: 6,
-  },
-  tagText: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  smartwatchRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-  },
-  smartwatchItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  smartwatchDivider: {
-    width: 1,
-    height: 40,
-    backgroundColor: '#E5E7EB',
-  },
-  smartwatchValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginTop: 8,
-  },
-  smartwatchLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginTop: 4,
-  },
-  metaItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  metaContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-    gap: 12,
-  },
-  metaStatusDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#D1D5DB',
-  },
-  metaStatusConcluido: {
-    backgroundColor: '#10B981',
-  },
-  metaStatusAndamento: {
-    backgroundColor: '#F59E0B',
-  },
-  metaStatusNovo: {
-    backgroundColor: '#6366F1',
-  },
-  metaTextContainer: {
-    flex: 1,
-  },
-  metaTitulo: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#1F2937',
-    marginBottom: 2,
-  },
-  metaProgresso: {
-    fontSize: 12,
-    color: '#6B7280',
-  },
-  correlacaoSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    marginBottom: 16,
-  },
-  chart: {
-    marginLeft: -25,
-    borderRadius: 16,
-  },
-  bottomNavigation: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  navText: {
-    fontSize: 12,
-    color: '#9CA3AF',
-  },
+  container: { flex: 1, backgroundColor: '#F9FAFB' },
+  scrollView: { flex: 1 },
+  scrollContent: { paddingBottom: 40 },
+  
+  // Header
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
+  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 2 },
+  exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 8 },
+  exportText: { fontSize: 14, fontWeight: '500', color: '#6366F1' },
+  
+  // Tabs
+  tabsContainer: { flexDirection: 'row', backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#E5E7EB', paddingHorizontal: 8 },
+  tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 14 },
+  tabActive: { borderBottomWidth: 2, borderBottomColor: '#6366F1' },
+  tabText: { fontSize: 12, color: '#9CA3AF', fontWeight: '500' },
+  tabTextActive: { color: '#6366F1' },
+  
+  // Conteúdo
+  abaContainer: { padding: 16 },
+  
+  // Cards do Perfil
+  pacienteInfo: { paddingHorizontal: 20, paddingVertical: 16 },
+  pacienteHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 },
+  pacienteNome: { fontSize: 28, fontWeight: 'bold', color: '#1F2937' },
+  idBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12 },
+  idText: { fontSize: 12, color: '#6B7280' },
+  pacienteIdade: { fontSize: 14, color: '#6B7280', marginTop: 4 },
+  condicaoContainer: { marginTop: 16, flexDirection: 'row', alignItems: 'center', gap: 12 },
+  condicaoLabel: { fontSize: 12, fontWeight: '600', color: '#EF4444', letterSpacing: 0.5 },
+  condicaoValor: { fontSize: 16, fontWeight: '600', color: '#EF4444' },
+  
+  card: { backgroundColor: '#FFFFFF', marginHorizontal: 20, marginBottom: 16, borderRadius: 16, padding: 16, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
+  cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 10 },
+  cardTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 12 },
+  
+  statusBadge: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  statusEstavel: { backgroundColor: '#D1FAE5' },
+  statusInstavel: { backgroundColor: '#FEF3C7' },
+  statusText: { fontSize: 14, fontWeight: '600' },
+  statusTextEstavel: { color: '#10B981' },
+  statusTextInstavel: { color: '#F59E0B' },
+  melhoraText: { fontSize: 14, color: '#10B981', fontWeight: '500' },
+  
+  diagnosticoCodigo: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 8 },
+  diagnosticoDescricao: { fontSize: 14, color: '#6B7280', lineHeight: 20 },
+  resumoTexto: { fontSize: 14, color: '#4B5563', lineHeight: 20, marginBottom: 16 },
+  
+  tagsContainer: { flexDirection: 'row', gap: 12, flexWrap: 'wrap' },
+  tag: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#F3F4F6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  tagText: { fontSize: 12, fontWeight: '500', color: '#4B5563' },
+  
+  smartwatchRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
+  smartwatchItem: { alignItems: 'center', flex: 1 },
+  smartwatchDivider: { width: 1, height: 40, backgroundColor: '#E5E7EB' },
+  smartwatchValue: { fontSize: 24, fontWeight: 'bold', color: '#1F2937', marginTop: 8 },
+  smartwatchLabel: { fontSize: 12, color: '#6B7280', marginTop: 4 },
+  
+  correlacaoSubtitle: { fontSize: 14, color: '#6B7280', marginBottom: 16 },
+  chart: { marginLeft: -25, borderRadius: 16 },
+  
+  // Seção de Metas e Insights
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937' },
+  sectionSubtitle: { fontSize: 12, color: '#9CA3AF' },
+  addButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 4 },
+  addButtonText: { fontSize: 12, fontWeight: '500', color: '#6366F1' },
+  
+  emptyCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 32, alignItems: 'center', marginBottom: 16 },
+  emptyText: { fontSize: 16, fontWeight: '500', color: '#6B7280', marginTop: 12 },
+  emptySubtext: { fontSize: 12, color: '#9CA3AF', marginTop: 4 },
+  
+  metaCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 4, elevation: 1 },
+  metaHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  metaStatus: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 6 },
+  metaStatusDot: { width: 8, height: 8, borderRadius: 4 },
+  metaStatusText: { fontSize: 11, fontWeight: '600' },
+  metaActions: { flexDirection: 'row', gap: 12 },
+  metaTitulo: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 4 },
+  metaProgresso: { fontSize: 13, color: '#6B7280', marginBottom: 8 },
+  metaPrazo: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  metaPrazoText: { fontSize: 11, color: '#9CA3AF' },
+  
+  insightCard: { backgroundColor: '#F8FAFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E0E7FF' },
+  insightHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  insightData: { fontSize: 11, color: '#9CA3AF' },
+  insightTexto: { fontSize: 14, color: '#374151', lineHeight: 20 },
+  
+  lembreteCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  lembreteHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
+  lembreteDia: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#EEF2FF', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 },
+  lembreteDiaText: { fontSize: 12, fontWeight: '500', color: '#6366F1' },
+  enviadoBadge: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#D1FAE5', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, gap: 4 },
+  enviadoText: { fontSize: 10, fontWeight: '500', color: '#10B981' },
+  lembreteTexto: { fontSize: 14, color: '#1F2937', marginBottom: 12, lineHeight: 20 },
+  lembreteActions: { flexDirection: 'row', gap: 12 },
+  enviarBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#EEF2FF', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, gap: 6 },
+  enviarBtnText: { fontSize: 12, fontWeight: '500', color: '#6366F1' },
+  removerBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FEE2E2', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, gap: 6 },
+  removerBtnText: { fontSize: 12, fontWeight: '500', color: '#EF4444' },
+  enviarTodosBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#6366F1', padding: 12, borderRadius: 12, gap: 8, marginTop: 8 },
+  enviarTodosBtnText: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  
+  // Seção de Arquivos
+  arquivoCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  arquivoHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  arquivoIcon: { width: 48, height: 48, borderRadius: 12, backgroundColor: '#F3F4F6', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  arquivoInfo: { flex: 1 },
+  arquivoNome: { fontSize: 14, fontWeight: '500', color: '#1F2937', marginBottom: 4 },
+  arquivoMeta: { fontSize: 11, color: '#9CA3AF' },
+  arquivoActions: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  analiseBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  analiseBtnText: { fontSize: 12, fontWeight: '500', color: '#6366F1' },
+  downloadBtn: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  downloadBtnText: { fontSize: 12, fontWeight: '500', color: '#10B981' },
+  
+  anotacaoCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  anotacaoHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  anotacaoTitulo: { fontSize: 14, fontWeight: '600', color: '#1F2937' },
+  anotacaoData: { fontSize: 11, color: '#9CA3AF', marginTop: 2 },
+  anotacaoTexto: { fontSize: 13, color: '#6B7280', lineHeight: 18, marginBottom: 12 },
+  
+  // Modais
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: '#FFFFFF', borderRadius: 24, width: '90%', maxHeight: '80%' },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  modalTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937' },
+  modalContent: { padding: 20 },
+  modalInput: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, padding: 12, fontSize: 16, backgroundColor: '#F9FAFB', minHeight: 50, textAlignVertical: 'top' },
+  textArea: { height: 120 },
+  inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 8 },
+  modalButton: { backgroundColor: '#6366F1', borderRadius: 12, padding: 14, alignItems: 'center', marginTop: 24 },
+  modalButtonText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  
+  diasContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  diaButton: { paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, backgroundColor: '#F3F4F6' },
+  diaButtonActive: { backgroundColor: '#6366F1' },
+  diaButtonText: { fontSize: 12, fontWeight: '500', color: '#6B7280' },
+  diaButtonTextActive: { color: '#FFFFFF' },
+  
+  // Modal de tipos de arquivo
+  tipoArquivoBtn: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#F9FAFB', padding: 16, borderRadius: 12, marginBottom: 12, borderWidth: 1, borderColor: '#E5E7EB' },
+  tipoArquivoBtnText: { fontSize: 16, color: '#1F2937' },
+  
+  // Modal de Análise
+  analiseModalContainer: { backgroundColor: '#FFFFFF', borderRadius: 24, width: '85%', maxHeight: '70%' },
+  analiseModalHeader: { flexDirection: 'row', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', gap: 12 },
+  analiseIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#EEF2FF', alignItems: 'center', justifyContent: 'center' },
+  analiseModalTitle: { flex: 1, fontSize: 18, fontWeight: '600', color: '#1F2937' },
+  analiseModalContent: { padding: 20 },
+  analiseItemTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 12 },
+  analiseDivider: { height: 1, backgroundColor: '#E5E7EB', marginBottom: 16 },
+  analiseText: { fontSize: 14, color: '#4B5563', lineHeight: 22 },
+  analiseCloseButton: { backgroundColor: '#F3F4F6', margin: 20, padding: 12, borderRadius: 12, alignItems: 'center' },
+  analiseCloseButtonText: { fontSize: 14, fontWeight: '500', color: '#6B7280' },
+  
+  analiseSection: { backgroundColor: '#F8FAFF', borderRadius: 16, padding: 16, marginTop: 20 },
+  analiseSectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  analiseSectionTitle: { fontSize: 14, fontWeight: '600', color: '#6366F1' },
+  analiseSectionText: { fontSize: 13, color: '#4B5563', lineHeight: 20 },
+  anotacaoDataModal: { fontSize: 12, color: '#9CA3AF', marginBottom: 16 },
+  anotacaoTextoModal: { fontSize: 15, color: '#1F2937', lineHeight: 22 },
 });
 
 export default DashboardPaciente;
