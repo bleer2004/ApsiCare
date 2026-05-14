@@ -8,7 +8,7 @@ from scipy.signal import find_peaks
 #----------------
 # CONFIG
 DATA_PATH   = r"C:\Users\eduar\OneDrive\Desktop\maua26\TCC-Códigos\Git-TCC\PsicoCare\dataset\WESAD"
-OUTPUT_PATH = Path("explore_hr")
+OUTPUT_PATH = Path("features")
 OUTPUT_PATH.mkdir(exist_ok=True)
 
 subjects = ["S2","S3","S4","S5","S6","S7","S8","S9","S10","S11","S13","S14","S15","S16","S17"]
