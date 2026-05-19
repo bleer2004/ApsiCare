@@ -202,7 +202,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
       
       await Share.share({
         message: conteudoTexto,
-        title: `Relatório_${relatorio.pacienteNome}_${relatorio.data}.txt`,
+        title: `Relatorio_${relatorio.pacienteNome}_${relatorio.data}.txt`,
       });
       
       Alert.alert('Sucesso', 'Relatório compartilhado com sucesso!');
@@ -278,7 +278,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
   };
   
   const getTipoColor = (tipo) => {
-    return tipo === 'smartwatch' ? '#6366F1' : '#10B981';
+    return tipo === 'smartwatch' ? '#B367D4' : '#10B981';
   };
   
   const getTipoLabel = (tipo) => {
@@ -299,7 +299,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
       
       <Text style={styles.relatorioTitulo}>{relatorio.titulo}</Text>
       <Text style={styles.relatorioPaciente}>
-        <Icon name="user" size={12} color="#9CA3AF" /> {relatorio.pacienteNome}
+        <Icon name="user" size={12} color="#94A3B8" /> {relatorio.pacienteNome}
       </Text>
       <Text style={styles.relatorioDescricao} numberOfLines={2}>
         {relatorio.descricao}
@@ -307,7 +307,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
       
       <View style={styles.relatorioActions}>
         <TouchableOpacity style={styles.analisarBtn} onPress={() => handleAnalisarIA(relatorio)}>
-          <Icon name="cpu" size={18} color="#6366F1" />
+          <Icon name="cpu" size={18} color="#B367D4" />
           <Text style={styles.analisarBtnText}>Analisar com IA</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.baixarBtn} onPress={() => handleBaixarRelatorio(relatorio)}>
@@ -322,14 +322,14 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
   
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
       
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Relatórios</Text>
           <TouchableOpacity style={styles.exportAllButton} onPress={handleExportarTodos}>
-            <Icon name="download" size={20} color="#6366F1" />
+            <Icon name="download" size={18} color="#B367D4" />
             <Text style={styles.exportAllText}>Exportar Tudo</Text>
           </TouchableOpacity>
         </View>
@@ -348,7 +348,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
               <Text style={styles.filterSelectText}>
                 {selectedPaciente === 'todos' ? 'Todos os pacientes' : pacientesList.find(p => p.id === selectedPaciente)?.nome}
               </Text>
-              <Icon name="chevron-down" size={20} color="#6B7280" />
+              <Icon name="chevron-down" size={20} color="#94A3B8" />
             </TouchableOpacity>
             
             {showPacienteDropdown && (
@@ -377,7 +377,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
                 <Text style={[styles.filterSelectText, !dataInicio && styles.placeholderText]}>
                   {dataInicio || 'Selecionar data'}
                 </Text>
-                <Icon name="calendar" size={18} color="#6B7280" />
+                <Icon name="calendar" size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
             
@@ -387,7 +387,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
                 <Text style={[styles.filterSelectText, !dataFim && styles.placeholderText]}>
                   {dataFim || 'Selecionar data'}
                 </Text>
-                <Icon name="calendar" size={18} color="#6B7280" />
+                <Icon name="calendar" size={18} color="#94A3B8" />
               </TouchableOpacity>
             </View>
           </View>
@@ -406,14 +406,14 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
                 style={[styles.tipoFilterBtn, tipoRelatorio === 'smartwatch' && styles.tipoFilterBtnActive]}
                 onPress={() => setTipoRelatorio('smartwatch')}
               >
-                <Icon name="watch" size={14} color={tipoRelatorio === 'smartwatch' ? '#FFFFFF' : '#6B7280'} />
+                <Icon name="watch" size={14} color={tipoRelatorio === 'smartwatch' ? '#FFFFFF' : '#64748B'} />
                 <Text style={[styles.tipoFilterText, tipoRelatorio === 'smartwatch' && styles.tipoFilterTextActive]}>Smartwatch</Text>
               </TouchableOpacity>
               <TouchableOpacity 
                 style={[styles.tipoFilterBtn, tipoRelatorio === 'anotacoes' && styles.tipoFilterBtnActive]}
                 onPress={() => setTipoRelatorio('anotacoes')}
               >
-                <Icon name="file-text" size={14} color={tipoRelatorio === 'anotacoes' ? '#FFFFFF' : '#6B7280'} />
+                <Icon name="file-text" size={14} color={tipoRelatorio === 'anotacoes' ? '#FFFFFF' : '#64748B'} />
                 <Text style={[styles.tipoFilterText, tipoRelatorio === 'anotacoes' && styles.tipoFilterTextActive]}>Anotações</Text>
               </TouchableOpacity>
             </View>
@@ -421,7 +421,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
           
           {/* Botão Limpar Filtros */}
           <TouchableOpacity style={styles.clearFiltersBtn} onPress={handleLimparFiltros}>
-            <Icon name="x" size={16} color="#6366F1" />
+            <Icon name="x" size={16} color="#B367D4" />
             <Text style={styles.clearFiltersText}>Limpar filtros</Text>
           </TouchableOpacity>
         </View>
@@ -491,7 +491,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
           <View style={styles.analiseModalContainer}>
             <View style={styles.analiseModalHeader}>
               <View style={styles.analiseIcon}>
-                <Icon name="cpu" size={24} color="#6366F1" />
+                <Icon name="cpu" size={24} color="#B367D4" />
               </View>
               <View style={styles.analiseHeaderText}>
                 <Text style={styles.analiseModalTitle}>Análise da IA</Text>
@@ -500,7 +500,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
                 </Text>
               </View>
               <TouchableOpacity onPress={() => setModalAnaliseVisible(false)}>
-                <Icon name="x" size={24} color="#6B7280" />
+                <Icon name="x" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
             <ScrollView style={styles.analiseModalContent}>
@@ -517,7 +517,7 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
               <View style={styles.analiseDivider} />
               
               <Text style={styles.analiseSectionTitle}>
-                <Icon name="brain" size={16} color="#6366F1" /> Análise Inteligente
+                <Icon name="brain" size={16} color="#B367D4" /> Análise Inteligente
               </Text>
               <Text style={styles.analiseText}>{analiseSelecionada?.analiseIA}</Text>
               
@@ -576,17 +576,17 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
       {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
-          <Icon name="home" size={24} color="#9CA3AF" />
+          <View style={styles.navIconInicio} />
           <Text style={styles.navText}>Início</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Pacientes')}>
-          <Icon name="users" size={24} color="#9CA3AF" />
+          <View style={styles.navIconPacientes} />
           <Text style={styles.navText}>Pacientes</Text>
         </TouchableOpacity>
         
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]} onPress={() => navigation.navigate('Relatorios')}>
-          <Icon name="bar-chart-2" size={24} color="#6366F1" />
+          <View style={styles.navIconRelatorios} />
           <Text style={[styles.navText, styles.navTextActive]}>Relatórios</Text>
         </TouchableOpacity>
       </View>
@@ -597,31 +597,32 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F6F6F8',
   },
   scrollView: {
     flex: 1,
+    marginBottom: 65,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingVertical: 16,
     backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#E2E8F0',
   },
   headerTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#1F2937',
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    color: '#0F172A',
   },
   exportAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(179, 103, 212, 0.10)',
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
@@ -629,8 +630,9 @@ const styles = StyleSheet.create({
   },
   exportAllText: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6366F1',
+    color: '#B367D4',
   },
   filtersContainer: {
     backgroundColor: '#FFFFFF',
@@ -638,16 +640,19 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     padding: 16,
     borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowRadius: 4,
+    elevation: 1,
   },
   filtersTitle: {
     fontSize: 16,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 16,
   },
   filterGroup: {
@@ -655,8 +660,9 @@ const styles = StyleSheet.create({
   },
   filterLabel: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
     marginBottom: 6,
   },
   filterSelect: {
@@ -664,18 +670,19 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     borderRadius: 12,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#FFFFFF',
   },
   filterSelectText: {
     fontSize: 14,
-    color: '#1F2937',
+    fontFamily: 'Manrope',
+    color: '#0F172A',
   },
   placeholderText: {
-    color: '#9CA3AF',
+    color: '#94A3B8',
   },
   filterRow: {
     flexDirection: 'row',
@@ -693,15 +700,16 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderRadius: 10,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
   },
   tipoFilterBtnActive: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#B367D4',
   },
   tipoFilterText: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
   },
   tipoFilterTextActive: {
     color: '#FFFFFF',
@@ -713,13 +721,14 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingVertical: 10,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F1F5F9',
     marginTop: 8,
   },
   clearFiltersText: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6366F1',
+    color: '#B367D4',
   },
   dropdown: {
     position: 'absolute',
@@ -729,7 +738,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#E5E7EB',
+    borderColor: '#E2E8F0',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -741,11 +750,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F1F5F9',
   },
   dropdownItemText: {
     fontSize: 14,
-    color: '#1F2937',
+    fontFamily: 'Manrope',
+    color: '#0F172A',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -759,35 +769,40 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 4,
+    shadowRadius: 2,
     elevation: 1,
   },
   statNumber: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#6366F1',
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    color: '#B367D4',
   },
   statLabel: {
     fontSize: 11,
-    color: '#6B7280',
+    fontFamily: 'Manrope',
+    color: '#64748B',
     marginTop: 4,
   },
   relatoriosContainer: {
     marginHorizontal: 16,
-    marginBottom: 80,
+    marginBottom: 16,
   },
   relatoriosTitle: {
     fontSize: 18,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 16,
   },
   relatoriosCount: {
     fontSize: 14,
-    color: '#9CA3AF',
+    color: '#94A3B8',
     fontWeight: '400',
   },
   relatorioCard: {
@@ -795,11 +810,13 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 16,
     marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 6,
-    elevation: 2,
+    shadowRadius: 2,
+    elevation: 1,
   },
   relatorioHeader: {
     flexDirection: 'row',
@@ -817,26 +834,31 @@ const styles = StyleSheet.create({
   },
   tipoBadgeText: {
     fontSize: 11,
+    fontFamily: 'Manrope',
     fontWeight: '600',
   },
   relatorioData: {
     fontSize: 11,
-    color: '#9CA3AF',
+    fontFamily: 'Manrope',
+    color: '#94A3B8',
   },
   relatorioTitulo: {
     fontSize: 16,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 6,
   },
   relatorioPaciente: {
     fontSize: 13,
-    color: '#6B7280',
+    fontFamily: 'Manrope',
+    color: '#64748B',
     marginBottom: 8,
   },
   relatorioDescricao: {
     fontSize: 13,
-    color: '#4B5563',
+    fontFamily: 'Manrope',
+    color: '#475569',
     lineHeight: 18,
     marginBottom: 14,
   },
@@ -845,7 +867,7 @@ const styles = StyleSheet.create({
     gap: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F1F5F9',
   },
   analisarBtn: {
     flex: 1,
@@ -853,14 +875,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(179, 103, 212, 0.10)',
     paddingVertical: 10,
     borderRadius: 12,
   },
   analisarBtnText: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6366F1',
+    color: '#B367D4',
   },
   baixarBtn: {
     flex: 1,
@@ -868,12 +891,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     paddingVertical: 10,
     borderRadius: 12,
   },
   baixarBtnText: {
     fontSize: 13,
+    fontFamily: 'Manrope',
     fontWeight: '500',
     color: '#10B981',
   },
@@ -884,14 +908,16 @@ const styles = StyleSheet.create({
   },
   emptyStateTitle: {
     fontSize: 18,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateText: {
     fontSize: 14,
-    color: '#6B7280',
+    fontFamily: 'Manrope',
+    color: '#64748B',
     textAlign: 'center',
     paddingHorizontal: 40,
   },
@@ -912,14 +938,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
+    borderBottomColor: '#F1F5F9',
     gap: 12,
   },
   analiseIcon: {
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#EEF2FF',
+    backgroundColor: 'rgba(179, 103, 212, 0.10)',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -928,12 +954,14 @@ const styles = StyleSheet.create({
   },
   analiseModalTitle: {
     fontSize: 18,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
   },
   analiseModalSubtitle: {
     fontSize: 12,
-    color: '#6B7280',
+    fontFamily: 'Manrope',
+    color: '#64748B',
     marginTop: 2,
   },
   analiseModalContent: {
@@ -946,51 +974,57 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     gap: 6,
     marginBottom: 12,
   },
   analiseTipoText: {
     fontSize: 11,
+    fontFamily: 'Manrope',
     fontWeight: '600',
   },
   analiseTitulo: {
     fontSize: 18,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 8,
   },
   analiseDescricao: {
     fontSize: 14,
-    color: '#6B7280',
+    fontFamily: 'Manrope',
+    color: '#64748B',
     marginBottom: 16,
   },
   analiseDivider: {
     height: 1,
-    backgroundColor: '#E5E7EB',
+    backgroundColor: '#E2E8F0',
     marginVertical: 16,
   },
   analiseSectionTitle: {
     fontSize: 16,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 12,
   },
   analiseText: {
     fontSize: 14,
-    color: '#4B5563',
+    fontFamily: 'Manrope',
+    color: '#475569',
     lineHeight: 22,
   },
   detalhesContainer: {
-    backgroundColor: '#F8FAFF',
+    backgroundColor: 'rgba(179, 103, 212, 0.05)',
     borderRadius: 16,
     padding: 16,
     marginTop: 16,
   },
   detalhesTitle: {
     fontSize: 14,
+    fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
+    color: '#0F172A',
     marginBottom: 12,
   },
   detalhesRow: {
@@ -998,45 +1032,49 @@ const styles = StyleSheet.create({
   },
   detalhesLabel: {
     fontSize: 12,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
     marginBottom: 2,
   },
   detalhesValue: {
     fontSize: 13,
-    color: '#1F2937',
+    fontFamily: 'Manrope',
+    color: '#0F172A',
   },
   analiseModalFooter: {
     flexDirection: 'row',
     padding: 16,
     borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
+    borderTopColor: '#F1F5F9',
     gap: 12,
   },
   analiseCloseButton: {
     flex: 1,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#F1F5F9',
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
   },
   analiseCloseButtonText: {
     fontSize: 14,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#6B7280',
+    color: '#64748B',
   },
   analiseExportButton: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#6366F1',
+    backgroundColor: '#B367D4',
     paddingVertical: 12,
     borderRadius: 12,
     gap: 8,
   },
   analiseExportButtonText: {
     fontSize: 14,
+    fontFamily: 'Manrope',
     fontWeight: '500',
     color: '#FFFFFF',
   },
@@ -1044,7 +1082,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    borderTopColor: '#E2E8F0',
     paddingVertical: 12,
     paddingHorizontal: 20,
     justifyContent: 'space-between',
@@ -1058,15 +1096,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  navItemActive: {},
+  navIconInicio: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#94A3B8',
+  },
+  navIconPacientes: {
+    width: 22,
+    height: 16,
+    backgroundColor: '#94A3B8',
+  },
+  navIconRelatorios: {
+    width: 20,
+    height: 20,
+    backgroundColor: '#B367D4',
+  },
   navText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    color: '#94A3B8',
   },
   navTextActive: {
-    color: '#6366F1',
-    fontWeight: '500',
+    color: '#B367D4',
   },
+  navItemActive: {},
 });
 
 export default Relatorios;
