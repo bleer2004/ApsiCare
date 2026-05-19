@@ -19,7 +19,7 @@ import { API_URL } from '../../services/api';
 const USAR_MOCK = true; 
 
 const VisaoGeral = ({ navigation }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState('semana');
+  const [selectedPeriod, setSelectedPeriod] = useState('mes');
   const [searchText, setSearchText] = useState('');
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -84,7 +84,7 @@ const VisaoGeral = ({ navigation }) => {
     datasets: [
       {
         data: [78, 75, 72, 70, 68, 72, 78],
-        color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
+        color: (opacity = 1) => `rgba(179, 103, 212, ${opacity})`,
         strokeWidth: 2,
       },
     ],
@@ -100,7 +100,8 @@ const VisaoGeral = ({ navigation }) => {
       descricao: 'Queda brusca no humor (Score -40%)',
       tempo: 'Emitido há 12 minutos',
       origem: 'Relatado via App Diário',
-      cor: '#EF4444',
+      cor: '#DC2626',
+      corBg: '#FEE2E2',
       icon: 'alert-triangle',
     },
     {
@@ -110,7 +111,8 @@ const VisaoGeral = ({ navigation }) => {
       descricao: 'Isolamento social detectado (3 dias)',
       tempo: 'Emitido há 2 horas',
       origem: 'Inatividade em grupos',
-      cor: '#F59E0B',
+      cor: '#D97706',
+      corBg: '#FEF3C7',
       icon: 'trending-up',
     },
     {
@@ -120,7 +122,8 @@ const VisaoGeral = ({ navigation }) => {
       descricao: 'Ideação recorrente em mensagens',
       tempo: 'Emitido há 45 minutos',
       origem: 'Gatilho linguístico IA',
-      cor: '#EF4444',
+      cor: '#DC2626',
+      corBg: '#FEE2E2',
       icon: 'alert-triangle',
     },
   ];
@@ -144,215 +147,201 @@ const VisaoGeral = ({ navigation }) => {
   };
 
   const renderPacienteCard = ({ item }) => (
-    <View style={styles.pacienteCard}>
-      <View style={styles.pacienteHeader}>
-        <View style={styles.pacienteInfo}>
-          <Text style={styles.pacienteNome}>{item.nome}</Text>
-          <View style={[styles.tipoBadge, { backgroundColor: item.cor + '20' }]}>
-            <Icon name={item.icon} size={12} color={item.cor} />
-            <Text style={[styles.tipoTexto, { color: item.cor }]}>{item.tipo}</Text>
+    <View style={[styles.alertCard, item.tipo === 'CRÍTICO' ? styles.criticalCard : styles.trendCard]}>
+      <View style={styles.alertCardHeader}>
+        <View style={[styles.avatar, item.tipo === 'CRÍTICO' ? styles.criticalAvatar : styles.trendAvatar]}>
+          <View style={styles.avatarImage} />
+        </View>
+        <View style={styles.alertCardInfo}>
+          <View style={styles.alertCardNameRow}>
+            <Text style={styles.alertCardName}>{item.nome}</Text>
+            <View style={[styles.criticalBadge, { backgroundColor: item.corBg }]}>
+              <Text style={[styles.criticalBadgeText, { color: item.cor }]}>{item.tipo}</Text>
+            </View>
+          </View>
+          <View style={styles.alertMessageRow}>
+            <View style={[styles.criticalIconSmall, { backgroundColor: item.cor }]} />
+            <Text style={[styles.criticalMessageText, { color: item.cor }]}>{item.descricao}</Text>
+          </View>
+          <Text style={styles.alertMeta}>Emitido há {item.tempo === 'Emitido há 12 minutos' ? '12 minutos' : item.tempo === 'Emitido há 2 horas' ? '2 horas' : '45 minutos'} • {item.origem}</Text>
+          <View style={styles.actionButtons}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => handleVerProntuario(item)}>
+              <Text style={styles.primaryButtonText}>Ver Prontuário</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => item.tipo === 'CRÍTICO' ? handleContatar(item) : handleLigar(item)}>
+              <View style={styles.secondaryIcon} />
+              <Text style={styles.secondaryButtonText}>{item.tipo === 'CRÍTICO' ? 'Contatar' : 'Ligar'}</Text>
+            </TouchableOpacity>
           </View>
         </View>
-        <Icon name="more-horizontal" size={20} color="#9CA3AF" />
       </View>
-
-      <Text style={styles.pacienteDescricao}>{item.descricao}</Text>
-      
-      <View style={styles.pacienteMeta}>
-        <Icon name="clock" size={14} color="#9CA3AF" />
-        <Text style={styles.metaTexto}>{item.tempo}</Text>
-        <Icon name="info" size={14} color="#9CA3AF" style={styles.metaIcon} />
-        <Text style={styles.metaTexto}>{item.origem}</Text>
-      </View>
-
-      <View style={styles.pacienteActions}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.prontuarioButton]}
-          onPress={() => handleVerProntuario(item)}
-        >
-          <Icon name="file-text" size={16} color="#6366F1" />
-          <Text style={styles.prontuarioButtonText}>Ver Prontuário</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.contatarButton]}
-          onPress={() => item.tipo === 'CRÍTICO' ? handleContatar(item) : handleLigar(item)}
-        >
-          <Icon name={item.tipo === 'CRÍTICO' ? 'message-circle' : 'phone'} size={16} color="#FFFFFF" />
-          <Text style={styles.contatarButtonText}>
-            {item.tipo === 'CRÍTICO' ? 'Contatar' : 'Ligar'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <View style={[styles.statusBar, item.tipo === 'CRÍTICO' ? styles.criticalStatusBar : styles.trendStatusBar]} />
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
-      
+      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
+
+      {/* Header com blur */}
+      <View style={styles.headerBlur}>
+        <View style={styles.headerContent}>
+          <View style={styles.headerLeft}>
+            <View style={styles.headerIcon}>
+              <View style={styles.headerIconPlaceholder} />
+            </View>
+            <Text style={styles.headerTitle}>Visão geral</Text>
+          </View>
+        </View>
+      </View>
+
       <ScrollView 
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <View style={styles.header}>
-          <View style={styles.searchContainer}>
-            <Icon name="search" size={20} color="#9CA3AF" />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Buscar pacientes..."
-              placeholderTextColor="#9CA3AF"
-              value={searchText}
-              onChangeText={setSearchText}
-            />
-          </View>
-          <TouchableOpacity style={styles.configButton} onPress={() => navigation.navigate('Configuracoes')}>
-            <Icon name="settings" size={24} color="#4B5563" />
+        {/* Filtros */}
+        <View style={styles.filtersContainer}>
+          <TouchableOpacity style={[styles.filterChip, styles.filterChipActive]}>
+            <Text style={styles.filterChipTextActive}>Todos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterChipOutline}>
+            <View style={styles.criticalDot} />
+            <Text style={styles.filterChipOutlineText}>Críticos</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.filterChipOutline}>
+            <View style={styles.trendDot} />
+            <Text style={styles.filterChipOutlineText}>Tendência</Text>
           </TouchableOpacity>
         </View>
 
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Visão geral</Text>
-          <View style={styles.filters}>
-            <TouchableOpacity style={styles.filterChip}>
-              <Text style={styles.filterChipText}>Todos</Text>
+        {/* Gráfico de Humor */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Humor Geral dos Pacientes</Text>
+          <View style={styles.chartPeriodContainer}>
+            <TouchableOpacity 
+              style={[styles.periodButton, selectedPeriod === 'dia' && styles.periodButtonActive]} 
+              onPress={() => setSelectedPeriod('dia')}
+            >
+              <Text style={[styles.periodButtonText, selectedPeriod === 'dia' && styles.periodButtonTextActive]}>Dia</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.filterChip, styles.criticosChip]}>
-              <Icon name="alert-circle" size={14} color="#EF4444" />
-              <Text style={[styles.filterChipText, styles.criticosText]}>Críticos</Text>
+            <TouchableOpacity 
+              style={[styles.periodButton, selectedPeriod === 'semana' && styles.periodButtonActive]} 
+              onPress={() => setSelectedPeriod('semana')}
+            >
+              <Text style={[styles.periodButtonText, selectedPeriod === 'semana' && styles.periodButtonTextActive]}>Semana</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.filterChip}>
-              <Icon name="trending-up" size={14} color="#F59E0B" />
-              <Text style={styles.filterChipText}>Tendência</Text>
+            <TouchableOpacity 
+              style={[styles.periodButton, selectedPeriod === 'mes' && styles.periodButtonActive]} 
+              onPress={() => setSelectedPeriod('mes')}
+            >
+              <Text style={[styles.periodButtonText, selectedPeriod === 'mes' && styles.periodButtonTextActive]}>Mês</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.periodButton, selectedPeriod === 'ano' && styles.periodButtonActive]} 
+              onPress={() => setSelectedPeriod('ano')}
+            >
+              <Text style={[styles.periodButtonText, selectedPeriod === 'ano' && styles.periodButtonTextActive]}>Ano</Text>
             </TouchableOpacity>
           </View>
-        </View>
-
-        <View style={styles.chartContainer}>
-          <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>Humor Geral dos Pacientes</Text>
-            <View style={styles.periodButtons}>
-              {['Dia', 'Semana', 'Mês', 'Ano'].map((period) => (
-                <TouchableOpacity
-                  key={period}
-                  style={[
-                    styles.periodButton,
-                    selectedPeriod === period.toLowerCase() && styles.periodButtonActive,
-                  ]}
-                  onPress={() => setSelectedPeriod(period.toLowerCase())}
-                >
-                  <Text
-                    style={[
-                      styles.periodButtonText,
-                      selectedPeriod === period.toLowerCase() && styles.periodButtonTextActive,
-                    ]}
-                  >
-                    {period}
-                  </Text>
-                </TouchableOpacity>
-              ))}
+          
+          <View style={styles.chartBarsContainer}>
+            <View style={[styles.chartBar, { height: 115 }]} />
+            <View style={[styles.chartBar, { height: 144 }]} />
+            <View style={[styles.chartBar, { height: 77 }]} />
+            <View style={[styles.chartBar, { height: 106 }]} />
+            <View style={[styles.chartBarGreen, { height: 173 }]}>
+              <View style={styles.chartTooltip}>
+                <Text style={styles.chartTooltipText}>78%</Text>
+              </View>
             </View>
+            <View style={[styles.chartBar, { height: 125 }]} />
+            <View style={[styles.chartBar, { height: 134 }]} />
           </View>
           
-          <LineChart
-            data={chartData}
-            width={screenWidth - 48}
-            height={220}
-            chartConfig={{
-              backgroundColor: '#FFFFFF',
-              backgroundGradientFrom: '#FFFFFF',
-              backgroundGradientTo: '#FFFFFF',
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(99, 102, 241, ${opacity})`,
-              labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-              style: {
-                borderRadius: 16,
-              },
-              propsForDots: {
-                r: '6',
-                strokeWidth: '2',
-                stroke: '#6366F1',
-              },
-            }}
-            bezier
-            style={styles.chart}
-            formatYLabel={(value) => `${value}%`}
-          />
+          <View style={styles.chartLabels}>
+            <Text style={styles.chartLabel}>Sem 1</Text>
+            <Text style={styles.chartLabel}>Sem 2</Text>
+            <Text style={styles.chartLabel}>Sem 3</Text>
+            <Text style={styles.chartLabel}>Sem 4</Text>
+            <Text style={[styles.chartLabel, styles.chartLabelActive]}>Hoje</Text>
+            <Text style={styles.chartLabel}>Sem 6</Text>
+            <Text style={styles.chartLabel}>Sem 7</Text>
+          </View>
         </View>
 
-        <View style={styles.atencaoContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>ATENÇÃO IMEDIATA</Text>
-            <TouchableOpacity>
-              <Text style={styles.verTodosText}>Ver todos</Text>
-            </TouchableOpacity>
-          </View>
-          
+        {/* Atenção Imediata */}
+        <Text style={styles.sectionTitle}>Atenção Imediata</Text>
+
+        {/* Cards de pacientes */}
+        <View style={styles.cardsContainer}>
           <FlatList
             data={pacientesAtencao}
             keyExtractor={(item) => item.id}
             renderItem={renderPacienteCard}
             scrollEnabled={false}
-            contentContainerStyle={styles.pacientesList}
           />
         </View>
 
-        <View style={styles.urgenciasContainer}>
-          <View style={styles.urgenciasHeader}>
-            <View style={styles.urgenciasTitleContainer}>
-              <Icon name="alert-octagon" size={20} color="#EF4444" />
-              <Text style={styles.urgenciasTitle}>URGÊNCIAS</Text>
-            </View>
-            <View style={styles.alertCount}>
-              <Text style={styles.alertCountText}>3 Alertas</Text>
+        {/* Urgências */}
+        <View style={styles.urgencySection}>
+          <View style={styles.urgencyHeader}>
+            <Text style={styles.sectionTitle}>Urgências</Text>
+            <View style={styles.alertBadge}>
+              <Text style={styles.alertBadgeText}>3 Alertas</Text>
             </View>
           </View>
-
-          <View style={styles.tendenciaCard}>
-            <Text style={styles.tendenciaTitle}>Tendência de Piora Detectada</Text>
-            <Text style={styles.tendenciaDescricao}>
-              Pacientes: {tendenciaPiora.join(', ')} apresentaram quedas bruscas no humor semanal.
-            </Text>
-            <TouchableOpacity style={styles.relatorioButton}>
-              <Text style={styles.relatorioButtonText}>Ver Relatórios Completos →</Text>
-            </TouchableOpacity>
+          <View style={styles.urgencyCard}>
+            <View style={styles.urgencyIconContainer}>
+              <View style={styles.urgencyIcon} />
+            </View>
+            <View style={styles.urgencyInfo}>
+              <Text style={styles.urgencyTitle}>Tendência de Piora Detectada</Text>
+              <Text style={styles.urgencyDescription}>
+                Pacientes: {tendenciaPiora.join(', ')} apresentaram quedas bruscas no humor semanal.
+              </Text>
+              <TouchableOpacity style={styles.urgencyLink}>
+                <Text style={styles.urgencyLinkText}>Ver Relatórios Completos</Text>
+                <View style={styles.urgencyLinkIcon} />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
 
-        <View style={styles.configContaContainer}>
-          <TouchableOpacity style={styles.configContaButton} onPress={() => navigation.navigate('Configuracoes')}>            
-            <Icon name="sliders" size={20} color="#6366F1" />
-            <Text style={styles.configContaText}>Configurações</Text>
-            <Text style={styles.configContaSubtext}>AJUSTES DA CONTA</Text>
-            <Icon name="chevron-right" size={20} color="#9CA3AF" style={styles.chevronIcon} />
-          </TouchableOpacity>
-        </View>
+        {/* Configurações */}
+        <TouchableOpacity style={styles.settingsCard} onPress={() => navigation.navigate('Configuracoes')}>
+          <View style={styles.settingsIconContainer}>
+            <View style={styles.settingsIcon} />
+          </View>
+          <Text style={styles.settingsTitle}>Configurações</Text>
+          <Text style={styles.settingsSubtitle}>Ajustes da conta</Text>
+        </TouchableOpacity>
       </ScrollView>
 
-      {/* ========== BOTTOM NAVIGATION ========== */}
+      {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity 
-          style={[styles.navItem, styles.navItemActive]}
+          style={styles.navItem}
           onPress={() => navigation.navigate('VisaoGeral')}
         >
-          <Icon name="home" size={24} color="#6366F1" />
-          <Text style={[styles.navText, styles.navTextActive]}>Início</Text>
+          <View style={styles.navIconInicio} />
+          <Text style={styles.navText}>Início</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={styles.navItem}
+          style={[styles.navItem, styles.navItemActive]}
           onPress={() => navigation.navigate('Pacientes')}
         >
-          <Icon name="users" size={24} color="#9CA3AF" />
-          <Text style={styles.navText}>Pacientes</Text>
+          <View style={styles.navIconPacientes} />
+          <Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
+          <View style={styles.navBadge} />
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.navItem}
           onPress={() => navigation.navigate('Relatorios')}
         >
-          <Icon name="bar-chart-2" size={24} color="#9CA3AF" />
+          <View style={styles.navIconRelatorios} />
           <Text style={styles.navText}>Relatórios</Text>
         </TouchableOpacity>
       </View>
@@ -363,349 +352,563 @@ const VisaoGeral = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F9FAFB',
+    backgroundColor: '#F6F6F8',
+  },
+  // Header com blur
+  headerBlur: {
+    backgroundColor: 'rgba(246, 246, 248, 0.80)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(43, 108, 238, 0.10)',
+  },
+  headerContent: {
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerIcon: {
+    width: 16,
+    height: 16,
+  },
+  headerIconPlaceholder: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#B367D4',
+  },
+  headerTitle: {
+    color: '#0F172A',
+    fontSize: 20,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 25,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 80, // Aumentado para dar espaço para o bottom nav
+    paddingBottom: 80,
   },
-  header: {
+  // Filtros
+  filtersContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  searchContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F9FAFB',
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    marginRight: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    color: '#1F2937',
-    paddingVertical: 12,
-    paddingHorizontal: 8,
-  },
-  configButton: {
-    padding: 8,
-  },
-  titleContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 16,
-  },
-  filters: {
-    flexDirection: 'row',
+    padding: 16,
     gap: 12,
   },
   filterChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 6,
-  },
-  criticosChip: {
-    backgroundColor: '#FEE2E2',
-  },
-  criticosText: {
-    color: '#EF4444',
-  },
-  filterChipText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#4B5563',
-  },
-  chartContainer: {
-    backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  chartTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  periodButtons: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  periodButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 8,
-  },
-  periodButtonActive: {
-    backgroundColor: '#6366F1',
-  },
-  periodButtonText: {
-    fontSize: 12,
-    color: '#6B7280',
-    fontWeight: '500',
-  },
-  periodButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  chart: {
-    marginLeft: -20,
-    borderRadius: 16,
-  },
-  atencaoContainer: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    height: 40,
     paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1F2937',
-  },
-  verTodosText: {
-    fontSize: 14,
-    color: '#6366F1',
-    fontWeight: '500',
-  },
-  pacientesList: {
-    paddingHorizontal: 20,
-    gap: 16,
-  },
-  pacienteCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
+    backgroundColor: '#B367D4',
+    borderRadius: 9999,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#2B6CEE',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
     elevation: 2,
   },
-  pacienteHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+  filterChipActive: {
+    backgroundColor: '#B367D4',
   },
-  pacienteInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-  },
-  pacienteNome: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1F2937',
-  },
-  tipoBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    gap: 4,
-  },
-  tipoTexto: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  pacienteDescricao: {
+  filterChipTextActive: {
+    color: 'white',
     fontSize: 14,
-    color: '#4B5563',
-    marginBottom: 12,
-  },
-  pacienteMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    flexWrap: 'wrap',
-  },
-  metaTexto: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 4,
-  },
-  metaIcon: {
-    marginLeft: 12,
-  },
-  pacienteActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-    borderRadius: 10,
-    gap: 8,
-  },
-  prontuarioButton: {
-    backgroundColor: '#EEF2FF',
-  },
-  prontuarioButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#6366F1',
-  },
-  contatarButton: {
-    backgroundColor: '#6366F1',
-  },
-  contatarButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#FFFFFF',
-  },
-  urgenciasContainer: {
-    marginHorizontal: 20,
-    marginBottom: 24,
-  },
-  urgenciasHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  urgenciasTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  urgenciasTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#EF4444',
-  },
-  alertCount: {
-    backgroundColor: '#FEE2E2',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  alertCountText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#EF4444',
-  },
-  tendenciaCard: {
-    backgroundColor: '#FFFBEB',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#FDE68A',
-  },
-  tendenciaTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#92400E',
-    marginBottom: 8,
-  },
-  tendenciaDescricao: {
-    fontSize: 14,
-    color: '#78350F',
-    marginBottom: 12,
+    fontFamily: 'ABeeZee',
+    fontWeight: '400',
     lineHeight: 20,
   },
-  relatorioButton: {
-    alignSelf: 'flex-start',
-  },
-  relatorioButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#F59E0B',
-  },
-  configContaContainer: {
-    marginHorizontal: 20,
-    marginBottom: 16,
-  },
-  configContaButton: {
+  filterChipOutline: {
+    height: 40,
+    paddingHorizontal: 20,
+    backgroundColor: 'white',
+    borderRadius: 9999,
+    borderWidth: 1,
+    borderColor: 'rgba(43, 108, 238, 0.10)',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    gap: 8,
   },
-  configContaText: {
-    fontSize: 16,
+  criticalDot: {
+    width: 16.67,
+    height: 16.67,
+    backgroundColor: '#EF4444',
+  },
+  trendDot: {
+    width: 16.67,
+    height: 10,
+    backgroundColor: '#F59E0B',
+  },
+  filterChipOutlineText: {
+    color: '#475569',
+    fontSize: 14,
+    fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#1F2937',
-    marginLeft: 12,
+    lineHeight: 20,
   },
-  configContaSubtext: {
+  // Gráfico
+  chartCard: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  chartTitle: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 28,
+    marginBottom: 16,
+  },
+  chartPeriodContainer: {
+    flexDirection: 'row',
+    padding: 4,
+    backgroundColor: '#F1F5F9',
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  periodButton: {
+    flex: 1,
+    paddingVertical: 6,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  periodButtonActive: {
+    backgroundColor: 'white',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  periodButtonText: {
+    color: '#64748B',
     fontSize: 12,
-    color: '#6B7280',
-    marginLeft: 8,
+    fontFamily: 'ABeeZee',
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  periodButtonTextActive: {
+    color: 'rgba(179, 103, 212, 0.84)',
+  },
+  chartBarsContainer: {
+    flexDirection: 'row',
+    height: 192,
+    paddingHorizontal: 8,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginBottom: 8,
+  },
+  chartBar: {
+    flex: 1,
+    backgroundColor: 'rgba(179, 103, 212, 0.20)',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+  },
+  chartBarGreen: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    position: 'relative',
+  },
+  chartTooltip: {
+    position: 'absolute',
+    top: -32,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#0F172A',
+    borderRadius: 4,
+    alignItems: 'center',
+  },
+  chartTooltipText: {
+    color: 'white',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    lineHeight: 15,
+  },
+  chartLabels: {
+    flexDirection: 'row',
+    paddingHorizontal: 4,
+    justifyContent: 'space-between',
+  },
+  chartLabel: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 15,
+  },
+  chartLabelActive: {
+    color: 'rgba(179, 103, 212, 0.84)',
+    fontWeight: '700',
+  },
+  // Seção
+  sectionTitle: {
+    color: '#64748B',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 20,
+    letterSpacing: 0.70,
+    marginHorizontal: 16,
+    marginBottom: 12,
+  },
+  cardsContainer: {
+    paddingHorizontal: 16,
+    gap: 16,
+    marginBottom: 24,
+  },
+  alertCard: {
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  criticalCard: {
+    borderColor: '#FECACA',
+  },
+  trendCard: {
+    borderColor: '#FDE68A',
+  },
+  alertCardHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  avatar: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+    borderWidth: 2,
+  },
+  criticalAvatar: {
+    borderColor: '#FEE2E2',
+  },
+  trendAvatar: {
+    borderColor: '#FEF3C7',
+  },
+  avatarImage: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: '#E2E8F0',
+  },
+  alertCardInfo: {
     flex: 1,
   },
-  chevronIcon: {
-    marginLeft: 'auto',
-  },
-  bottomNavigation: {
+  alertCardNameRow: {
     flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  alertCardName: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  criticalBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  criticalBadgeText: {
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 15,
+  },
+  alertMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 4,
+  },
+  criticalIconSmall: {
+    width: 12.83,
+    height: 11.08,
+  },
+  criticalMessageText: {
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+    flex: 1,
+  },
+  alertMeta: {
+    color: '#64748B',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    lineHeight: 16,
+    marginBottom: 12,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  primaryButton: {
+    flex: 1,
     paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
+    backgroundColor: '#B367D4',
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  primaryButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  secondaryButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(43, 108, 238, 0.05)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(43, 108, 238, 0.20)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  secondaryIcon: {
+    width: 11.67,
+    height: 11.67,
+    backgroundColor: '#B367D4',
+  },
+  secondaryButtonText: {
+    color: '#B367D4',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  statusBar: {
+    position: 'absolute',
+    left: 1,
+    top: 1,
+    width: 4,
+    height: '100%',
+  },
+  criticalStatusBar: {
+    backgroundColor: '#EF4444',
+  },
+  trendStatusBar: {
+    backgroundColor: '#F59E0B',
+  },
+  // Urgências
+  urgencySection: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+  },
+  urgencyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  alertBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    backgroundColor: '#FEE2E2',
+    borderRadius: 9999,
+  },
+  alertBadgeText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  urgencyCard: {
+    padding: 16,
+    backgroundColor: '#FEF2F2',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#FECACA',
+    flexDirection: 'row',
+    gap: 16,
+  },
+  urgencyIconContainer: {
+    padding: 8,
+    backgroundColor: '#EF4444',
+    borderRadius: 8,
+  },
+  urgencyIcon: {
+    width: 22,
+    height: 19,
+    backgroundColor: 'white',
+  },
+  urgencyInfo: {
+    flex: 1,
+  },
+  urgencyTitle: {
+    color: '#7F1D1D',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  urgencyDescription: {
+    color: '#B91C1C',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    lineHeight: 16,
+    marginBottom: 8,
+  },
+  urgencyLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  urgencyLinkText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 16,
+  },
+  urgencyLinkIcon: {
+    width: 9.33,
+    height: 9.33,
+    backgroundColor: '#DC2626',
+  },
+  // Configurações
+  settingsCard: {
+    marginHorizontal: 16,
+    marginBottom: 24,
+    padding: 16,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+    alignItems: 'center',
+  },
+  settingsIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#F1F5F9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  settingsIcon: {
+    width: 25.13,
+    height: 25,
+    backgroundColor: '#475569',
+  },
+  settingsTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  settingsSubtitle: {
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 15,
+  },
+  // Bottom Navigation
+  bottomNavigation: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#F6F6F8',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(43, 108, 238, 0.10)',
+    paddingVertical: 12,
+    paddingHorizontal: 8,
     justifyContent: 'space-between',
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 4,
+    position: 'relative',
   },
   navItemActive: {
-    // Estilo ativo
+    // active style
+  },
+  navIconInicio: {
+    width: 17.33,
+    height: 19.5,
+    backgroundColor: '#94A3B8',
+  },
+  navIconPacientes: {
+    width: 23.83,
+    height: 17.33,
+    backgroundColor: '#B367D4',
+  },
+  navIconRelatorios: {
+    width: 17.33,
+    height: 17.33,
+    backgroundColor: '#94A3B8',
   },
   navText: {
-    fontSize: 12,
-    color: '#9CA3AF',
+    color: '#94A3B8',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 15,
+    letterSpacing: 1,
   },
   navTextActive: {
-    color: '#6366F1',
-    fontWeight: '500',
+    color: '#B367D4',
+  },
+  navBadge: {
+    position: 'absolute',
+    top: 8,
+    right: 85,
+    width: 15,
+    height: 14,
+    backgroundColor: '#EF4444',
+    borderRadius: 9999,
+    borderWidth: 2,
+    borderColor: '#F6F6F8',
   },
 });
 
