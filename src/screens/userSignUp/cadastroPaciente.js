@@ -14,10 +14,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Modal,  
+  Modal,
+  Switch,
+  Slider,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { Picker } from '@react-native-picker/picker';
 
 const CadastroPaciente = ({ navigation }) => {
   const [nome, setNome] = useState('');
@@ -30,6 +33,34 @@ const CadastroPaciente = ({ navigation }) => {
   const [diagnostico, setDiagnostico] = useState('');
   const [observacoes, setObservacoes] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Configurações de IA
+  const [interacaoMotivacional, setInteracaoMotivacional] = useState(true);
+  const [analisePadroes, setAnalisePadroes] = useState(true);
+  const [sugestoesReflexao, setSugestoesReflexao] = useState(false);
+  const [intensidadeInteracao, setIntensidadeInteracao] = useState(50);
+
+  // Configurações do App
+  const [modoMinimalista, setModoMinimalista] = useState(false);
+  const [removerEstimulos, setRemoverEstimulos] = useState(true);
+
+  // NOVAS FUNCIONALIDADES
+  // 1. Intervalo de notificações
+  const [frequenciaNotificacoes, setFrequenciaNotificacoes] = useState('diaria');
+  const [horarioInicio, setHorarioInicio] = useState('09:00');
+  const [horarioFim, setHorarioFim] = useState('18:00');
+  const [intervaloNotificacoes, setIntervaloNotificacoes] = useState('2');
+
+  // 2. Cadastro de ligações de emergência
+  const [contatosEmergencia, setContatosEmergencia] = useState([
+    { id: '1', nome: 'CVV', numero: '188', isPreset: true },
+    { id: '2', nome: 'SAMU', numero: '192', isPreset: true },
+    { id: '3', nome: 'Polícia', numero: '190', isPreset: true },
+  ]);
+  const [showEmergenciaModal, setShowEmergenciaModal] = useState(false);
+  const [novoContatoNome, setNovoContatoNome] = useState('');
+  const [novoContatoNumero, setNovoContatoNumero] = useState('');
+  const [editandoContato, setEditandoContato] = useState(null);
 
   const formatTelefone = (text) => {
     let cleaned = text.replace(/\D/g, '');
@@ -84,6 +115,24 @@ const CadastroPaciente = ({ navigation }) => {
           birthDate: formatDate(dataNascimento),
           diagnostico,
           observacoes,
+          // Salvar também as configurações
+          configuracoesIA: {
+            interacaoMotivacional,
+            analisePadroes,
+            sugestoesReflexao,
+            intensidadeInteracao,
+          },
+          configuracoesApp: {
+            modoMinimalista,
+            removerEstimulos,
+            notificacoes: {
+              frequencia: frequenciaNotificacoes,
+              horarioInicio,
+              horarioFim,
+              intervalo: intervaloNotificacoes,
+            },
+            contatosEmergencia: contatosEmergencia.filter(c => !c.isPreset || c.numero),
+          },
         }),
       });
 
@@ -103,19 +152,132 @@ const CadastroPaciente = ({ navigation }) => {
     }
   };
 
+  const handleAdicionarContato = () => {
+    if (!novoContatoNome || !novoContatoNumero) {
+      Alert.alert('Erro', 'Preencha nome e número do contato');
+      return;
+    }
+    const novoId = String(contatosEmergencia.length + 1);
+    const novoContato = {
+      id: novoId,
+      nome: novoContatoNome,
+      numero: novoContatoNumero,
+      isPreset: false,
+    };
+    if (editandoContato) {
+      setContatosEmergencia(contatosEmergencia.map(c => 
+        c.id === editandoContato.id ? { ...c, nome: novoContatoNome, numero: novoContatoNumero } : c
+      ));
+      setEditandoContato(null);
+    } else {
+      setContatosEmergencia([...contatosEmergencia, novoContato]);
+    }
+    setNovoContatoNome('');
+    setNovoContatoNumero('');
+    setShowEmergenciaModal(false);
+  };
+
+  const handleRemoverContato = (id) => {
+    const contato = contatosEmergencia.find(c => c.id === id);
+    if (contato?.isPreset) {
+      Alert.alert('Atenção', 'Não é possível remover contatos padrão');
+      return;
+    }
+    setContatosEmergencia(contatosEmergencia.filter(c => c.id !== id));
+  };
+
+  const handleEditarContato = (contato) => {
+    if (contato.isPreset) {
+      Alert.alert('Atenção', 'Edite o número do contato padrão diretamente no campo');
+      return;
+    }
+    setEditandoContato(contato);
+    setNovoContatoNome(contato.nome);
+    setNovoContatoNumero(contato.numero);
+    setShowEmergenciaModal(true);
+  };
+
+  const renderEmergenciaModal = () => (
+    <Modal
+      visible={showEmergenciaModal}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => {
+        setShowEmergenciaModal(false);
+        setEditandoContato(null);
+        setNovoContatoNome('');
+        setNovoContatoNumero('');
+      }}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {editandoContato ? 'Editar Contato' : 'Novo Contato de Emergência'}
+            </Text>
+            <TouchableOpacity onPress={() => {
+              setShowEmergenciaModal(false);
+              setEditandoContato(null);
+              setNovoContatoNome('');
+              setNovoContatoNumero('');
+            }}>
+              <Icon name="x" size={24} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+          <View style={styles.modalContent}>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Nome do Contato</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="user" size={20} color="#94A3B8" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="Ex: Mãe, Irmão, Amigo"
+                  placeholderTextColor="#94A3B8"
+                  value={novoContatoNome}
+                  onChangeText={setNovoContatoNome}
+                />
+              </View>
+            </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Número de Telefone</Text>
+              <View style={styles.inputWrapper}>
+                <Icon name="phone" size={20} color="#94A3B8" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="(00) 00000-0000"
+                  placeholderTextColor="#94A3B8"
+                  value={novoContatoNumero}
+                  onChangeText={(text) => setNovoContatoNumero(formatTelefone(text))}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+            <TouchableOpacity style={styles.modalButton} onPress={handleAdicionarContato}>
+              <Text style={styles.modalButtonText}>
+                {editandoContato ? 'Atualizar Contato' : 'Adicionar Contato'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9FAFB" />
+      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
 
-      {/* Header fora do KeyboardAvoidingView */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Icon name="arrow-left" size={24} color="#4B5563" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Novo Paciente</Text>
-        <View style={{ width: 40 }} />
+      {/* Header com blur */}
+      <View style={styles.headerBlur}>
+        <View style={styles.headerContent}>
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <View style={styles.backIcon} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Cadastrar novo paciente</Text>
+          <View style={{ width: 40 }} />
+        </View>
       </View>
-      
+
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
@@ -128,200 +290,734 @@ const CadastroPaciente = ({ navigation }) => {
           bounces={false}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.form}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+          {/* Informações Básicas */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconPurple} />
+              <Text style={styles.sectionTitle}>Informações básicas</Text>
+            </View>
+            
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Nome Completo</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Digite o nome completo"
+                  placeholderTextColor="#6B7280"
+                  value={nome}
+                  onChangeText={setNome}
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>E-mail</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="exemplo@email.com"
+                  placeholderTextColor="#6B7280"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  returnKeyType="next"
+                />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Telefone</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="(00) 00000-0000"
+                  placeholderTextColor="#6B7280"
+                  value={telefone}
+                  onChangeText={(text) => setTelefone(formatTelefone(text))}
+                  keyboardType="phone-pad"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Informações Clínicas */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconPurpleLarge} />
+              <Text style={styles.sectionTitle}>Informações clínicas</Text>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Diagnóstico Principal</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Selecione um diagnóstico"
+                  placeholderTextColor="#0F172A"
+                  value={diagnostico}
+                  onChangeText={setDiagnostico}
+                />
+                <Icon name="chevron-down" size={20} color="#6B7280" />
+              </View>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Resumo Clínico</Text>
+              <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  placeholder="Descreva brevemente o histórico e objetivos terapêuticos..."
+                  placeholderTextColor="#6B7280"
+                  value={observacoes}
+                  onChangeText={setObservacoes}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  returnKeyType="done"
+                />
+              </View>
+            </View>
+          </View>
+
+          {/* Configuração de IA */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconPurpleMedium} />
+              <Text style={styles.sectionTitle}>Configuração de IA</Text>
+            </View>
+            
+            <View style={styles.iaCard}>
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Interação motivacional</Text>
+                <Switch
+                  value={interacaoMotivacional}
+                  onValueChange={setInteracaoMotivacional}
+                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Análise de padrões</Text>
+                <Switch
+                  value={analisePadroes}
+                  onValueChange={setAnalisePadroes}
+                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
+              <View style={styles.switchRow}>
+                <Text style={styles.switchLabel}>Sugestões de reflexão</Text>
+                <Switch
+                  value={sugestoesReflexao}
+                  onValueChange={setSugestoesReflexao}
+                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  thumbColor="#FFFFFF"
+                />
+              </View>
               
-              <View style={styles.row}>
-                <View style={[styles.inputContainer, { flex: 1, marginRight: 12 }]}>
-                  <Text style={styles.inputLabel}>Nome *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Icon name="user" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Digite o nome"
-                      placeholderTextColor="#9CA3AF"
-                      value={nome}
-                      onChangeText={setNome}
-                      returnKeyType="next"
-                    />
-                  </View>
-                </View>
-
-                <View style={[styles.inputContainer, { flex: 1 }]}>
-                  <Text style={styles.inputLabel}>Sobrenome *</Text>
-                  <View style={styles.inputWrapper}>
-                    <Icon name="user" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                    <TextInput
-                      style={styles.input}
-                      placeholder="Digite o sobrenome"
-                      placeholderTextColor="#9CA3AF"
-                      value={sobrenome}
-                      onChangeText={setSobrenome}
-                      returnKeyType="next"
-                    />
-                  </View>
+              <View style={styles.sliderContainer}>
+                <Text style={styles.sliderLabel}>Intensidade da Interação</Text>
+                <Slider
+                  value={intensidadeInteracao}
+                  onValueChange={setIntensidadeInteracao}
+                  minimumValue={0}
+                  maximumValue={100}
+                  step={1}
+                  minimumTrackTintColor="rgba(179, 103, 212, 0.84)"
+                  maximumTrackTintColor="#E2E8F0"
+                  thumbTintColor="rgba(179, 103, 212, 0.84)"
+                />
+                <View style={styles.sliderLabels}>
+                  <Text style={styles.sliderLabelText}>Sutil</Text>
+                  <Text style={styles.sliderLabelText}>Média</Text>
+                  <Text style={styles.sliderLabelText}>Frequente</Text>
                 </View>
               </View>
+            </View>
+          </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>E-mail *</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="mail" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="paciente@email.com"
-                    placeholderTextColor="#9CA3AF"
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    returnKeyType="next"
-                  />
-                </View>
-              </View>
+          {/* Configurações do App */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={styles.sectionIconPurpleTall} />
+              <Text style={styles.sectionTitle}>Configurações do App</Text>
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Telefone</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="phone" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="(00) 00000-0000"
-                    placeholderTextColor="#9CA3AF"
-                    value={telefone}
-                    onChangeText={(text) => setTelefone(formatTelefone(text))}
-                    keyboardType="phone-pad"
-                  />
-                </View>
-              </View>
+            <View style={styles.switchRowBorder}>
+              <Text style={styles.switchLabel}>Modo Minimalista</Text>
+              <Switch
+                value={modoMinimalista}
+                onValueChange={setModoMinimalista}
+                trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
+            <View style={styles.switchRowBorder}>
+              <Text style={styles.switchLabel}>Remover estímulos visuais</Text>
+              <Switch
+                value={removerEstimulos}
+                onValueChange={setRemoverEstimulos}
+                trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                thumbColor="#FFFFFF"
+              />
+            </View>
 
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Data de Nascimento</Text>
-                <TouchableOpacity 
-                  style={styles.inputWrapper}
-                  onPress={() => setShowDatePicker(true)}
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Frequência de Notificações</Text>
+              <View style={styles.inputWrapper}>
+                <Picker
+                  selectedValue={frequenciaNotificacoes}
+                  onValueChange={setFrequenciaNotificacoes}
+                  style={styles.picker}
                 >
-                  <Icon name="calendar" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                  <Text style={[styles.input, !dataNascimento && styles.placeholderText]}>
-                    {dataNascimento || 'DD/MM/AAAA'}
-                  </Text>
-                  <Icon name="chevron-right" size={20} color="#9CA3AF" />
-                </TouchableOpacity>
+                  <Picker.Item label="Diária" value="diaria" />
+                  <Picker.Item label="A cada 2 dias" value="cada2dias" />
+                  <Picker.Item label="Semanal" value="semanal" />
+                  <Picker.Item label="Personalizado" value="personalizado" />
+                </Picker>
               </View>
             </View>
 
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Informações Clínicas</Text>
-              
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Diagnóstico Principal</Text>
-                <View style={styles.inputWrapper}>
-                  <Icon name="file-text" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Ex: Transtorno de Ansiedade"
-                    placeholderTextColor="#9CA3AF"
-                    value={diagnostico}
-                    onChangeText={setDiagnostico}
-                    returnKeyType="next"
-                  />
+            {frequenciaNotificacoes === 'personalizado' && (
+              <>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Horário de Início</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="09:00"
+                      placeholderTextColor="#6B7280"
+                      value={horarioInicio}
+                      onChangeText={setHorarioInicio}
+                    />
+                  </View>
                 </View>
-              </View>
-
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputLabel}>Observações</Text>
-                <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
-                  <Icon name="clipboard" size={20} color="#9CA3AF" style={styles.inputIcon} />
-                  <TextInput
-                    style={[styles.input, styles.textArea]}
-                    placeholder="Observações iniciais sobre o paciente..."
-                    placeholderTextColor="#9CA3AF"
-                    value={observacoes}
-                    onChangeText={setObservacoes}
-                    multiline
-                    numberOfLines={4}
-                    textAlignVertical="top"
-                    returnKeyType="done"
-                  />
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Horário de Fim</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="18:00"
+                      placeholderTextColor="#6B7280"
+                      value={horarioFim}
+                      onChangeText={setHorarioFim}
+                    />
+                  </View>
                 </View>
-              </View>
-            </View>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputLabel}>Intervalo entre notificações (horas)</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="2"
+                      placeholderTextColor="#6B7280"
+                      value={intervaloNotificacoes}
+                      onChangeText={setIntervaloNotificacoes}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </View>
+              </>
+            )}
 
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => navigation.goBack()}>
-                <Text style={styles.cancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity style={styles.saveButton} onPress={handleSalvar} disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator size="small" color="#FFFFFF" />
-                ) : (
-                  <>
-                    <Icon name="save" size={20} color="#FFFFFF" />
-                    <Text style={styles.saveButtonText}>Salvar</Text>
-                  </>
-                )}
+            {/* Contatos de Emergência */}
+            <View style={styles.emergenciaSection}>
+              <Text style={styles.emergenciaTitle}>Contatos de Emergência</Text>
+              {contatosEmergencia.map((contato) => (
+                <View key={contato.id} style={styles.contatoRow}>
+                  <View style={styles.contatoInfo}>
+                    <Text style={styles.contatoNome}>{contato.nome}</Text>
+                    <Text style={styles.contatoNumero}>{contato.numero}</Text>
+                  </View>
+                  <View style={styles.contatoActions}>
+                    <TouchableOpacity onPress={() => handleEditarContato(contato)}>
+                      <Icon name="edit-2" size={18} color="#B367D4" />
+                    </TouchableOpacity>
+                    {!contato.isPreset && (
+                      <TouchableOpacity onPress={() => handleRemoverContato(contato.id)}>
+                        <Icon name="trash-2" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                </View>
+              ))}
+              <TouchableOpacity 
+                style={styles.addContatoButton}
+                onPress={() => setShowEmergenciaModal(true)}
+              >
+                <Icon name="plus" size={16} color="#B367D4" />
+                <Text style={styles.addContatoText}>Adicionar novo contato</Text>
               </TouchableOpacity>
             </View>
           </View>
+
+          {/* Botão Enviar Convite */}
+          <TouchableOpacity style={styles.inviteButton}>
+            <View style={styles.inviteIcon} />
+            <Text style={styles.inviteButtonText}>Enviar convite por e-mail</Text>
+          </TouchableOpacity>
+
+          {/* Botão Cadastrar */}
+          <TouchableOpacity style={styles.saveButton} onPress={handleSalvar} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Text style={styles.saveButtonText}>Cadastrar Paciente</Text>
+            )}
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
 
+      {/* Modal de Data */}
       {showDatePicker && (
-      <Modal transparent animationType="slide">
-        <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
-          <View style={{ backgroundColor: '#3A3A3C', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 40 }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E5E7EB' }}>
-              <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                <Text style={{ color: '#FFFF', fontSize: 16 }}>Cancelar</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleConfirmarData}>
-                <Text style={{ color: '#FFFF', fontSize: 16, fontWeight: '600' }}>Confirmar</Text>
-              </TouchableOpacity>
+        <Modal transparent animationType="slide">
+          <View style={styles.datePickerOverlay}>
+            <View style={styles.datePickerContainer}>
+              <View style={styles.datePickerHeader}>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={styles.datePickerCancelText}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleConfirmarData}>
+                  <Text style={styles.datePickerConfirmText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+              <DateTimePicker
+                value={tempDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'inline' : 'spinner'}
+                onChange={handleDateChange}
+                maximumDate={new Date()}
+                locale="pt-BR"
+                style={styles.datePicker}
+              />
             </View>
-            <DateTimePicker
-              value={tempDate}
-              mode="date"
-              display={Platform.OS === 'ios' ? 'inline' : 'spinner'}
-              onChange={handleDateChange}
-              maximumDate={new Date()}
-              locale="pt-BR"
-              style={{ height: 380 }}
-            />
           </View>
-        </View>
-      </Modal>
-    )}
+        </Modal>
+      )}
+
+      {/* Modal de Emergência */}
+      {renderEmergenciaModal()}
+
+      {/* Bottom Navigation */}
+      <View style={styles.bottomNavigation}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
+          <View style={styles.navIconInicio} />
+          <Text style={styles.navText}>Início</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
+          <View style={styles.navIconPacientes} />
+          <Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Relatorios')}>
+          <View style={styles.navIconRelatorios} />
+          <Text style={styles.navText}>Relatórios</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F9FAFB' },
-  keyboardView: { flex: 1 },
-  scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 80 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { fontSize: 18, fontWeight: '600', color: '#1F2937' },
-  form: { padding: 20 },
-  section: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 20, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: '#1F2937', marginBottom: 16 },
-  row: { flexDirection: 'row' },
-  inputContainer: { marginBottom: 16 },
-  inputLabel: { fontSize: 14, fontWeight: '500', color: '#374151', marginBottom: 8 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 12, paddingHorizontal: 12, backgroundColor: '#F9FAFB' },
-  inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, color: '#1F2937', paddingVertical: 14, paddingHorizontal: 0 },
-  placeholderText: { color: '#9CA3AF' },
-  textAreaWrapper: { alignItems: 'flex-start' },
-  textArea: { height: 100, paddingTop: 12 },
-  buttonContainer: { flexDirection: 'row', gap: 12 },
-  cancelButton: { flex: 1, backgroundColor: '#F3F4F6', paddingVertical: 14, borderRadius: 12, alignItems: 'center' },
-  cancelButtonText: { fontSize: 16, fontWeight: '500', color: '#6B7280' },
-  saveButton: { flex: 1, backgroundColor: '#6366F1', paddingVertical: 14, borderRadius: 12, alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 8 },
-  saveButtonText: { fontSize: 16, fontWeight: '600', color: '#FFFFFF' },
+  container: {
+    flex: 1,
+    backgroundColor: '#F6F6F8',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 120,
+    paddingHorizontal: 16,
+  },
+  // Header
+  headerBlur: {
+    backgroundColor: 'rgba(246, 246, 248, 0.80)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backIcon: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#475569',
+  },
+  headerTitle: {
+    color: '#0F172A',
+    fontSize: 20,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  // Seções
+  section: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+  },
+  sectionIconPurple: {
+    width: 16,
+    height: 16,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  sectionIconPurpleLarge: {
+    width: 20,
+    height: 20,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  sectionIconPurpleMedium: {
+    width: 19.01,
+    height: 20,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  sectionIconPurpleTall: {
+    width: 18,
+    height: 24,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  sectionTitle: {
+    color: '#0F172A',
+    fontSize: 18,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 28,
+  },
+  // Inputs
+  inputContainer: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 4,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    paddingHorizontal: 12,
+    backgroundColor: 'white',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#CBD5E1',
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  input: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    color: '#0F172A',
+    paddingVertical: 12,
+    paddingHorizontal: 0,
+  },
+  textAreaWrapper: {
+    alignItems: 'flex-start',
+    minHeight: 120,
+  },
+  textArea: {
+    height: 100,
+    paddingTop: 12,
+  },
+  // IA Card
+  iaCard: {
+    padding: 16,
+    backgroundColor: 'rgba(43, 108, 238, 0.05)',
+    borderRadius: 12,
+    gap: 16,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  switchRowBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  switchLabel: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  sliderContainer: {
+    marginTop: 8,
+  },
+  sliderLabel: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  sliderLabelText: {
+    color: '#64748B',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 15,
+    letterSpacing: 0.5,
+  },
+  // Emergência
+  emergenciaSection: {
+    marginTop: 16,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+  emergenciaTitle: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+    marginBottom: 12,
+  },
+  contatoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  contatoInfo: {
+    flex: 1,
+  },
+  contatoNome: {
+    color: '#0F172A',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  contatoNumero: {
+    color: '#64748B',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    lineHeight: 16,
+  },
+  contatoActions: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  addContatoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 12,
+  },
+  addContatoText: {
+    color: '#B367D4',
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+    lineHeight: 20,
+  },
+  // Pickers
+  picker: {
+    flex: 1,
+    height: 48,
+    color: '#0F172A',
+  },
+  // Botões
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 50,
+    marginTop: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  inviteIcon: {
+    width: 11.67,
+    height: 9.33,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  inviteButtonText: {
+    color: 'rgba(179, 103, 212, 0.84)',
+    fontSize: 16,
+    fontFamily: 'ABeeZee',
+    fontWeight: '400',
+    lineHeight: 24,
+  },
+  saveButton: {
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  saveButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 24,
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  modalContent: {
+    padding: 20,
+  },
+  modalButton: {
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+  },
+  // Date Picker
+  datePickerOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+  },
+  datePickerContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingBottom: 40,
+  },
+  datePickerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  datePickerCancelText: {
+    color: '#64748B',
+    fontSize: 16,
+  },
+  datePickerConfirmText: {
+    color: 'rgba(179, 103, 212, 0.84)',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  datePicker: {
+    height: 380,
+  },
+  // Bottom Navigation
+  bottomNavigation: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  navItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 4,
+  },
+  navItemActive: {},
+  navIconInicio: {
+    width: 16,
+    height: 18,
+    backgroundColor: '#94A3B8',
+  },
+  navIconPacientes: {
+    width: 22,
+    height: 16,
+    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+  },
+  navIconRelatorios: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#94A3B8',
+  },
+  navText: {
+    color: '#94A3B8',
+    fontSize: 10,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    lineHeight: 15,
+    letterSpacing: 0.5,
+  },
+  navTextActive: {
+    color: 'rgba(179, 103, 212, 0.84)',
+  },
 });
 
 export default CadastroPaciente;
