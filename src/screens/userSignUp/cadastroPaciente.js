@@ -20,7 +20,14 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Picker } from '@react-native-picker/picker';
+
+// Opções para o Picker customizado
+const frequenciaOptions = [
+  { label: 'Diária', value: 'diaria' },
+  { label: 'A cada 2 dias', value: 'cada2dias' },
+  { label: 'Semanal', value: 'semanal' },
+  { label: 'Personalizado', value: 'personalizado' },
+];
 
 const CadastroPaciente = ({ navigation }) => {
   const [nome, setNome] = useState('');
@@ -47,6 +54,7 @@ const CadastroPaciente = ({ navigation }) => {
   // NOVAS FUNCIONALIDADES
   // 1. Intervalo de notificações
   const [frequenciaNotificacoes, setFrequenciaNotificacoes] = useState('diaria');
+  const [showFrequenciaPicker, setShowFrequenciaPicker] = useState(false);
   const [horarioInicio, setHorarioInicio] = useState('09:00');
   const [horarioFim, setHorarioFim] = useState('18:00');
   const [intervaloNotificacoes, setIntervaloNotificacoes] = useState('2');
@@ -115,7 +123,6 @@ const CadastroPaciente = ({ navigation }) => {
           birthDate: formatDate(dataNascimento),
           diagnostico,
           observacoes,
-          // Salvar também as configurações
           configuracoesIA: {
             interacaoMotivacional,
             analisePadroes,
@@ -197,6 +204,11 @@ const CadastroPaciente = ({ navigation }) => {
     setShowEmergenciaModal(true);
   };
 
+  const getFrequenciaLabel = (value) => {
+    const option = frequenciaOptions.find(opt => opt.value === value);
+    return option ? option.label : 'Diária';
+  };
+
   const renderEmergenciaModal = () => (
     <Modal
       visible={showEmergenciaModal}
@@ -260,6 +272,53 @@ const CadastroPaciente = ({ navigation }) => {
           </View>
         </View>
       </View>
+    </Modal>
+  );
+
+  const renderFrequenciaPickerModal = () => (
+    <Modal
+      visible={showFrequenciaPicker}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setShowFrequenciaPicker(false)}
+    >
+      <TouchableOpacity 
+        style={styles.modalOverlay} 
+        activeOpacity={1} 
+        onPress={() => setShowFrequenciaPicker(false)}
+      >
+        <View style={styles.pickerModalContainer}>
+          <View style={styles.pickerModalHeader}>
+            <Text style={styles.pickerModalTitle}>Frequência de Notificações</Text>
+            <TouchableOpacity onPress={() => setShowFrequenciaPicker(false)}>
+              <Icon name="x" size={24} color="#64748B" />
+            </TouchableOpacity>
+          </View>
+          {frequenciaOptions.map((option) => (
+            <TouchableOpacity
+              key={option.value}
+              style={[
+                styles.pickerOption,
+                frequenciaNotificacoes === option.value && styles.pickerOptionActive
+              ]}
+              onPress={() => {
+                setFrequenciaNotificacoes(option.value);
+                setShowFrequenciaPicker(false);
+              }}
+            >
+              <Text style={[
+                styles.pickerOptionText,
+                frequenciaNotificacoes === option.value && styles.pickerOptionTextActive
+              ]}>
+                {option.label}
+              </Text>
+              {frequenciaNotificacoes === option.value && (
+                <Icon name="check" size={20} color="#B367D4" />
+              )}
+            </TouchableOpacity>
+          ))}
+        </View>
+      </TouchableOpacity>
     </Modal>
   );
 
@@ -394,7 +453,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <Switch
                   value={interacaoMotivacional}
                   onValueChange={setInteracaoMotivacional}
-                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  trackColor={{ false: '#CBD5E1', true: '#B367D4' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -403,7 +462,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <Switch
                   value={analisePadroes}
                   onValueChange={setAnalisePadroes}
-                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  trackColor={{ false: '#CBD5E1', true: '#B367D4' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -412,7 +471,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <Switch
                   value={sugestoesReflexao}
                   onValueChange={setSugestoesReflexao}
-                  trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                  trackColor={{ false: '#CBD5E1', true: '#B367D4' }}
                   thumbColor="#FFFFFF"
                 />
               </View>
@@ -425,9 +484,9 @@ const CadastroPaciente = ({ navigation }) => {
                   minimumValue={0}
                   maximumValue={100}
                   step={1}
-                  minimumTrackTintColor="rgba(179, 103, 212, 0.84)"
+                  minimumTrackTintColor="#B367D4"
                   maximumTrackTintColor="#E2E8F0"
-                  thumbTintColor="rgba(179, 103, 212, 0.84)"
+                  thumbTintColor="#B367D4"
                 />
                 <View style={styles.sliderLabels}>
                   <Text style={styles.sliderLabelText}>Sutil</Text>
@@ -450,7 +509,7 @@ const CadastroPaciente = ({ navigation }) => {
               <Switch
                 value={modoMinimalista}
                 onValueChange={setModoMinimalista}
-                trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                trackColor={{ false: '#CBD5E1', true: '#B367D4' }}
                 thumbColor="#FFFFFF"
               />
             </View>
@@ -459,25 +518,22 @@ const CadastroPaciente = ({ navigation }) => {
               <Switch
                 value={removerEstimulos}
                 onValueChange={setRemoverEstimulos}
-                trackColor={{ false: '#CBD5E1', true: 'rgba(179, 103, 212, 0.84)' }}
+                trackColor={{ false: '#CBD5E1', true: '#B367D4' }}
                 thumbColor="#FFFFFF"
               />
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Frequência de Notificações</Text>
-              <View style={styles.inputWrapper}>
-                <Picker
-                  selectedValue={frequenciaNotificacoes}
-                  onValueChange={setFrequenciaNotificacoes}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Diária" value="diaria" />
-                  <Picker.Item label="A cada 2 dias" value="cada2dias" />
-                  <Picker.Item label="Semanal" value="semanal" />
-                  <Picker.Item label="Personalizado" value="personalizado" />
-                </Picker>
-              </View>
+              <TouchableOpacity 
+                style={styles.inputWrapper}
+                onPress={() => setShowFrequenciaPicker(true)}
+              >
+                <Text style={styles.input}>
+                  {getFrequenciaLabel(frequenciaNotificacoes)}
+                </Text>
+                <Icon name="chevron-down" size={20} color="#94A3B8" />
+              </TouchableOpacity>
             </View>
 
             {frequenciaNotificacoes === 'personalizado' && (
@@ -600,6 +656,9 @@ const CadastroPaciente = ({ navigation }) => {
       {/* Modal de Emergência */}
       {renderEmergenciaModal()}
 
+      {/* Modal de Frequência de Notificações */}
+      {renderFrequenciaPickerModal()}
+
       {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
@@ -679,22 +738,22 @@ const styles = StyleSheet.create({
   sectionIconPurple: {
     width: 16,
     height: 16,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   sectionIconPurpleLarge: {
     width: 20,
     height: 20,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   sectionIconPurpleMedium: {
     width: 19.01,
     height: 20,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   sectionIconPurpleTall: {
     width: 18,
     height: 24,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   sectionTitle: {
     color: '#0F172A',
@@ -748,7 +807,7 @@ const styles = StyleSheet.create({
   // IA Card
   iaCard: {
     padding: 16,
-    backgroundColor: 'rgba(43, 108, 238, 0.05)',
+    backgroundColor: 'rgba(179, 103, 212, 0.05)',
     borderRadius: 12,
     gap: 16,
   },
@@ -854,12 +913,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 20,
   },
-  // Pickers
-  picker: {
-    flex: 1,
-    height: 48,
-    color: '#0F172A',
-  },
   // Botões
   inviteButton: {
     flexDirection: 'row',
@@ -870,22 +923,22 @@ const styles = StyleSheet.create({
     marginTop: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(179, 103, 212, 0.84)',
+    borderColor: '#B367D4',
   },
   inviteIcon: {
     width: 11.67,
     height: 9.33,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   inviteButtonText: {
-    color: 'rgba(179, 103, 212, 0.84)',
+    color: '#B367D4',
     fontSize: 16,
     fontFamily: 'ABeeZee',
     fontWeight: '400',
     lineHeight: 24,
   },
   saveButton: {
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
@@ -929,7 +982,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalButton: {
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',
@@ -939,6 +992,48 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 16,
     fontFamily: 'Manrope',
+    fontWeight: '600',
+  },
+  // Picker Modal
+  pickerModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '80%',
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  pickerModalTitle: {
+    fontSize: 18,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+    color: '#0F172A',
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  pickerOptionActive: {
+    backgroundColor: 'rgba(179, 103, 212, 0.05)',
+  },
+  pickerOptionText: {
+    fontSize: 16,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    color: '#0F172A',
+  },
+  pickerOptionTextActive: {
+    color: '#B367D4',
     fontWeight: '600',
   },
   // Date Picker
@@ -965,7 +1060,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   datePickerConfirmText: {
-    color: 'rgba(179, 103, 212, 0.84)',
+    color: '#B367D4',
     fontSize: 16,
     fontWeight: '600',
   },
@@ -999,7 +1094,7 @@ const styles = StyleSheet.create({
   navIconPacientes: {
     width: 22,
     height: 16,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
+    backgroundColor: '#B367D4',
   },
   navIconRelatorios: {
     width: 16,
@@ -1016,7 +1111,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   navTextActive: {
-    color: 'rgba(179, 103, 212, 0.84)',
+    color: '#B367D4',
   },
 });
 
