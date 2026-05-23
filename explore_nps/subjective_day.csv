@@ -1,0 +1,4 @@
+subject,profile,timestamp,notification,physio_reference,HR,IBI,RMSSD,TEMP,mood,emotion_emoji,emotion_value,impact,context,context_weight,stress_physio,stress_subj,stress_physio_adj,divergence,flag,insight
+S14,hiperreativo,2025-01-13 20:00,therapist_scheduled,amusement,85.57,734.81,110.71,31.94,6,😶,3,2,socializing,0.1,0.486,0.4153,0.4374,0.0221,aligned,[fim da tarde] A percepção está alinhada com o estado fisiológico.
+S16,dissociativo,2025-01-13 20:00,therapist_scheduled,amusement,86.33,729.59,113.74,30.04,6,😊,5,2,resting/leisure,0.0,0.5106,0.2403,0.5106,0.2703,aligned,[fim da tarde] A percepção está alinhada com o estado fisiológico.
+S17,neutro,2025-01-13 20:00,therapist_scheduled,amusement,82.73,780.48,128.33,32.91,9,😊,5,2,exercising,0.8,0.4882,0.1069,0.0976,-0.0093,aligned,[fim da tarde] A percepção está alinhada com o estado fisiológico.
