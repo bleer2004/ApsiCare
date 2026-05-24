@@ -41,12 +41,18 @@ const LoginPaciente = ({ navigation }) => {
     }
   };
 
+  const handleForgotPassword = () => {
+    navigation.navigate('RecuperarSenhaPaciente');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          {/* Efeito decorativo de fundo */}
           <View style={styles.decorativeBlur} />
+          
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <View style={styles.logoIconWrapper}>
@@ -55,7 +61,7 @@ const LoginPaciente = ({ navigation }) => {
                 </View>
               </View>
             </View>
-            <Text style={styles.appName}>PsicoCare</Text>
+            <Text style={styles.appName}>ApsiCare</Text>
             <Text style={styles.appDescription}>Plataforma clínica de saúde mental.</Text>
           </View>
 
@@ -99,6 +105,11 @@ const LoginPaciente = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
               </View>
+
+              {/* Link Esqueci minha senha */}
+              <TouchableOpacity style={styles.forgotPasswordContainer} onPress={handleForgotPassword}>
+                <Text style={styles.forgotPasswordText}>Esqueci minha senha</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity style={styles.loginButton} onPress={handleLogin} disabled={loading}>
                 {loading ? (
@@ -243,6 +254,17 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#0F172A',
     paddingVertical: 16,
+  },
+  forgotPasswordContainer: {
+    alignSelf: 'flex-end',
+    marginBottom: 24,
+  },
+  forgotPasswordText: {
+    fontSize: 14,
+    fontFamily: 'ABeeZee',
+    fontWeight: '400',
+    color: 'rgba(179, 102, 211, 0.84)',
+    lineHeight: 20,
   },
   loginButton: {
     height: 56,

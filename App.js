@@ -22,6 +22,8 @@ import HomePaciente from './paciente/src/screens/HomePaciente';
 import MetasPaciente from './paciente/src/screens/MetasPaciente';
 import DiarioPaciente from './paciente/src/screens/DiarioPaciente';
 import PerfilPaciente from './paciente/src/screens/perfilPaciente';
+import RecuperarSenhaPaciente from './paciente/src/screens/RecuperarSenhaPaciente';
+
 
 const Stack = createNativeStackNavigator();
 

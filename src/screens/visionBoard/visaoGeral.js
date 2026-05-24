@@ -16,6 +16,7 @@ import { LineChart } from 'react-native-chart-kit';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
 
+
 const USAR_MOCK = true; 
 
 const VisaoGeral = ({ navigation }) => {

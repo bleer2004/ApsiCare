@@ -24,7 +24,7 @@ const AmbienteTeste = ({ navigation }) => {
           <View style={styles.logoIconWrapper}>
             <Icon name="heart" size={40} color="#B367D4" />
           </View>
-          <Text style={styles.logoText}>PsicoCare</Text>
+          <Text style={styles.logoText}>ApsiCare</Text>
           <Text style={styles.logoSubtext}>Plataforma clínica de saúde mental</Text>
         </View>
 

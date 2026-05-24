@@ -181,10 +181,10 @@ const Cadastro = ({ navigation }) => {
           <View style={styles.header}>
             <View style={styles.iconHeaderContainer}>
               <View style={styles.iconHeaderWrapper}>
-                <View style={styles.iconHeaderPlaceholder} />
+                <Icon name="heart" size={28} color="#B367D4" />
               </View>
             </View>
-            <Text style={styles.title}>PsicoCare</Text>
+            <Text style={styles.title}>ApsiCare</Text>
             <Text style={styles.subtitle}>
               Plataforma clínica de saúde mental.
             </Text>
@@ -363,7 +363,7 @@ const Cadastro = ({ navigation }) => {
           </View>
 
           <View style={styles.footer}>
-            <View style={styles.securityIcon} />
+            <Icon name="shield" size={12} color="#10B981" />
             <Text style={styles.securityText}>AMBIENTE SEGURO & CRIPTOGRAFADO</Text>
           </View>
         </ScrollView>
@@ -446,11 +446,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  iconHeaderPlaceholder: {
-    width: 28.52,
-    height: 30,
-    backgroundColor: 'rgba(179, 103, 212, 0.84)',
   },
   title: {
     color: '#0F172A',
@@ -583,11 +578,6 @@ const styles = StyleSheet.create({
     paddingTop: 32,
     gap: 8,
     zIndex: 1,
-  },
-  securityIcon: {
-    width: 9.33,
-    height: 11.67,
-    backgroundColor: '#10B981',
   },
   securityText: {
     color: '#10B981',

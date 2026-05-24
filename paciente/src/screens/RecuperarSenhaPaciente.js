@@ -1,5 +1,6 @@
+// paciente/screens/RecuperarSenhaPaciente.js
 import React, { useState } from 'react';
-import { API_URL } from '../../services/api';
+import { API_URL } from '../../../src/services/api'; // Caminho corrigido
 import Icon from 'react-native-vector-icons/Feather';
 
 import {
@@ -18,7 +19,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 
-const RecuperarSenha = ({ navigation }) => {
+const RecuperarSenhaPaciente = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [codigo, setCodigo] = useState('');
   const [novaSenha, setNovaSenha] = useState('');
@@ -30,22 +31,19 @@ const RecuperarSenha = ({ navigation }) => {
 
   const handleEnviarCodigo = async () => {
     if (!email) {
-      Alert.alert('Erro', 'Por favor, digite seu e-mail profissional');
+      Alert.alert('Erro', 'Por favor, digite seu e-mail');
       return;
     }
     
     setLoading(true);
-    console.log("Tentando enviar para:", `${API_URL}/auth/forgot-password`);
-
     try {
-      const response = await fetch(`${API_URL}/auth/forgot-password`, {
+      const response = await fetch(`${API_URL}/auth/patient/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
       });
 
       const data = await response.json();
-      console.log("Resposta do Servidor:", data); 
 
       if (!response.ok) {
         Alert.alert('Erro', data.error || 'Erro desconhecido no servidor');
@@ -69,13 +67,12 @@ const RecuperarSenha = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/auth/verify-code`, {
+      const response = await fetch(`${API_URL}/auth/patient/verify-code`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: codigo }),
+        body: JSON.stringify({ code: codigo, email }),
       });
       const data = await response.json();
-      console.log(data);
       if (!response.ok) {
         Alert.alert('Erro', data.error || 'Código inválido ou expirado');
         return;
@@ -104,10 +101,10 @@ const RecuperarSenha = ({ navigation }) => {
     }
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/auth/reset-password`, {
+      const response = await fetch(`${API_URL}/auth/patient/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: codigo, newPassword: novaSenha }),
+        body: JSON.stringify({ email, code: codigo, newPassword: novaSenha }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -158,16 +155,16 @@ const RecuperarSenha = ({ navigation }) => {
       </View>
       <Text style={styles.stepTitle}>Esqueceu sua senha?</Text>
       <Text style={styles.stepDescription}>
-        Digite seu e-mail profissional cadastrado e enviaremos um código de verificação para redefinir sua senha.
+        Digite seu e-mail cadastrado e enviaremos um código de verificação para redefinir sua senha.
       </Text>
 
       <View style={styles.inputContainer}>
-        <Text style={styles.inputLabel}>E-mail profissional</Text>
+        <Text style={styles.inputLabel}>E-mail</Text>
         <View style={styles.inputWrapper}>
           <Icon name="mail" size={20} color="#94A3B8" style={styles.inputIcon} />
           <TextInput
             style={styles.input}
-            placeholder="exemplo@clinica.com.br"
+            placeholder="seu@email.com"
             placeholderTextColor="#94A3B8"
             value={email}
             onChangeText={setEmail}
@@ -357,10 +354,10 @@ const RecuperarSenha = ({ navigation }) => {
           <View style={styles.header}>
             <View style={styles.iconHeaderContainer}>
               <View style={styles.iconHeaderWrapper}>
-                <Icon name="heart" size={28} color="#B367D4" />
+                <Icon name="heart" size={24} color="#B367D4" />
               </View>
             </View>
-            <Text style={styles.title}>ApsiCare</Text>
+            <Text style={styles.title}>PsicoCare</Text>
             <Text style={styles.subtitle}>
               Plataforma clínica de saúde mental.
             </Text>
@@ -375,7 +372,7 @@ const RecuperarSenha = ({ navigation }) => {
           </View>
 
           <View style={styles.footer}>
-            <Icon name="shield" size={12} color="#10B981" />
+            <View style={styles.securityIcon} />
             <Text style={styles.securityText}>AMBIENTE SEGURO & CRIPTOGRAFADO</Text>
           </View>
         </ScrollView>
@@ -399,7 +396,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
-  // Efeito de fundo blur
   blurBackground: {
     position: 'absolute',
     left: 198,
@@ -508,7 +504,7 @@ const styles = StyleSheet.create({
   },
   stepLabelActive: {
     color: 'rgba(179, 103, 212, 0.84)',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   stepLine: {
     flex: 1,
@@ -626,6 +622,11 @@ const styles = StyleSheet.create({
     gap: 8,
     zIndex: 1,
   },
+  securityIcon: {
+    width: 9.33,
+    height: 11.67,
+    backgroundColor: '#10B981',
+  },
   securityText: {
     color: '#10B981',
     fontSize: 11,
@@ -684,4 +685,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default RecuperarSenha;
+export default RecuperarSenhaPaciente;
