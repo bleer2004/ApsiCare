@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
 import Icon from 'react-native-vector-icons/Feather';
+import BottomNav from '../../components/BottomNav';
 
 import {
   View,
@@ -257,7 +258,6 @@ const Pacientes = ({ navigation }) => {
 
   const renderPacienteCard = ({ item }) => {
     const initials = getInitials(item.nome);
-    const hasImage = false; // Mock - você pode adicionar lógica de imagem real
     
     return (
       <TouchableOpacity
@@ -265,23 +265,17 @@ const Pacientes = ({ navigation }) => {
         onPress={() => handlePacientePress(item)}
         activeOpacity={0.7}
       >
-        {hasImage ? (
-          <View style={styles.pacienteAvatar}>
-            <View style={styles.avatarImage} />
-          </View>
-        ) : (
-          <View style={styles.pacienteAvatarInitial}>
-            <Text style={styles.avatarInitialText}>{initials}</Text>
-          </View>
-        )}
+        <View style={styles.pacienteAvatarInitial}>
+          <Text style={styles.avatarInitialText}>{initials}</Text>
+        </View>
         <View style={styles.pacienteInfo}>
           <Text style={styles.pacienteNome}>{item.nome}</Text>
           <View style={styles.sessaoContainer}>
-            <View style={styles.calendarIcon} />
+            <Icon name="calendar" size={12} color="#64748B" />
             <Text style={styles.pacienteUltimaSessao}>Última sessão: {item.ultimaSessao}</Text>
           </View>
         </View>
-        <View style={styles.chevronIcon} />
+        <Icon name="chevron-right" size={18} color="#CBD5E1" />
       </TouchableOpacity>
     );
   };
@@ -297,7 +291,7 @@ const Pacientes = ({ navigation }) => {
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
             <View style={styles.headerIconContainer}>
-              <View style={styles.headerIcon} />
+              <Icon name="users" size={22} color="#B367D4" />
             </View>
             <Text style={styles.headerTitle}>Pacientes</Text>
           </View>
@@ -309,6 +303,7 @@ const Pacientes = ({ navigation }) => {
           <View style={styles.totalRow}>
             <Text style={styles.totalNumber}>{totalPacientes}</Text>
             <View style={styles.totalBadge}>
+              <Icon name="plus-circle" size={12} color="white" />
               <Text style={styles.totalBadgeText}>+{novosPacientes} este mês</Text>
             </View>
           </View>
@@ -317,7 +312,7 @@ const Pacientes = ({ navigation }) => {
 
       {/* Search Input */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchIcon} />
+        <Icon name="search" size={18} color="#94A3B8" style={styles.searchIcon} />
         <TextInput
           style={styles.searchInput}
           placeholder="Buscar por nome ..."
@@ -341,7 +336,7 @@ const Pacientes = ({ navigation }) => {
           onPress={() => setActiveFilter('ativos')}
         >
           <Text style={[styles.filterOutlineText, activeFilter === 'ativos' && styles.filterOutlineTextActive]}>Ativos</Text>
-          <View style={styles.filterChevron} />
+          <Icon name="chevron-down" size={12} color="#475569" />
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -349,7 +344,7 @@ const Pacientes = ({ navigation }) => {
           onPress={() => setActiveFilter('recentes')}
         >
           <Text style={[styles.filterOutlineText, activeFilter === 'recentes' && styles.filterOutlineTextActive]}>Recentes</Text>
-          <View style={styles.filterChevron} />
+          <Icon name="chevron-down" size={12} color="#475569" />
         </TouchableOpacity>
       </View>
 
@@ -359,28 +354,12 @@ const Pacientes = ({ navigation }) => {
         keyExtractor={(item) => item.id}
         renderItem={renderPacienteCard}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.pacientesList}
+        contentContainerStyle={[styles.pacientesList, { paddingBottom: 80 }]}
       />
-
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
-          <View style={styles.navIconInicio} />
-          <Text style={styles.navText}>Início</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <View style={styles.navIconPacientes} />
-          <Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Relatorios')}>
-          <View style={styles.navIconRelatorios} />
-          <Text style={styles.navText}>Relatórios</Text>
-        </TouchableOpacity>
-      </View>
 
       {/* FAB Button */}
       <TouchableOpacity style={styles.fabButton} onPress={() => navigation.navigate('CadastroPaciente')}>
-        <View style={styles.fabIcon} />
+        <Icon name="user-plus" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
       {/* Modal de Cadastro */}
@@ -438,6 +417,9 @@ const Pacientes = ({ navigation }) => {
           </View>
         </View>
       </Modal>
+
+      {/* Bottom Navigation - Componente reutilizável */}
+      <BottomNav navigation={navigation} currentScreen="Pacientes" />
     </SafeAreaView>
   );
 };
@@ -469,11 +451,6 @@ const styles = StyleSheet.create({
     padding: 8,
     backgroundColor: 'rgba(179, 103, 212, 0.10)',
     borderRadius: 8,
-  },
-  headerIcon: {
-    width: 22,
-    height: 16,
-    backgroundColor: '#B367D4',
   },
   headerTitle: {
     color: '#0F172A',
@@ -514,6 +491,9 @@ const styles = StyleSheet.create({
     lineHeight: 40,
   },
   totalBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 2,
     backgroundColor: 'rgba(255, 255, 255, 0.20)',
@@ -537,10 +517,7 @@ const styles = StyleSheet.create({
   searchIcon: {
     position: 'absolute',
     left: 12,
-    top: 10,
-    width: 18,
-    height: 18,
-    backgroundColor: '#94A3B8',
+    top: 12,
     zIndex: 1,
   },
   searchInput: {
@@ -611,15 +588,9 @@ const styles = StyleSheet.create({
   filterOutlineTextActive: {
     color: '#B367D4',
   },
-  filterChevron: {
-    width: 7,
-    height: 4.32,
-    backgroundColor: '#475569',
-  },
   // List
   pacientesList: {
     paddingHorizontal: 16,
-    paddingBottom: 120,
     gap: 12,
   },
   pacienteCard: {
@@ -635,20 +606,6 @@ const styles = StyleSheet.create({
     elevation: 1,
     borderWidth: 1,
     borderColor: '#F1F5F9',
-  },
-  pacienteAvatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 2,
-    borderColor: 'rgba(179, 103, 212, 0.10)',
-    marginRight: 16,
-    overflow: 'hidden',
-  },
-  avatarImage: {
-    width: 56,
-    height: 56,
-    backgroundColor: '#E2E8F0',
   },
   pacienteAvatarInitial: {
     width: 56,
@@ -684,68 +641,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  calendarIcon: {
-    width: 10.5,
-    height: 11.67,
-    backgroundColor: '#64748B',
-  },
   pacienteUltimaSessao: {
     color: '#64748B',
     fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
     lineHeight: 16,
-  },
-  chevronIcon: {
-    width: 7.4,
-    height: 12,
-    backgroundColor: '#CBD5E1',
-  },
-  // Bottom Navigation
-  bottomNavigation: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.80)',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    justifyContent: 'space-between',
-    backdropFilter: 'blur(6px)',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  navItemActive: {},
-  navIconInicio: {
-    width: 16,
-    height: 18,
-    backgroundColor: '#94A3B8',
-  },
-  navIconPacientes: {
-    width: 22,
-    height: 16,
-    backgroundColor: '#B367D4',
-  },
-  navIconRelatorios: {
-    width: 16,
-    height: 20,
-    backgroundColor: '#94A3B8',
-  },
-  navText: {
-    color: '#94A3B8',
-    fontSize: 10,
-    fontFamily: 'Manrope',
-    fontWeight: '700',
-    lineHeight: 15,
-  },
-  navTextActive: {
-    color: '#B367D4',
   },
   // FAB
   fabButton: {
@@ -763,11 +664,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
     elevation: 5,
-  },
-  fabIcon: {
-    width: 17.5,
-    height: 17.5,
-    backgroundColor: 'white',
   },
   // Modal
   modalOverlay: {
@@ -839,7 +735,7 @@ const styles = StyleSheet.create({
     paddingTop: 12,
   },
   cadastrarButton: {
-    backgroundColor: '#6366F1',
+    backgroundColor: '#B367D4',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',

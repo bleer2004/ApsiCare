@@ -330,7 +330,7 @@ const CadastroPaciente = ({ navigation }) => {
       <View style={styles.headerBlur}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <View style={styles.backIcon} />
+            <Icon name="arrow-left" size={24} color="#475569" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Cadastrar novo paciente</Text>
           <View style={{ width: 40 }} />
@@ -352,13 +352,14 @@ const CadastroPaciente = ({ navigation }) => {
           {/* Informações Básicas */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconPurple} />
+              <Icon name="info" size={16} color="#B367D4" />
               <Text style={styles.sectionTitle}>Informações básicas</Text>
             </View>
             
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Nome Completo</Text>
               <View style={styles.inputWrapper}>
+                <Icon name="user" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Digite o nome completo"
@@ -373,6 +374,7 @@ const CadastroPaciente = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>E-mail</Text>
               <View style={styles.inputWrapper}>
+                <Icon name="mail" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="exemplo@email.com"
@@ -389,6 +391,7 @@ const CadastroPaciente = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Telefone</Text>
               <View style={styles.inputWrapper}>
+                <Icon name="phone" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="(00) 00000-0000"
@@ -404,13 +407,14 @@ const CadastroPaciente = ({ navigation }) => {
           {/* Informações Clínicas */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconPurpleLarge} />
+              <Icon name="clipboard" size={20} color="#B367D4" />
               <Text style={styles.sectionTitle}>Informações clínicas</Text>
             </View>
 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Diagnóstico Principal</Text>
               <View style={styles.inputWrapper}>
+                <Icon name="file-text" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
                   placeholder="Selecione um diagnóstico"
@@ -425,6 +429,7 @@ const CadastroPaciente = ({ navigation }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Resumo Clínico</Text>
               <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
+                <Icon name="align-left" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <TextInput
                   style={[styles.input, styles.textArea]}
                   placeholder="Descreva brevemente o histórico e objetivos terapêuticos..."
@@ -443,7 +448,7 @@ const CadastroPaciente = ({ navigation }) => {
           {/* Configuração de IA */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconPurpleMedium} />
+              <Icon name="cpu" size={19} color="#B367D4" />
               <Text style={styles.sectionTitle}>Configuração de IA</Text>
             </View>
             
@@ -500,7 +505,7 @@ const CadastroPaciente = ({ navigation }) => {
           {/* Configurações do App */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <View style={styles.sectionIconPurpleTall} />
+              <Icon name="settings" size={18} color="#B367D4" />
               <Text style={styles.sectionTitle}>Configurações do App</Text>
             </View>
 
@@ -529,6 +534,7 @@ const CadastroPaciente = ({ navigation }) => {
                 style={styles.inputWrapper}
                 onPress={() => setShowFrequenciaPicker(true)}
               >
+                <Icon name="bell" size={20} color="#94A3B8" style={styles.inputIcon} />
                 <Text style={styles.input}>
                   {getFrequenciaLabel(frequenciaNotificacoes)}
                 </Text>
@@ -541,6 +547,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Horário de Início</Text>
                   <View style={styles.inputWrapper}>
+                    <Icon name="clock" size={20} color="#94A3B8" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
                       placeholder="09:00"
@@ -553,6 +560,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Horário de Fim</Text>
                   <View style={styles.inputWrapper}>
+                    <Icon name="clock" size={20} color="#94A3B8" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
                       placeholder="18:00"
@@ -565,6 +573,7 @@ const CadastroPaciente = ({ navigation }) => {
                 <View style={styles.inputContainer}>
                   <Text style={styles.inputLabel}>Intervalo entre notificações (horas)</Text>
                   <View style={styles.inputWrapper}>
+                    <Icon name="repeat" size={20} color="#94A3B8" style={styles.inputIcon} />
                     <TextInput
                       style={styles.input}
                       placeholder="2"
@@ -611,7 +620,7 @@ const CadastroPaciente = ({ navigation }) => {
 
           {/* Botão Enviar Convite */}
           <TouchableOpacity style={styles.inviteButton}>
-            <View style={styles.inviteIcon} />
+            <Icon name="mail" size={16} color="#B367D4" />
             <Text style={styles.inviteButtonText}>Enviar convite por e-mail</Text>
           </TouchableOpacity>
 
@@ -620,7 +629,10 @@ const CadastroPaciente = ({ navigation }) => {
             {loading ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.saveButtonText}>Cadastrar Paciente</Text>
+              <>
+                <Icon name="save" size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
+                <Text style={styles.saveButtonText}>Cadastrar Paciente</Text>
+              </>
             )}
           </TouchableOpacity>
         </ScrollView>
@@ -662,15 +674,15 @@ const CadastroPaciente = ({ navigation }) => {
       {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
-          <View style={styles.navIconInicio} />
+          <Icon name="home" size={20} color="#94A3B8" />
           <Text style={styles.navText}>Início</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <View style={styles.navIconPacientes} />
+          <Icon name="users" size={20} color="#B367D4" />
           <Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Relatorios')}>
-          <View style={styles.navIconRelatorios} />
+          <Icon name="bar-chart-2" size={20} color="#94A3B8" />
           <Text style={styles.navText}>Relatórios</Text>
         </TouchableOpacity>
       </View>
@@ -712,11 +724,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#475569',
-  },
   headerTitle: {
     color: '#0F172A',
     fontSize: 20,
@@ -734,26 +741,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 16,
-  },
-  sectionIconPurple: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconPurpleLarge: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconPurpleMedium: {
-    width: 19.01,
-    height: 20,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconPurpleTall: {
-    width: 18,
-    height: 24,
-    backgroundColor: '#B367D4',
   },
   sectionTitle: {
     color: '#0F172A',
@@ -925,11 +912,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#B367D4',
   },
-  inviteIcon: {
-    width: 11.67,
-    height: 9.33,
-    backgroundColor: '#B367D4',
-  },
   inviteButtonText: {
     color: '#B367D4',
     fontSize: 16,
@@ -942,6 +924,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
     marginTop: 16,
     marginBottom: 32,
   },
@@ -1086,21 +1070,6 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   navItemActive: {},
-  navIconInicio: {
-    width: 16,
-    height: 18,
-    backgroundColor: '#94A3B8',
-  },
-  navIconPacientes: {
-    width: 22,
-    height: 16,
-    backgroundColor: '#B367D4',
-  },
-  navIconRelatorios: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#94A3B8',
-  },
   navText: {
     color: '#94A3B8',
     fontSize: 10,

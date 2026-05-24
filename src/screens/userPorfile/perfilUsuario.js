@@ -23,7 +23,6 @@ import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
 
 import RelatoriosPaciente from '../Files/RelatoriosPsicologo';
-import SmartwatchPaciente from '../smartwatch/SmartWatchPaciente';
 
 const DashboardPaciente = ({ navigation, route }) => {
   const screenWidth = Dimensions.get('window').width;
@@ -362,7 +361,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     );
   };
 
-  // ========== FUNÇÕES DOS ARQUIVOS (SEM DEPENDÊNCIA EXTERNA) ==========
+  // ========== FUNÇÕES DOS ARQUIVOS ==========
   const handleAdicionarArquivo = () => {
     Alert.alert(
       'Adicionar Arquivo',
@@ -831,9 +830,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     <RelatoriosPaciente paciente={paciente} standalone={true} />
   );
 
-  const renderAbaSmartwatch = () => (
-    <SmartwatchPaciente paciente={paciente} standalone={true} />
-  );
+  
 
   // ========== RENDER PRINCIPAL ==========
   return (
@@ -848,7 +845,7 @@ const DashboardPaciente = ({ navigation, route }) => {
         {/* Header com Voltar e Exportar */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <View style={styles.backIcon} />
+            <Icon name="arrow-left" size={24} color="#475569" />
           </TouchableOpacity>
           <TouchableOpacity onPress={handleExportarRelatorio} style={styles.exportButton}>
             <Icon name="download" size={18} color="#B367D4" />
@@ -890,13 +887,7 @@ const DashboardPaciente = ({ navigation, route }) => {
             <Text style={[styles.tabText, abaAtiva === 'relatorios' && styles.tabTextActive]}>Relatórios</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={[styles.tab, abaAtiva === 'smartwatch' && styles.tabActive]}
-            onPress={() => setAbaAtiva('smartwatch')}
-          >
-            <Icon name="watch" size={18} color={abaAtiva === 'smartwatch' ? '#B367D4' : '#94A3B8'} />
-            <Text style={[styles.tabText, abaAtiva === 'smartwatch' && styles.tabTextActive]}>Smartwatch</Text>
-          </TouchableOpacity>
+          
         </View>
 
         {/* Conteúdo da ABA ativa */}
@@ -1043,7 +1034,6 @@ const DashboardPaciente = ({ navigation, route }) => {
         </View>
       </Modal>
 
-      {/* Modal de Ver Anotação Completa */}
       <Modal animationType="slide" transparent={true} visible={modalAnotacaoVisible} onRequestClose={() => setModalAnotacaoVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
@@ -1053,7 +1043,7 @@ const DashboardPaciente = ({ navigation, route }) => {
                 <Icon name="x" size={24} color="#64748B" />
               </TouchableOpacity>
             </View>
-            <ScrollView style={styles.modalContent}>
+            <ScrollView style={styles.modalScrollContent}>
               <Text style={styles.anotacaoDataModal}>{anotacaoSelecionada?.data}</Text>
               <Text style={styles.anotacaoTextoModal}>{anotacaoSelecionada?.texto}</Text>
               
@@ -1081,7 +1071,6 @@ const styles = StyleSheet.create({
   // Header
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 8 },
   backButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 2, elevation: 1 },
-  backIcon: { width: 16, height: 16, backgroundColor: '#475569' },
   exportButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(179, 103, 212, 0.10)', paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, gap: 8 },
   exportText: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', color: '#B367D4' },
   
@@ -1236,6 +1225,9 @@ const styles = StyleSheet.create({
   analiseSectionText: { fontSize: 13, fontFamily: 'Manrope', color: '#475569', lineHeight: 20 },
   anotacaoDataModal: { fontSize: 12, fontFamily: 'Manrope', color: '#94A3B8', marginBottom: 16 },
   anotacaoTextoModal: { fontSize: 15, fontFamily: 'Manrope', color: '#0F172A', lineHeight: 22 },
+  modalScrollContent: {
+  padding: 20,
+},
 });
 
 export default DashboardPaciente;

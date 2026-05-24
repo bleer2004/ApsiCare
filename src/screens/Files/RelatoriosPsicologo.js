@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import BottomNav from '../../components/BottomNav';
 
 const Relatorios = ({ navigation }) => {
   // ========== ESTADOS ==========
@@ -31,7 +32,7 @@ const Relatorios = ({ navigation }) => {
   const [dataFim, setDataFim] = useState('');
   const [showStartPicker, setShowStartPicker] = useState(false);
   const [showEndPicker, setShowEndPicker] = useState(false);
-  const [tipoRelatorio, setTipoRelatorio] = useState('todos'); // todos, smartwatch, anotacoes
+  const [tipoRelatorio, setTipoRelatorio] = useState('todos');
   
   // Dropdown de pacientes
   const [showPacienteDropdown, setShowPacienteDropdown] = useState(false);
@@ -126,17 +127,14 @@ const Relatorios = ({ navigation }) => {
   const getFilteredRelatorios = () => {
     let filtered = [...relatorios];
     
-    // Filtro por paciente
     if (selectedPaciente !== 'todos') {
       filtered = filtered.filter(r => r.pacienteId === selectedPaciente);
     }
     
-    // Filtro por tipo
     if (tipoRelatorio !== 'todos') {
       filtered = filtered.filter(r => r.tipo === tipoRelatorio);
     }
     
-    // Filtro por data
     if (dataInicio) {
       filtered = filtered.filter(r => {
         const [dia, mes, ano] = r.data.split('/');
@@ -324,7 +322,11 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
       
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.scrollView} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Relatórios</Text>
@@ -573,23 +575,8 @@ Relatório gerado por PsicoCare - Plataforma de Saúde Mental
         </View>
       </Modal>
       
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
-          <View style={styles.navIconInicio} />
-          <Text style={styles.navText}>Início</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Pacientes')}>
-          <View style={styles.navIconPacientes} />
-          <Text style={styles.navText}>Pacientes</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={[styles.navItem, styles.navItemActive]} onPress={() => navigation.navigate('Relatorios')}>
-          <View style={styles.navIconRelatorios} />
-          <Text style={[styles.navText, styles.navTextActive]}>Relatórios</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Bottom Navigation - Componente reutilizável */}
+      <BottomNav navigation={navigation} currentScreen="Relatorios" />
     </SafeAreaView>
   );
 };
@@ -601,7 +588,9 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-    marginBottom: 65,
+  },
+  scrollContent: {
+    paddingBottom: 80,
   },
   header: {
     flexDirection: 'row',
@@ -1078,49 +1067,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FFFFFF',
   },
-  bottomNavigation: {
-    flexDirection: 'row',
-    backgroundColor: '#FFFFFF',
-    borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    justifyContent: 'space-between',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    gap: 4,
-  },
-  navIconInicio: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#94A3B8',
-  },
-  navIconPacientes: {
-    width: 22,
-    height: 16,
-    backgroundColor: '#94A3B8',
-  },
-  navIconRelatorios: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#B367D4',
-  },
-  navText: {
-    fontSize: 10,
-    fontFamily: 'Manrope',
-    fontWeight: '700',
-    color: '#94A3B8',
-  },
-  navTextActive: {
-    color: '#B367D4',
-  },
-  navItemActive: {},
 });
 
 export default Relatorios;
