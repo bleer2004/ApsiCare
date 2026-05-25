@@ -1,11 +1,11 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, PutCommand } = require("@aws-sdk/lib-dynamodb");
-const { v4: uuidv4 } = require("uuid");
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, PutCommand } from "@aws-sdk/lib-dynamodb";
+import { v4 as uuidv4 } from "uuid";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const patientId = event.pathParameters?.patientId;
   if (!patientId) return resp(400, { error: "patientId obrigatório" });
 

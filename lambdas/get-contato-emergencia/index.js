@@ -1,10 +1,10 @@
-const { DynamoDBClient } = require("@aws-sdk/client-dynamodb");
-const { DynamoDBDocumentClient, QueryCommand } = require("@aws-sdk/lib-dynamodb");
+import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
+import { DynamoDBDocumentClient, QueryCommand } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
 
-exports.handler = async (event) => {
+export const handler = async (event) => {
   const patientId = event.pathParameters?.patientId;
   if (!patientId) return resp(400, { error: "patientId obrigatório" });
 
@@ -18,6 +18,9 @@ exports.handler = async (event) => {
       },
     }));
 
+    console.log("Items encontrados:", result.Items?.length);
+    console.log("Items:", JSON.stringify(result.Items));
+
     const contacts = (result.Items || []).map((item) => ({
       contactId: item.contactId,
       nome: item.nome,
@@ -28,8 +31,8 @@ exports.handler = async (event) => {
 
     return resp(200, { contacts });
   } catch (err) {
-    console.error(err);
-    return resp(500, { error: "Erro ao buscar contatos de emergência" });
+    console.error("Erro DynamoDB:", err);
+    return resp(500, { error: "Erro ao buscar contatos de emergência", detail: err.message });
   }
 };
 
