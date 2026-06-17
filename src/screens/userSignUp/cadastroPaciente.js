@@ -119,12 +119,12 @@ const CadastroPaciente = ({ navigation }) => {
       const patientId = data.patient?.id;
       setPatientIdCriado(patientId);
 
-      // 2. Salva contatos de emergência custom via PUT (mesma lambda do salvar-contato-emergencia)
+      // 2. Salva contatos de emergência custom via PUT
       const contatosCustom = contatosEmergencia.filter(c => !c.isPreset);
       for (const contato of contatosCustom) {
         try {
           await fetch(`${API_URL}/patients/${patientId}/emergency-contact`, {
-            method: 'PUT', // ← corrigido: usa PUT igual à rota configurada
+            method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ nome: contato.nome, telefone: contato.numero, relacao: contato.relacao || 'Não informado' }),
           });
@@ -206,7 +206,10 @@ const CadastroPaciente = ({ navigation }) => {
 
           {/* Informações Básicas */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}><Icon name="info" size={16} color="#B367D4" /><Text style={styles.sectionTitle}>Informações básicas</Text></View>
+            <View style={styles.sectionHeader}>
+              <Icon name="info" size={16} color="#B367D4" />
+              <Text style={styles.sectionTitle}>Informações básicas</Text>
+            </View>
             {[
               { label: 'Nome Completo *', icon: 'user', value: nome, onChange: setNome, placeholder: 'Digite o nome completo' },
               { label: 'Sobrenome', icon: 'user', value: sobrenome, onChange: setSobrenome, placeholder: 'Digite o sobrenome' },
@@ -217,7 +220,15 @@ const CadastroPaciente = ({ navigation }) => {
                 <Text style={styles.inputLabel}>{field.label}</Text>
                 <View style={styles.inputWrapper}>
                   <Icon name={field.icon} size={20} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput style={styles.input} placeholder={field.placeholder} placeholderTextColor="#6B7280" value={field.value} onChangeText={field.onChange} keyboardType={field.keyboard || 'default'} autoCapitalize={field.autoCapitalize || 'sentences'} />
+                  <TextInput 
+                    style={styles.input} 
+                    placeholder={field.placeholder} 
+                    placeholderTextColor="#94A3B8" 
+                    value={field.value} 
+                    onChangeText={field.onChange} 
+                    keyboardType={field.keyboard || 'default'} 
+                    autoCapitalize={field.autoCapitalize || 'sentences'} 
+                  />
                 </View>
               </View>
             ))}
@@ -226,33 +237,54 @@ const CadastroPaciente = ({ navigation }) => {
               <Text style={styles.inputLabel}>Data de Nascimento</Text>
               <TouchableOpacity style={styles.inputWrapper} onPress={() => setShowDatePicker(true)}>
                 <Icon name="calendar" size={20} color="#94A3B8" style={styles.inputIcon} />
-                <Text style={[styles.input, { color: dataNascimento ? '#0F172A' : '#6B7280' }]}>{dataNascimento || 'DD/MM/AAAA'}</Text>
+                <Text style={[styles.input, { color: dataNascimento ? '#0F172A' : '#94A3B8' }]}>{dataNascimento || 'DD/MM/AAAA'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Informações Clínicas */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}><Icon name="clipboard" size={20} color="#B367D4" /><Text style={styles.sectionTitle}>Informações clínicas</Text></View>
+            <View style={styles.sectionHeader}>
+              <Icon name="clipboard" size={20} color="#B367D4" />
+              <Text style={styles.sectionTitle}>Informações clínicas</Text>
+            </View>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Diagnóstico Principal</Text>
               <View style={styles.inputWrapper}>
                 <Icon name="file-text" size={20} color="#94A3B8" style={styles.inputIcon} />
-                <TextInput style={styles.input} placeholder="Digite o diagnóstico" placeholderTextColor="#6B7280" value={diagnostico} onChangeText={setDiagnostico} />
+                <TextInput 
+                  style={styles.input} 
+                  placeholder="Digite o diagnóstico" 
+                  placeholderTextColor="#94A3B8" 
+                  value={diagnostico} 
+                  onChangeText={setDiagnostico} 
+                />
               </View>
             </View>
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Resumo Clínico</Text>
               <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
                 <Icon name="align-left" size={20} color="#94A3B8" style={styles.inputIcon} />
-                <TextInput style={[styles.input, styles.textArea]} placeholder="Descreva brevemente o histórico e objetivos terapêuticos..." placeholderTextColor="#6B7280" value={observacoes} onChangeText={setObservacoes} multiline numberOfLines={4} textAlignVertical="top" />
+                <TextInput 
+                  style={[styles.input, styles.textArea]} 
+                  placeholder="Descreva brevemente o histórico e objetivos terapêuticos..." 
+                  placeholderTextColor="#94A3B8" 
+                  value={observacoes} 
+                  onChangeText={setObservacoes} 
+                  multiline 
+                  numberOfLines={4} 
+                  textAlignVertical="top" 
+                />
               </View>
             </View>
           </View>
 
           {/* Configuração de IA */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}><Icon name="cpu" size={19} color="#B367D4" /><Text style={styles.sectionTitle}>Configuração de IA</Text></View>
+            <View style={styles.sectionHeader}>
+              <Icon name="cpu" size={19} color="#B367D4" />
+              <Text style={styles.sectionTitle}>Configuração de IA</Text>
+            </View>
             <View style={styles.iaCard}>
               {[
                 { label: 'Interação motivacional', value: interacaoMotivacional, onChange: setInteracaoMotivacional },
@@ -266,7 +298,16 @@ const CadastroPaciente = ({ navigation }) => {
               ))}
               <View style={styles.sliderContainer}>
                 <Text style={styles.sliderLabel}>Intensidade da Interação</Text>
-                <Slider value={intensidadeInteracao} onValueChange={setIntensidadeInteracao} minimumValue={0} maximumValue={100} step={1} minimumTrackTintColor="#B367D4" maximumTrackTintColor="#E2E8F0" thumbTintColor="#B367D4" />
+                <Slider 
+                  value={intensidadeInteracao} 
+                  onValueChange={setIntensidadeInteracao} 
+                  minimumValue={0} 
+                  maximumValue={100} 
+                  step={1} 
+                  minimumTrackTintColor="#B367D4" 
+                  maximumTrackTintColor="#E2E8F0" 
+                  thumbTintColor="#B367D4" 
+                />
                 <View style={styles.sliderLabels}>
                   <Text style={styles.sliderLabelText}>Sutil</Text>
                   <Text style={styles.sliderLabelText}>Média</Text>
@@ -278,7 +319,10 @@ const CadastroPaciente = ({ navigation }) => {
 
           {/* Configurações do App */}
           <View style={styles.section}>
-            <View style={styles.sectionHeader}><Icon name="settings" size={18} color="#B367D4" /><Text style={styles.sectionTitle}>Configurações do App</Text></View>
+            <View style={styles.sectionHeader}>
+              <Icon name="settings" size={18} color="#B367D4" />
+              <Text style={styles.sectionTitle}>Configurações do App</Text>
+            </View>
             {[
               { label: 'Modo Minimalista', value: modoMinimalista, onChange: setModoMinimalista },
               { label: 'Remover estímulos visuais', value: removerEstimulos, onChange: setRemoverEstimulos },
@@ -297,45 +341,59 @@ const CadastroPaciente = ({ navigation }) => {
                 <Icon name="chevron-down" size={20} color="#94A3B8" />
               </TouchableOpacity>
             </View>
+          </View>
 
-            {/* Contatos de Emergência */}
-            <View style={styles.emergenciaSection}>
-              <Text style={styles.emergenciaTitle}>Contatos de Emergência</Text>
-              <Text style={{ fontSize: 12, color: '#94A3B8', fontFamily: 'Manrope', marginBottom: 12 }}>
-                Os contatos personalizados serão salvos no perfil do paciente após o cadastro.
-              </Text>
-              {contatosEmergencia.map((contato) => (
-                <View key={contato.id} style={styles.contatoRow}>
-                  <View style={styles.contatoInfo}>
-                    <Text style={styles.contatoNome}>{contato.nome}</Text>
-                    <Text style={styles.contatoNumero}>{contato.numero}</Text>
-                  </View>
-                  <View style={styles.contatoActions}>
-                    {!contato.isPreset && (
-                      <>
-                        <TouchableOpacity onPress={() => handleEditarContato(contato)}><Icon name="edit-2" size={18} color="#B367D4" /></TouchableOpacity>
-                        <TouchableOpacity onPress={() => handleRemoverContato(contato.id)}><Icon name="trash-2" size={18} color="#EF4444" /></TouchableOpacity>
-                      </>
-                    )}
-                    {contato.isPreset && <Icon name="lock" size={16} color="#CBD5E1" />}
-                  </View>
+          {/* Contatos de Emergência — seção separada */}
+          <View style={styles.emergenciaSection}>
+            <Text style={styles.emergenciaTitle}>Contatos de Emergência</Text>
+            <Text style={styles.emergenciaSubtitle}>
+              Os contatos personalizados serão salvos no perfil do paciente após o cadastro.
+            </Text>
+            {contatosEmergencia.map((contato) => (
+              <View key={contato.id} style={styles.contatoRow}>
+                <View style={styles.contatoInfo}>
+                  <Text style={styles.contatoNome}>{contato.nome}</Text>
+                  <Text style={styles.contatoNumero}>{contato.numero}</Text>
                 </View>
-              ))}
-              <TouchableOpacity style={styles.addContatoButton} onPress={() => setShowEmergenciaModal(true)}>
-                <Icon name="plus" size={16} color="#B367D4" />
-                <Text style={styles.addContatoText}>Adicionar contato personalizado</Text>
-              </TouchableOpacity>
-            </View>
+                <View style={styles.contatoActions}>
+                  {!contato.isPreset && (
+                    <>
+                      <TouchableOpacity onPress={() => handleEditarContato(contato)}>
+                        <Icon name="edit-2" size={18} color="#B367D4" />
+                      </TouchableOpacity>
+                      <TouchableOpacity onPress={() => handleRemoverContato(contato.id)}>
+                        <Icon name="trash-2" size={18} color="#EF4444" />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  {contato.isPreset && <Icon name="lock" size={16} color="#CBD5E1" />}
+                </View>
+              </View>
+            ))}
+            <TouchableOpacity style={styles.addContatoButton} onPress={() => setShowEmergenciaModal(true)}>
+              <Icon name="plus" size={16} color="#B367D4" />
+              <Text style={styles.addContatoText}>Adicionar contato personalizado</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Botão Enviar Convite */}
-          <TouchableOpacity style={[styles.inviteButton, !patientIdCriado && styles.inviteButtonDisabled]} onPress={handleEnviarConvite} disabled={!patientIdCriado}>
+          <TouchableOpacity 
+            style={[styles.inviteButton, !patientIdCriado && styles.inviteButtonDisabled]} 
+            onPress={handleEnviarConvite} 
+            disabled={!patientIdCriado}
+          >
             <Icon name="mail" size={16} color={patientIdCriado ? '#B367D4' : '#94A3B8'} />
-            <Text style={[styles.inviteButtonText, !patientIdCriado && styles.inviteButtonTextDisabled]}>Enviar convite por e-mail</Text>
+            <Text style={[styles.inviteButtonText, !patientIdCriado && styles.inviteButtonTextDisabled]}>
+              Enviar convite por e-mail
+            </Text>
           </TouchableOpacity>
 
           {/* Botão Cadastrar */}
-          <TouchableOpacity style={[styles.saveButton, cadastroConcluido && { backgroundColor: '#10B981' }]} onPress={handleSalvar} disabled={loading || cadastroConcluido}>
+          <TouchableOpacity 
+            style={[styles.saveButton, cadastroConcluido && { backgroundColor: '#10B981' }]} 
+            onPress={handleSalvar} 
+            disabled={loading || cadastroConcluido}
+          >
             {loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
               <>
                 <Icon name={cadastroConcluido ? 'check' : 'save'} size={18} color="#FFFFFF" style={{ marginRight: 8 }} />
@@ -352,17 +410,34 @@ const CadastroPaciente = ({ navigation }) => {
           <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.3)' }}>
             <View style={{ backgroundColor: '#1E293B', borderTopLeftRadius: 20, borderTopRightRadius: 20, paddingBottom: 40 }}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' }}>
-                <TouchableOpacity onPress={() => setShowDatePicker(false)}><Text style={{ color: '#64748B', fontSize: 16 }}>Cancelar</Text></TouchableOpacity>
-                <TouchableOpacity onPress={handleConfirmarData}><Text style={{ color: '#B367D4', fontSize: 16, fontWeight: '600' }}>Confirmar</Text></TouchableOpacity>
+                <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                  <Text style={{ color: '#64748B', fontSize: 16 }}>Cancelar</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleConfirmarData}>
+                  <Text style={{ color: '#B367D4', fontSize: 16, fontWeight: '600' }}>Confirmar</Text>
+                </TouchableOpacity>
               </View>
-              <DateTimePicker value={tempDate} mode="date" display={Platform.OS === 'ios' ? 'inline' : 'spinner'} onChange={handleDateChange} maximumDate={new Date()} locale="pt-BR" style={{ height: 380 }} />
+              <DateTimePicker 
+                value={tempDate} 
+                mode="date" 
+                display={Platform.OS === 'ios' ? 'inline' : 'spinner'} 
+                onChange={handleDateChange} 
+                maximumDate={new Date()} 
+                locale="pt-BR" 
+                style={{ height: 380 }} 
+              />
             </View>
           </View>
         </Modal>
       )}
 
       {/* Modal Contato Emergência */}
-      <Modal visible={showEmergenciaModal} transparent animationType="slide" onRequestClose={() => { setShowEmergenciaModal(false); setEditandoContato(null); setNovoContatoNome(''); setNovoContatoNumero(''); }}>
+      <Modal 
+        visible={showEmergenciaModal} 
+        transparent 
+        animationType="slide" 
+        onRequestClose={() => { setShowEmergenciaModal(false); setEditandoContato(null); setNovoContatoNome(''); setNovoContatoNumero(''); }}
+      >
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: 'flex-end' }}>
           <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={() => setShowEmergenciaModal(false)} />
           <View style={styles.modalContainer}>
@@ -377,14 +452,27 @@ const CadastroPaciente = ({ navigation }) => {
                 <Text style={styles.inputLabel}>Nome do Contato</Text>
                 <View style={styles.inputWrapper}>
                   <Icon name="user" size={20} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput style={styles.input} placeholder="Ex: Mãe, Irmão, Amigo" placeholderTextColor="#94A3B8" value={novoContatoNome} onChangeText={setNovoContatoNome} />
+                  <TextInput 
+                    style={styles.input} 
+                    placeholder="Ex: Mãe, Irmão, Amigo" 
+                    placeholderTextColor="#94A3B8" 
+                    value={novoContatoNome} 
+                    onChangeText={setNovoContatoNome} 
+                  />
                 </View>
               </View>
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Número de Telefone</Text>
                 <View style={styles.inputWrapper}>
                   <Icon name="phone" size={20} color="#94A3B8" style={styles.inputIcon} />
-                  <TextInput style={styles.input} placeholder="(00) 00000-0000" placeholderTextColor="#94A3B8" value={novoContatoNumero} onChangeText={(t) => setNovoContatoNumero(formatTelefone(t))} keyboardType="phone-pad" />
+                  <TextInput 
+                    style={styles.input} 
+                    placeholder="(00) 00000-0000" 
+                    placeholderTextColor="#94A3B8" 
+                    value={novoContatoNumero} 
+                    onChangeText={(t) => setNovoContatoNumero(formatTelefone(t))} 
+                    keyboardType="phone-pad" 
+                  />
                 </View>
               </View>
               <TouchableOpacity style={styles.modalButton} onPress={handleAdicionarContato}>
@@ -401,11 +489,19 @@ const CadastroPaciente = ({ navigation }) => {
           <View style={styles.pickerModalContainer}>
             <View style={styles.pickerModalHeader}>
               <Text style={styles.pickerModalTitle}>Frequência de Notificações</Text>
-              <TouchableOpacity onPress={() => setShowFrequenciaPicker(false)}><Icon name="x" size={24} color="#64748B" /></TouchableOpacity>
+              <TouchableOpacity onPress={() => setShowFrequenciaPicker(false)}>
+                <Icon name="x" size={24} color="#64748B" />
+              </TouchableOpacity>
             </View>
             {frequenciaOptions.map((option) => (
-              <TouchableOpacity key={option.value} style={[styles.pickerOption, frequenciaNotificacoes === option.value && styles.pickerOptionActive]} onPress={() => { setFrequenciaNotificacoes(option.value); setShowFrequenciaPicker(false); }}>
-                <Text style={[styles.pickerOptionText, frequenciaNotificacoes === option.value && styles.pickerOptionTextActive]}>{option.label}</Text>
+              <TouchableOpacity 
+                key={option.value} 
+                style={[styles.pickerOption, frequenciaNotificacoes === option.value && styles.pickerOptionActive]} 
+                onPress={() => { setFrequenciaNotificacoes(option.value); setShowFrequenciaPicker(false); }}
+              >
+                <Text style={[styles.pickerOptionText, frequenciaNotificacoes === option.value && styles.pickerOptionTextActive]}>
+                  {option.label}
+                </Text>
                 {frequenciaNotificacoes === option.value && <Icon name="check" size={20} color="#B367D4" />}
               </TouchableOpacity>
             ))}
@@ -416,13 +512,16 @@ const CadastroPaciente = ({ navigation }) => {
       {/* Bottom Navigation */}
       <View style={styles.bottomNavigation}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('VisaoGeral')}>
-          <Icon name="home" size={20} color="#94A3B8" /><Text style={styles.navText}>Início</Text>
+          <Icon name="home" size={20} color="#94A3B8" />
+          <Text style={styles.navText}>Início</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Icon name="users" size={20} color="#B367D4" /><Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
+          <Icon name="users" size={20} color="#B367D4" />
+          <Text style={[styles.navText, styles.navTextActive]}>Pacientes</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Relatorios')}>
-          <Icon name="bar-chart-2" size={20} color="#94A3B8" /><Text style={styles.navText}>Relatórios</Text>
+          <Icon name="bar-chart-2" size={20} color="#94A3B8" />
+          <Text style={styles.navText}>Relatórios</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -433,62 +532,316 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F6F6F8' },
   keyboardView: { flex: 1 },
   scrollView: { flex: 1 },
-  scrollContent: { paddingBottom: 120, paddingHorizontal: 16 },
-  headerBlur: { backgroundColor: 'rgba(246, 246, 248, 0.80)', borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  headerContent: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  backButton: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { color: '#0F172A', fontSize: 20, fontFamily: 'Manrope', fontWeight: '700' },
-  section: { marginTop: 16, marginBottom: 16 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  sectionTitle: { color: '#0F172A', fontSize: 18, fontFamily: 'Manrope', fontWeight: '700' },
-  inputContainer: { marginBottom: 16 },
-  inputLabel: { color: '#0F172A', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', marginBottom: 4 },
-  inputWrapper: { flexDirection: 'row', alignItems: 'center', height: 48, paddingHorizontal: 12, backgroundColor: 'white', borderRadius: 8, borderWidth: 1, borderColor: '#CBD5E1' },
+  scrollContent: { paddingBottom: 100, paddingHorizontal: 0 },
+
+  headerBlur: {
+    backgroundColor: 'rgba(246, 246, 248, 0.95)',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  backButton: {
+    width: 40, height: 40, borderRadius: 20,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  headerTitle: {
+    color: '#0F172A', fontSize: 18,
+    fontFamily: 'Manrope', fontWeight: '700',
+  },
+
+  // Sections com fundo branco, separação clara
+  section: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    color: '#0F172A', fontSize: 16,
+    fontFamily: 'Manrope', fontWeight: '600',
+  },
+
+  // Inputs
+  inputContainer: { marginBottom: 14 },
+  inputLabel: {
+    color: '#334155', fontSize: 13,
+    fontFamily: 'Manrope', fontWeight: '500',
+    marginBottom: 6,
+  },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 48,
+    paddingHorizontal: 14,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
   inputIcon: { marginRight: 10 },
-  input: { flex: 1, fontSize: 16, fontFamily: 'Manrope', color: '#0F172A', paddingVertical: 12 },
-  textAreaWrapper: { alignItems: 'flex-start', minHeight: 120 },
-  textArea: { height: 100, paddingTop: 12 },
-  iaCard: { padding: 16, backgroundColor: 'rgba(179, 103, 212, 0.05)', borderRadius: 12, gap: 16 },
-  switchRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  switchRowBorder: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
-  switchLabel: { color: '#0F172A', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
-  sliderContainer: { marginTop: 8 },
-  sliderLabel: { color: '#0F172A', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', marginBottom: 12 },
-  sliderLabels: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 8 },
-  sliderLabelText: { color: '#64748B', fontSize: 10, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase' },
-  emergenciaSection: { marginTop: 16, paddingTop: 8, borderTopWidth: 1, borderTopColor: '#F1F5F9' },
-  emergenciaTitle: { color: '#0F172A', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', marginBottom: 4 },
-  contatoRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  input: {
+    flex: 1,
+    fontSize: 15,
+    fontFamily: 'Manrope',
+    color: '#0F172A',
+    paddingVertical: 0,
+  },
+  textAreaWrapper: {
+    alignItems: 'flex-start',
+    paddingVertical: 12,
+    minHeight: 120,
+    height: 'auto',
+  },
+  textArea: {
+    minHeight: 96,
+    paddingTop: 0,
+    paddingVertical: 0,
+    textAlignVertical: 'top',
+  },
+
+  // IA Card
+  iaCard: {
+    padding: 16,
+    backgroundColor: 'rgba(179, 103, 212, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(179, 103, 212, 0.12)',
+    gap: 0,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(179, 103, 212, 0.10)',
+  },
+  switchRowBorder: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
+  switchLabel: {
+    color: '#0F172A', fontSize: 14,
+    fontFamily: 'Manrope', fontWeight: '500',
+    flex: 1, paddingRight: 12,
+  },
+  sliderContainer: {
+    marginTop: 14,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(179, 103, 212, 0.10)',
+  },
+  sliderLabel: {
+    color: '#0F172A', fontSize: 14,
+    fontFamily: 'Manrope', fontWeight: '500',
+    marginBottom: 8,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 4,
+  },
+  sliderLabelText: {
+    color: '#94A3B8', fontSize: 11,
+    fontFamily: 'Manrope', fontWeight: '500',
+  },
+
+  // Contatos de emergência — seção própria
+  emergenciaSection: {
+    backgroundColor: '#FFFFFF',
+    marginTop: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  emergenciaTitle: {
+    color: '#0F172A', fontSize: 16,
+    fontFamily: 'Manrope', fontWeight: '600',
+    marginBottom: 4,
+  },
+  emergenciaSubtitle: {
+    fontSize: 12,
+    color: '#94A3B8',
+    fontFamily: 'Manrope',
+    marginBottom: 12,
+  },
+  contatoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
   contatoInfo: { flex: 1 },
-  contatoNome: { color: '#0F172A', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
-  contatoNumero: { color: '#64748B', fontSize: 12, fontFamily: 'Manrope' },
-  contatoActions: { flexDirection: 'row', gap: 16 },
-  addContatoButton: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 12 },
-  addContatoText: { color: '#B367D4', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
-  inviteButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 50, marginTop: 16, borderRadius: 8, borderWidth: 1, borderColor: '#B367D4' },
-  inviteButtonDisabled: { borderColor: '#CBD5E1', opacity: 0.6 },
-  inviteButtonText: { color: '#B367D4', fontSize: 16, fontFamily: 'Manrope' },
+  contatoNome: {
+    color: '#0F172A', fontSize: 14,
+    fontFamily: 'Manrope', fontWeight: '500',
+  },
+  contatoNumero: {
+    color: '#64748B', fontSize: 12,
+    fontFamily: 'Manrope', marginTop: 2,
+  },
+  contatoActions: { flexDirection: 'row', gap: 16, paddingLeft: 12 },
+  addContatoButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 14,
+  },
+  addContatoText: {
+    color: '#B367D4', fontSize: 14,
+    fontFamily: 'Manrope', fontWeight: '500',
+  },
+
+  // Botões de ação
+  inviteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    height: 50,
+    marginHorizontal: 20,
+    marginTop: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#B367D4',
+    backgroundColor: '#FFFFFF',
+  },
+  inviteButtonDisabled: { borderColor: '#E2E8F0', backgroundColor: '#F8FAFC', opacity: 0.7 },
+  inviteButtonText: {
+    color: '#B367D4', fontSize: 15,
+    fontFamily: 'Manrope', fontWeight: '600',
+  },
   inviteButtonTextDisabled: { color: '#94A3B8' },
-  saveButton: { backgroundColor: '#B367D4', borderRadius: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', marginTop: 16, marginBottom: 32 },
-  saveButtonText: { color: 'white', fontSize: 16, fontFamily: 'Manrope', fontWeight: '700' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'flex-end' },
-  modalContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: '80%' },
-  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  modalTitle: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '600', color: '#0F172A' },
+  saveButton: {
+    backgroundColor: '#B367D4',
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexDirection: 'row',
+    marginHorizontal: 20,
+    marginTop: 12,
+    marginBottom: 24,
+  },
+  saveButtonText: {
+    color: '#FFFFFF', fontSize: 16,
+    fontFamily: 'Manrope', fontWeight: '700',
+  },
+
+  // Modais
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  modalTitle: {
+    fontSize: 17, fontFamily: 'Manrope',
+    fontWeight: '600', color: '#0F172A',
+  },
   modalContent: { padding: 20 },
-  modalButton: { backgroundColor: '#B367D4', borderRadius: 12, paddingVertical: 14, alignItems: 'center', marginTop: 16 },
-  modalButtonText: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope', fontWeight: '600' },
-  pickerModalContainer: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 20, borderTopRightRadius: 20 },
-  pickerModalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20, borderBottomWidth: 1, borderBottomColor: '#E2E8F0' },
-  pickerModalTitle: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '600', color: '#0F172A' },
-  pickerOption: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderBottomWidth: 1, borderBottomColor: '#F1F5F9' },
+  modalButton: {
+    backgroundColor: '#B367D4',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalButtonText: {
+    color: '#FFFFFF', fontSize: 16,
+    fontFamily: 'Manrope', fontWeight: '600',
+  },
+  pickerModalContainer: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  pickerModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E2E8F0',
+  },
+  pickerModalTitle: {
+    fontSize: 17, fontFamily: 'Manrope',
+    fontWeight: '600', color: '#0F172A',
+  },
+  pickerOption: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F1F5F9',
+  },
   pickerOptionActive: { backgroundColor: 'rgba(179, 103, 212, 0.05)' },
-  pickerOptionText: { fontSize: 16, fontFamily: 'Manrope', color: '#0F172A' },
-  pickerOptionTextActive: { color: '#B367D4', fontWeight: '600' },
-  bottomNavigation: { position: 'absolute', bottom: 0, left: 0, right: 0, flexDirection: 'row', backgroundColor: 'white', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingVertical: 12, paddingHorizontal: 24 },
+  pickerOptionText: {
+    fontSize: 15, fontFamily: 'Manrope', color: '#0F172A',
+  },
+  pickerOptionTextActive: {
+    color: '#B367D4', fontWeight: '600',
+  },
+
+  // Bottom nav
+  bottomNavigation: {
+    position: 'absolute',
+    bottom: 0, left: 0, right: 0,
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    borderTopWidth: 1,
+    borderTopColor: '#E2E8F0',
+    paddingTop: 12,
+    paddingBottom: 16,
+    paddingHorizontal: 24,
+  },
   navItem: { flex: 1, alignItems: 'center', gap: 4 },
   navItemActive: {},
-  navText: { color: '#94A3B8', fontSize: 10, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase' },
+  navText: {
+    color: '#94A3B8', fontSize: 10,
+    fontFamily: 'Manrope', fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
   navTextActive: { color: '#B367D4' },
 });
 
