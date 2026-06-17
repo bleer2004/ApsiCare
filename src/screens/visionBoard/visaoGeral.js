@@ -39,6 +39,7 @@ const VisaoGeral = ({ navigation }) => {
           id: p.id || p.patientId,
           nome: p.name,
           email: p.email,
+          telefone: p.phone || p.telefone || p.phoneNumber,
           birthDate: p.birthDate,
           diagnosticoPrincipal: p.diagnostico || 'Aguardando diagnóstico',
           condicao: 'Em acompanhamento',
@@ -131,7 +132,7 @@ const VisaoGeral = ({ navigation }) => {
         cor: classificacao.cor,
         corBg: classificacao.corBg,
         icon: classificacao.icon,
-        telefone: p.email,
+        telefone: p.telefone,
         pacienteCompleto: p,
         isReal: true,
         isMock: false,
@@ -231,7 +232,7 @@ const VisaoGeral = ({ navigation }) => {
           valores: mediasPorDiaReal,
           labels: mediasPorDiaReal.map((_, i) => `D${i + 1}`),
           indiceDestaque: mediasPorDiaReal.length - 1,
-          legenda: 'Média por dia monitorado (5 dias)',
+          legenda: 'Média real por dia monitorado (5 dias)',
         };
       }
       return {
@@ -248,7 +249,7 @@ const VisaoGeral = ({ navigation }) => {
         valores: [63, 73, 84, valorHoje],
         labels: ['Sem -3', 'Sem -2', 'Sem -1', 'Hoje'],
         indiceDestaque: 3,
-        legenda: 'Semana atual',
+        legenda: 'Histórico ilustrativo + semana atual real',
       };
     }
     if (selectedPeriod === 'ano') {
@@ -257,7 +258,7 @@ const VisaoGeral = ({ navigation }) => {
         valores: [53, 58, 50, 63, 55, 68, 60, 66, 58, 71, 63, valorHoje],
         labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Hoje'],
         indiceDestaque: 11,
-        legenda: 'Ano atual',
+        legenda: 'Histórico ilustrativo + mês atual real',
       };
     }
     // mes (default) — igual ao gráfico original
@@ -266,7 +267,7 @@ const VisaoGeral = ({ navigation }) => {
       valores: [61, 76, 41, 56, valorHoje, 66, 71],
       labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Hoje', 'Sem 6', 'Sem 7'],
       indiceDestaque: 4,
-      legenda: 'Mês atual',
+      legenda: 'Histórico ilustrativo + semana atual real',
     };
   }, [selectedPeriod, valorHoje, mediasPorDiaReal]);
 
