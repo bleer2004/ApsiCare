@@ -332,7 +332,7 @@ const Configuracoes = ({ navigation }) => {
       <View style={styles.headerBlur}>
         <View style={styles.headerContent}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <View style={styles.backIcon} />
+            <Icon name="arrow-left" size={24} color="#475569" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Configurações</Text>
           <TouchableOpacity 
@@ -378,7 +378,7 @@ const Configuracoes = ({ navigation }) => {
         {/* Informações Pessoais */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIcon} />
+            <Icon name="user" size={18} color="#B367D4" />
             <Text style={styles.sectionTitle}>Informações Pessoais</Text>
           </View>
           
@@ -418,7 +418,7 @@ const Configuracoes = ({ navigation }) => {
         {/* Informações Profissionais */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconLarge} />
+            <Icon name="briefcase" size={18} color="#B367D4" />
             <Text style={styles.sectionTitle}>Informações Profissionais</Text>
           </View>
           
@@ -478,7 +478,7 @@ const Configuracoes = ({ navigation }) => {
         {/* Preferências */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconMedium} />
+            <Icon name="sliders" size={18} color="#B367D4" />
             <Text style={styles.sectionTitle}>Preferências</Text>
           </View>
           
@@ -550,7 +550,7 @@ const Configuracoes = ({ navigation }) => {
         {/* Segurança */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <View style={styles.sectionIconTall} />
+            <Icon name="shield" size={18} color="#B367D4" />
             <Text style={styles.sectionTitle}>Segurança</Text>
           </View>
           
@@ -684,7 +684,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
-  // Header com blur
   headerBlur: {
     backgroundColor: 'rgba(246, 246, 248, 0.80)',
     borderBottomWidth: 1,
@@ -704,11 +703,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backIcon: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#475569',
-  },
   headerTitle: {
     color: '#0F172A',
     fontSize: 20,
@@ -726,7 +720,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#B367D4',
   },
-  // Avatar Section
   avatarSection: {
     alignItems: 'center',
     paddingVertical: 24,
@@ -785,7 +778,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#64748B',
   },
-  // Sections
   section: {
     backgroundColor: '#FFFFFF',
     marginTop: 16,
@@ -801,33 +793,12 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  sectionIcon: {
-    width: 16,
-    height: 16,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconLarge: {
-    width: 20,
-    height: 20,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconMedium: {
-    width: 18,
-    height: 18,
-    backgroundColor: '#B367D4',
-  },
-  sectionIconTall: {
-    width: 16,
-    height: 20,
-    backgroundColor: '#B367D4',
-  },
   sectionTitle: {
     fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '600',
     color: '#0F172A',
   },
-  // Info Row
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -861,7 +832,6 @@ const styles = StyleSheet.create({
   editButton: {
     padding: 4,
   },
-  // Input Fields
   inputContainer: {
     marginBottom: 16,
   },
@@ -898,7 +868,6 @@ const styles = StyleSheet.create({
   placeholderText: {
     color: '#94A3B8',
   },
-  // Preference Items
   preferenceItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -929,7 +898,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#64748B',
   },
-  // Actions
   actionsSection: {
     marginTop: 24,
     marginHorizontal: 20,
@@ -965,7 +933,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#EF4444',
   },
-  // Version
   versionContainer: {
     alignItems: 'center',
     marginTop: 24,
@@ -984,7 +951,6 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: '#CBD5E1',
   },
-  // Modals
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
