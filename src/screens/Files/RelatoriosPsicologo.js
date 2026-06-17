@@ -80,7 +80,22 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
     } catch (err) { console.error('Erro ao carregar pacientes:', err); }
   };
 
-  // ── ANALISAR COM IA ──────────────────────────────────────
+ const handleRemoverRelatorio = (id, titulo) => {
+  Alert.alert(
+    'Remover relatório',
+    `Deseja remover "${titulo}" da lista?`,
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: () => setRelatorios(prev => prev.filter(r => r.id !== id))
+      }
+    ]
+  );
+};
+
+  // ── ANALISAR COM IA 
   const handleAnalisarIA = async (relatorio) => {
     if (relatorio.tipo === 'anotacoes') {
       setAnaliseSelecionada({
@@ -187,19 +202,12 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
 
   const renderRelatorioCard = (relatorio) => (
     <View key={relatorio.id} style={styles.relatorioCard}>
-      <TouchableOpacity 
-        style={styles.cardCloseButton} 
-        onPress={() => handleRemoverRelatorio(relatorio.id, relatorio.titulo)}
-      >
-        <Icon name="x" size={18} color="#94A3B8" />
-      </TouchableOpacity>
-
       <View style={styles.relatorioHeader}>
         <View style={[styles.tipoBadge, { backgroundColor: getTipoColor(relatorio.tipo) + '20' }]}>
           <Icon name={getTipoIcon(relatorio.tipo)} size={14} color={getTipoColor(relatorio.tipo)} />
           <Text style={[styles.tipoBadgeText, { color: getTipoColor(relatorio.tipo) }]}>{getTipoLabel(relatorio.tipo)}</Text>
         </View>
-        <Text style={[styles.relatorioData, { marginRight: 24 }]}>{relatorio.data}</Text>
+        <Text style={styles.relatorioData}>{relatorio.data}</Text>
       </View>
 
       <Text style={styles.relatorioTitulo}>{relatorio.titulo}</Text>
@@ -214,6 +222,12 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
         <TouchableOpacity style={styles.baixarBtn} onPress={() => handleBaixarRelatorio(relatorio)}>
           <Icon name="download" size={18} color="#10B981" />
           <Text style={styles.baixarBtnText}>Baixar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.deletarBtn}
+          onPress={() => handleRemoverRelatorio(relatorio.id, relatorio.titulo)}
+        >
+          <Icon name="trash-2" size={18} color="#EF4444" />
         </TouchableOpacity>
       </View>
     </View>
@@ -465,6 +479,8 @@ const styles = StyleSheet.create({
   analiseCloseButtonText: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', color: '#64748B' },
   analiseExportButton: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#B367D4', paddingVertical: 12, borderRadius: 12, gap: 8 },
   analiseExportButtonText: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', color: '#FFFFFF' },
+  deletarBtn: {paddingHorizontal: 12, paddingVertical: 10, borderRadius: 12, backgroundColor: '#FEF2F2', alignItems: 'center', justifyContent: 'center',
+},
 });
 
 export default Relatorios;

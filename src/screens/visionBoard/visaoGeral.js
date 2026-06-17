@@ -17,8 +17,8 @@ const VisaoGeral = ({ navigation }) => {
   const [pacienteSelecionado, setPacienteSelecionado] = useState(null);
   const [telaUrgencias, setTelaUrgencias] = useState(false);
 
-  // Dados reais do paciente com wesadId (Laura)
-  const [dadosWesad, setDadosWesad] = useState(null);
+  const [dadosWesadPorPaciente, setDadosWesadPorPaciente] = useState({});
+  const [relatoriosPorPaciente, setRelatoriosPorPaciente] = useState({});
 
   useEffect(() => {
     carregarDados();
@@ -48,10 +48,10 @@ const VisaoGeral = ({ navigation }) => {
         }));
         setPacientes(ps);
 
-        // Busca o último insight do primeiro paciente com wesadId para mostrar BPM real
-        if (ps.length > 0) {
-          carregarUltimoInsight(ps[0].id, token);
-        }
+        ps.forEach(p => {
+          carregarUltimoInsight(p.id, token);
+          carregarRelatorioSemanal(p.id, token);
+        });
       }
     } catch (err) {
       console.error('Erro ao carregar pacientes:', err);
@@ -68,48 +68,105 @@ const VisaoGeral = ({ navigation }) => {
       const data = await response.json();
       if (response.ok && data.insights?.length > 0) {
         const ultimo = data.insights[0];
-        setDadosWesad({
-          patientId,
-          hr_mean: ultimo.hr_mean,
-          rmssd: ultimo.rmssd,
-          perfil: ultimo.perfil,
-          flag: ultimo.flag,
-          nivelStress: ultimo.flag === 'anxiety_risk' ? 'Alto' : ultimo.flag === 'overreported' ? 'Médio' : 'Baixo',
-        });
+        setDadosWesadPorPaciente(prev => ({
+          ...prev,
+          [patientId]: {
+            hr_mean: ultimo.hr_mean,
+            rmssd: ultimo.rmssd,
+            perfil: ultimo.perfil,
+            flag: ultimo.flag,
+            nivelStress: ultimo.flag === 'anxiety_risk' ? 'Alto' : ultimo.flag === 'overreported' ? 'Médio' : 'Baixo',
+          },
+        }));
       }
     } catch (err) {
       console.error('Erro ao carregar insight:', err);
     }
   };
 
-  // Cards mock de atenção — mantidos visualmente + Laura aparece como real
+  // Busca o relatório semanal (com array "dias": HR, mood, stress_physio por dia)
+  const carregarRelatorioSemanal = async (patientId, token) => {
+    try {
+      const response = await fetch(`${API_URL}/patients/${patientId}/insights/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ action: 'weekly-report' }),
+      });
+      const data = await response.json();
+      if (response.ok && data.relatorio?.dias?.length > 0) {
+        setRelatoriosPorPaciente(prev => ({ ...prev, [patientId]: data.relatorio.dias }));
+      }
+    } catch (err) {
+      console.error('Erro ao carregar relatório semanal:', err);
+    }
+  };
+
+  const classificarPaciente = (dadosWesad) => {
+    if (!dadosWesad) {
+      return { tipo: 'ESTÁVEL', cor: '#10B981', corBg: '#D1FAE5', icon: 'check-circle' };
+    }
+    if (dadosWesad.flag === 'anxiety_risk') {
+      return { tipo: 'CRÍTICO', cor: '#DC2626', corBg: '#FEE2E2', icon: 'alert-triangle' };
+    }
+    if (dadosWesad.flag === 'overreported') {
+      return { tipo: 'TENDÊNCIA', cor: '#D97706', corBg: '#FEF3C7', icon: 'trending-up' };
+    }
+    return { tipo: 'ESTÁVEL', cor: '#10B981', corBg: '#D1FAE5', icon: 'check-circle' };
+  };
+
+  // Todos os pacientes reais — status fiel ao flag retornado pelo cálculo
+  const pacientesReais = useMemo(() => {
+    return pacientes.map((p) => {
+      const dadosWesad = dadosWesadPorPaciente[p.id];
+      const classificacao = classificarPaciente(dadosWesad);
+      return {
+        id: p.id,
+        nome: p.nome,
+        tipo: classificacao.tipo,
+        descricao: dadosWesad
+          ? `HR ${dadosWesad.hr_mean} bpm • Stress ${dadosWesad.nivelStress} • Perfil ${dadosWesad.perfil}`
+          : 'Aguardando dados fisiológicos',
+        tempo: 'Atualizado hoje',
+        origem: 'Dataset WESAD',
+        cor: classificacao.cor,
+        corBg: classificacao.corBg,
+        icon: classificacao.icon,
+        telefone: p.email,
+        pacienteCompleto: p,
+        isReal: true,
+        isMock: false,
+        dadosWesad,
+      };
+    });
+  }, [pacientes, dadosWesadPorPaciente]);
+
+  // ── PACIENTE MOCK DE ATENÇÃO ──────────────────────────────
+  // Ilustrativo (não está no WESAD), mas usa a MESMA fórmula de divergência
+  // que o app calcula de verdade: stress_physio_ajustado - stress_subjetivo.
+  // HR 96 bpm, IBI 680ms, RMSSD 38ms | stress_physio ~0.62, stress_subj ~0.25
+  // divergence = +0.37 → mesmo critério (>=0.3) usado nos reais → anxiety_risk
+  const pacienteMockAtencao = useMemo(() => ({
+    id: 'mock-atencao-1',
+    nome: 'Ana Clara Souza',
+    tipo: 'CRÍTICO',
+    descricao: 'HR 96 bpm • Stress Alto • Divergência +0.37 (cálculo ilustrativo)',
+    tempo: '12 minutos',
+    origem: 'Exemplo ilustrativo — mesma fórmula de divergência',
+    cor: '#DC2626',
+    corBg: '#FEE2E2',
+    icon: 'alert-triangle',
+    telefone: '+5511999990001',
+    pacienteCompleto: null,
+    isReal: false,
+    isMock: true,
+    dadosWesad: { hr_mean: 96, rmssd: 38, perfil: 'hiperreativo', nivelStress: 'Alto' },
+  }), []);
+
+  // Atenção Imediata = pacientes reais com risco real + o mock ilustrativo
   const pacientesAtencao = useMemo(() => {
-    const mockCards = [
-      { id: 'mock1', nome: 'Ana Clara Souza', tipo: 'CRÍTICO', descricao: 'Queda brusca no humor (Score -40%)', tempo: '12 minutos', origem: 'Relatado via App Diário', cor: '#DC2626', corBg: '#FEE2E2', icon: 'alert-triangle', telefone: '+5511999990001', pacienteCompleto: null },
-      { id: 'mock2', nome: 'Marcos Oliveira', tipo: 'TENDÊNCIA', descricao: 'Isolamento social detectado (3 dias)', tempo: '2 horas', origem: 'Inatividade em grupos', cor: '#D97706', corBg: '#FEF3C7', icon: 'trending-up', telefone: '+5511999990002', pacienteCompleto: null },
-    ];
-
-    // Adiciona pacientes reais com dados WESAD como alerta real
-    const reaisComWesad = pacientes.slice(0, 1).map((p, i) => ({
-      id: p.id,
-      nome: p.nome,
-      tipo: dadosWesad?.flag === 'anxiety_risk' ? 'CRÍTICO' : 'TENDÊNCIA',
-      descricao: dadosWesad
-        ? `HR ${dadosWesad.hr_mean} bpm • Stress ${dadosWesad.nivelStress} • Perfil ${dadosWesad.perfil}`
-        : 'Dados fisiológicos disponíveis',
-      tempo: 'Atualizado hoje',
-      origem: 'Dataset WESAD — Samsung Health',
-      cor: dadosWesad?.flag === 'anxiety_risk' ? '#DC2626' : '#D97706',
-      corBg: dadosWesad?.flag === 'anxiety_risk' ? '#FEE2E2' : '#FEF3C7',
-      icon: dadosWesad?.flag === 'anxiety_risk' ? 'alert-triangle' : 'activity',
-      telefone: p.email,
-      pacienteCompleto: p,
-      isReal: true,
-      dadosWesad,
-    }));
-
-    return [...reaisComWesad, ...mockCards];
-  }, [pacientes, dadosWesad]);
+    const reaisComRisco = pacientesReais.filter(p => p.tipo === 'CRÍTICO' || p.tipo === 'TENDÊNCIA');
+    return [...reaisComRisco, pacienteMockAtencao];
+  }, [pacientesReais, pacienteMockAtencao]);
 
   const pacientesUrgencias = [
     { id: 'u1', nome: 'Mariana Lopes', motivo: 'Queda de humor superior a 50% em 48h', detalhe: 'Score caiu de 80 para 32 entre segunda e quarta-feira.', tipo: 'piora', tempo: 'Detectado há 1 dia' },
@@ -119,17 +176,99 @@ const VisaoGeral = ({ navigation }) => {
   ];
 
   const tendenciaPiora = useMemo(() => {
-    return pacientes.length > 0
-      ? pacientes.slice(0, 3).map(p => p.nome.split(' ')[0])
-      : ['Mariana L.', 'Pedro H.', 'Julia S.'];
-  }, [pacientes]);
+    return pacientesAtencao.map(p => p.nome.split(' ')[0]);
+  }, [pacientesAtencao]);
+
+  // Filtro aplicado na seção "Meus Pacientes" (todos os reais + o mock ilustrativo)
+  const todosParaFiltro = useMemo(() => {
+    return [...pacientesReais, pacienteMockAtencao];
+  }, [pacientesReais, pacienteMockAtencao]);
 
   const pacientesFiltrados = useMemo(() => {
-    if (filtroAtivo === 'todos') return pacientesAtencao;
-    if (filtroAtivo === 'critico') return pacientesAtencao.filter(p => p.tipo === 'CRÍTICO');
-    if (filtroAtivo === 'tendencia') return pacientesAtencao.filter(p => p.tipo === 'TENDÊNCIA');
-    return pacientesAtencao;
-  }, [filtroAtivo, pacientesAtencao]);
+    if (filtroAtivo === 'todos') return todosParaFiltro;
+    if (filtroAtivo === 'critico') return todosParaFiltro.filter(p => p.tipo === 'CRÍTICO');
+    if (filtroAtivo === 'tendencia') return todosParaFiltro.filter(p => p.tipo === 'TENDÊNCIA');
+    return todosParaFiltro;
+  }, [filtroAtivo, todosParaFiltro]);
+
+  // ── GRÁFICO: muda de fato com o período selecionado ──────
+  // "dia"   → cada dia dos 5 DAILY_NPS reais (granularidade fina)
+  // "semana"→ 1 barra por semana (aqui só temos 1 semana real = "Hoje")
+  // "mes"   → visual histórico (4 semanas) + "Hoje" real, igual ao original
+  // "ano"   → 12 meses ilustrativos + "Hoje" real no mês atual
+  const mediaHumorHoje = useMemo(() => {
+    const relatorios = Object.values(relatoriosPorPaciente);
+    if (relatorios.length === 0) return null;
+    const todosMoods = relatorios.flatMap(dias => dias.map(d => d.mood)).filter(m => typeof m === 'number');
+    if (todosMoods.length === 0) return null;
+    const media = todosMoods.reduce((a, b) => a + b, 0) / todosMoods.length;
+    return Math.round((media / 10) * 100);
+  }, [relatoriosPorPaciente]);
+
+  // Médias reais por dia (Dia 1 a Dia 5), entre todos os pacientes reais carregados
+  const mediasPorDiaReal = useMemo(() => {
+    const relatorios = Object.values(relatoriosPorPaciente);
+    if (relatorios.length === 0) return [];
+    const totalDias = Math.max(...relatorios.map(r => r.length));
+    const medias = [];
+    for (let i = 0; i < totalDias; i++) {
+      const moods = relatorios.map(r => r[i]?.mood).filter(m => typeof m === 'number');
+      if (moods.length === 0) continue;
+      const media = moods.reduce((a, b) => a + b, 0) / moods.length;
+      medias.push(Math.round((media / 10) * 100));
+    }
+    return medias;
+  }, [relatoriosPorPaciente]);
+
+  const valorHoje = mediaHumorHoje ?? 78; // fallback enquanto carrega
+
+  const dadosGrafico = useMemo(() => {
+    if (selectedPeriod === 'dia') {
+      // usa os dias reais se já carregaram, senão fallback visual
+      if (mediasPorDiaReal.length > 0) {
+        return {
+          alturas: mediasPorDiaReal.map(v => Math.max(v * 1.9, 20)),
+          valores: mediasPorDiaReal,
+          labels: mediasPorDiaReal.map((_, i) => `D${i + 1}`),
+          indiceDestaque: mediasPorDiaReal.length - 1,
+          legenda: 'Média por dia monitorado (5 dias)',
+        };
+      }
+      return {
+        alturas: [110, 95, 130, 100, Math.max(valorHoje * 1.9, 20)],
+        valores: [58, 50, 68, 53, valorHoje],
+        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Hoje'],
+        indiceDestaque: 4,
+        legenda: 'Carregando dados diários...',
+      };
+    }
+    if (selectedPeriod === 'semana') {
+      return {
+        alturas: [120, 140, 160, Math.max(valorHoje * 1.9, 20)],
+        valores: [63, 73, 84, valorHoje],
+        labels: ['Sem -3', 'Sem -2', 'Sem -1', 'Hoje'],
+        indiceDestaque: 3,
+        legenda: 'Semana atual',
+      };
+    }
+    if (selectedPeriod === 'ano') {
+      return {
+        alturas: [100, 110, 95, 120, 105, 130, 115, 125, 110, 135, 120, Math.max(valorHoje * 1.9, 20)],
+        valores: [53, 58, 50, 63, 55, 68, 60, 66, 58, 71, 63, valorHoje],
+        labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Hoje'],
+        indiceDestaque: 11,
+        legenda: 'Ano atual',
+      };
+    }
+    // mes (default) — igual ao gráfico original
+    return {
+      alturas: [115, 144, 77, 106, Math.max(valorHoje * 1.9, 20), 125, 134],
+      valores: [61, 76, 41, 56, valorHoje, 66, 71],
+      labels: ['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Hoje', 'Sem 6', 'Sem 7'],
+      indiceDestaque: 4,
+      legenda: 'Mês atual',
+    };
+  }, [selectedPeriod, valorHoje, mediasPorDiaReal]);
 
   const handleVerProntuario = (item) => {
     if (item.pacienteCompleto) {
@@ -204,31 +343,37 @@ const VisaoGeral = ({ navigation }) => {
   }
 
   const renderPacienteCard = ({ item }) => (
-    <View style={[styles.alertCard, item.tipo === 'CRÍTICO' ? styles.criticalCard : styles.trendCard]}>
+    <View style={[
+      styles.alertCard,
+      item.tipo === 'CRÍTICO' ? styles.criticalCard : item.tipo === 'TENDÊNCIA' ? styles.trendCard : styles.stableCard,
+    ]}>
       <View style={styles.alertCardHeader}>
-        <View style={[styles.avatar, item.tipo === 'CRÍTICO' ? styles.criticalAvatar : styles.trendAvatar]}>
+        <View style={[
+          styles.avatar,
+          item.tipo === 'CRÍTICO' ? styles.criticalAvatar : item.tipo === 'TENDÊNCIA' ? styles.trendAvatar : styles.stableAvatar,
+        ]}>
           <Icon name="user" size={28} color="#94A3B8" />
         </View>
         <View style={styles.alertCardInfo}>
           <View style={styles.alertCardNameRow}>
             <Text style={styles.alertCardName}>{item.nome}</Text>
             <View style={styles.alertCardBadgeRow}>
+              {item.isReal && <View style={styles.realBadge}><Text style={styles.realBadgeText}>REAL</Text></View>}
               <View style={[styles.criticalBadge, { backgroundColor: item.corBg }]}>
                 <Text style={[styles.criticalBadgeText, { color: item.cor }]}>{item.tipo}</Text>
               </View>
             </View>
           </View>
 
-          {/* Dados WESAD em destaque para paciente real */}
-          {item.isReal && item.dadosWesad && (
+          {item.dadosWesad && (
             <View style={styles.wesadRow}>
               <View style={styles.wesadChip}>
                 <Icon name="activity" size={12} color="#B367D4" />
                 <Text style={styles.wesadChipText}>{item.dadosWesad.hr_mean} bpm</Text>
               </View>
               <View style={styles.wesadChip}>
-                <Icon name="zap" size={12} color={item.dadosWesad.nivelStress === 'Alto' ? '#EF4444' : '#10B981'} />
-                <Text style={[styles.wesadChipText, { color: item.dadosWesad.nivelStress === 'Alto' ? '#EF4444' : '#10B981' }]}>{item.dadosWesad.nivelStress}</Text>
+                <Icon name="zap" size={12} color={item.cor} />
+                <Text style={[styles.wesadChipText, { color: item.cor }]}>{item.dadosWesad.nivelStress}</Text>
               </View>
               <View style={styles.wesadChip}>
                 <Icon name="heart" size={12} color="#64748B" />
@@ -238,7 +383,7 @@ const VisaoGeral = ({ navigation }) => {
           )}
 
           <View style={styles.alertMessageRow}>
-            <Icon name={item.icon === 'alert-triangle' ? 'alert-triangle' : item.icon === 'activity' ? 'activity' : 'trending-up'} size={14} color={item.cor} />
+            <Icon name={item.icon} size={14} color={item.cor} />
             <Text style={[styles.criticalMessageText, { color: item.cor }]}>{item.descricao}</Text>
           </View>
           <Text style={styles.alertMeta}>Emitido há {item.tempo} • {item.origem}</Text>
@@ -253,7 +398,10 @@ const VisaoGeral = ({ navigation }) => {
           </View>
         </View>
       </View>
-      <View style={[styles.statusBar, item.tipo === 'CRÍTICO' ? styles.criticalStatusBar : styles.trendStatusBar]} />
+      <View style={[
+        styles.statusBar,
+        item.tipo === 'CRÍTICO' ? styles.criticalStatusBar : item.tipo === 'TENDÊNCIA' ? styles.trendStatusBar : styles.stableStatusBar,
+      ]} />
     </View>
   );
 
@@ -288,7 +436,44 @@ const VisaoGeral = ({ navigation }) => {
       </Modal>
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 80 }}>
-        {/* Filtros */}
+        {/* Gráfico — muda com o período selecionado */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Humor Geral dos Pacientes</Text>
+          <View style={styles.chartPeriodContainer}>
+            {['dia', 'semana', 'mes', 'ano'].map(p => (
+              <TouchableOpacity key={p} style={[styles.periodButton, selectedPeriod === p && styles.periodButtonActive]} onPress={() => setSelectedPeriod(p)}>
+                <Text style={[styles.periodButtonText, selectedPeriod === p && styles.periodButtonTextActive]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.chartBarsContainer}>
+            {dadosGrafico.alturas.map((h, i) => (
+              i === dadosGrafico.indiceDestaque
+                ? <View key={i} style={[styles.chartBarGreen, { height: h }]}><View style={styles.chartTooltip}><Text style={styles.chartTooltipText}>{dadosGrafico.valores[i]}%</Text></View></View>
+                : <View key={i} style={[styles.chartBar, { height: h }]} />
+            ))}
+          </View>
+          <View style={styles.chartLabels}>
+            {dadosGrafico.labels.map((label, i) => (
+              <Text key={`${label}-${i}`} style={[styles.chartLabel, i === dadosGrafico.indiceDestaque && styles.chartLabelActive]}>{label}</Text>
+            ))}
+          </View>
+          <Text style={styles.chartFootnote}>{dadosGrafico.legenda}</Text>
+        </View>
+
+        {/* Atenção Imediata */}
+        <Text style={styles.sectionTitle}>Atenção Imediata</Text>
+        {loading ? (
+          <View style={{ alignItems: 'center', paddingVertical: 32 }}><ActivityIndicator color="#B367D4" /><Text style={{ color: '#64748B', marginTop: 8, fontFamily: 'Manrope' }}>Carregando pacientes...</Text></View>
+        ) : pacientesAtencao.length === 0 ? (
+          <View style={styles.emptyFilter}><Icon name="check-circle" size={32} color="#10B981" /><Text style={styles.emptyFilterText}>Nenhum paciente em atenção no momento.</Text></View>
+        ) : (
+          <View style={styles.cardsContainer}>
+            <FlatList data={pacientesAtencao} keyExtractor={item => item.id} renderItem={renderPacienteCard} scrollEnabled={false} />
+          </View>
+        )}
+
+        {/* Filtros — aplicam na seção "Meus Pacientes" abaixo */}
         <View style={styles.filtersContainer}>
           <TouchableOpacity style={[styles.filterChip, filtroAtivo === 'todos' ? styles.filterChipActive : styles.filterChipOutline]} onPress={() => setFiltroAtivo('todos')}>
             <Text style={filtroAtivo === 'todos' ? styles.filterChipTextActive : styles.filterChipOutlineText}>Todos</Text>
@@ -303,71 +488,10 @@ const VisaoGeral = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Gráfico */}
-        <View style={styles.chartCard}>
-          <Text style={styles.chartTitle}>Humor Geral dos Pacientes</Text>
-          <View style={styles.chartPeriodContainer}>
-            {['dia', 'semana', 'mes', 'ano'].map(p => (
-              <TouchableOpacity key={p} style={[styles.periodButton, selectedPeriod === p && styles.periodButtonActive]} onPress={() => setSelectedPeriod(p)}>
-                <Text style={[styles.periodButtonText, selectedPeriod === p && styles.periodButtonTextActive]}>{p.charAt(0).toUpperCase() + p.slice(1)}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-          <View style={styles.chartBarsContainer}>
-            {[115, 144, 77, 106, 173, 125, 134].map((h, i) => (
-              i === 4
-                ? <View key={i} style={[styles.chartBarGreen, { height: h }]}><View style={styles.chartTooltip}><Text style={styles.chartTooltipText}>78%</Text></View></View>
-                : <View key={i} style={[styles.chartBar, { height: h }]} />
-            ))}
-          </View>
-          <View style={styles.chartLabels}>
-            {['Sem 1', 'Sem 2', 'Sem 3', 'Sem 4', 'Hoje', 'Sem 6', 'Sem 7'].map(label => (
-              <Text key={label} style={[styles.chartLabel, label === 'Hoje' && styles.chartLabelActive]}>{label}</Text>
-            ))}
-          </View>
-        </View>
-
-        {/* BPM real da Laura */}
-        {dadosWesad && (
-          <View style={styles.wesadSummaryCard}>
-            <View style={styles.wesadSummaryHeader}>
-              <Icon name="watch" size={16} color="#B367D4" />
-              <Text style={styles.wesadSummaryTitle}>Dados Fisiológicos — {pacientes[0]?.nome}</Text>
-            </View>
-            <View style={styles.wesadSummaryRow}>
-              <View style={styles.wesadSummaryItem}>
-                <Icon name="activity" size={20} color="#B367D4" />
-                <Text style={styles.wesadSummaryValue}>{dadosWesad.hr_mean}</Text>
-                <Text style={styles.wesadSummaryLabel}>BPM</Text>
-              </View>
-              <View style={styles.wesadSummaryDivider} />
-              <View style={styles.wesadSummaryItem}>
-                <Icon name="zap" size={20} color={dadosWesad.nivelStress === 'Alto' ? '#EF4444' : '#10B981'} />
-                <Text style={[styles.wesadSummaryValue, { color: dadosWesad.nivelStress === 'Alto' ? '#EF4444' : '#10B981' }]}>{dadosWesad.nivelStress}</Text>
-                <Text style={styles.wesadSummaryLabel}>Stress</Text>
-              </View>
-              <View style={styles.wesadSummaryDivider} />
-              <View style={styles.wesadSummaryItem}>
-                <Icon name="heart" size={20} color="#EF4444" />
-                <Text style={styles.wesadSummaryValue}>{dadosWesad.rmssd}</Text>
-                <Text style={styles.wesadSummaryLabel}>RMSSD</Text>
-              </View>
-              <View style={styles.wesadSummaryDivider} />
-              <View style={styles.wesadSummaryItem}>
-                <Icon name="user" size={20} color="#64748B" />
-                <Text style={[styles.wesadSummaryValue, { fontSize: 13 }]}>{dadosWesad.perfil}</Text>
-                <Text style={styles.wesadSummaryLabel}>Perfil</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Atenção Imediata */}
-        <Text style={styles.sectionTitle}>Atenção Imediata</Text>
-        {loading ? (
-          <View style={{ alignItems: 'center', paddingVertical: 32 }}><ActivityIndicator color="#B367D4" /><Text style={{ color: '#64748B', marginTop: 8, fontFamily: 'Manrope' }}>Carregando pacientes...</Text></View>
-        ) : pacientesFiltrados.length === 0 ? (
-          <View style={styles.emptyFilter}><Icon name="check-circle" size={32} color="#10B981" /><Text style={styles.emptyFilterText}>Nenhum paciente nessa categoria.</Text></View>
+        {/* Meus Pacientes — TODOS os reais, incluindo os estáveis */}
+        <Text style={styles.sectionTitle}>Meus Pacientes</Text>
+        {loading ? null : pacientesFiltrados.length === 0 ? (
+          <View style={styles.emptyFilter}><Icon name="users" size={32} color="#94A3B8" /><Text style={styles.emptyFilterText}>Nenhum paciente nessa categoria.</Text></View>
         ) : (
           <View style={styles.cardsContainer}>
             <FlatList data={pacientesFiltrados} keyExtractor={item => item.id} renderItem={renderPacienteCard} scrollEnabled={false} />
@@ -421,41 +545,35 @@ const styles = StyleSheet.create({
   filterChipTextActive: { color: 'white', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
   filterChipOutline: { height: 40, paddingHorizontal: 20, backgroundColor: 'white', borderRadius: 9999, borderWidth: 1, borderColor: 'rgba(43, 108, 238, 0.10)', flexDirection: 'row', alignItems: 'center', gap: 8 },
   filterChipOutlineText: { color: '#475569', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
-  chartCard: { marginHorizontal: 16, marginBottom: 16, padding: 20, backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9', elevation: 1 },
+  chartCard: { marginHorizontal: 16, marginTop: 16, marginBottom: 16, padding: 20, backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: '#F1F5F9', elevation: 1 },
   chartTitle: { color: '#0F172A', fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', marginBottom: 16 },
   chartPeriodContainer: { flexDirection: 'row', padding: 4, backgroundColor: '#F1F5F9', borderRadius: 8, marginBottom: 16 },
   periodButton: { flex: 1, paddingVertical: 6, borderRadius: 6, alignItems: 'center' },
   periodButtonActive: { backgroundColor: 'white', elevation: 1 },
   periodButtonText: { color: '#64748B', fontSize: 12, fontFamily: 'Manrope' },
   periodButtonTextActive: { color: 'rgba(179, 103, 212, 0.84)' },
-  chartBarsContainer: { flexDirection: 'row', height: 192, paddingHorizontal: 8, justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8 },
+  chartBarsContainer: { flexDirection: 'row', height: 192, paddingHorizontal: 8, justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 8, gap: 4 },
   chartBar: { flex: 1, backgroundColor: 'rgba(179, 103, 212, 0.20)', borderTopLeftRadius: 4, borderTopRightRadius: 4 },
   chartBarGreen: { flex: 1, backgroundColor: '#10B981', borderTopLeftRadius: 4, borderTopRightRadius: 4, position: 'relative' },
-  chartTooltip: { position: 'absolute', top: -32, left: 0, right: 0, paddingHorizontal: 8, paddingVertical: 4, backgroundColor: '#0F172A', borderRadius: 4, alignItems: 'center' },
+  chartTooltip: { position: 'absolute', top: -32, left: 0, right: 0, paddingHorizontal: 4, paddingVertical: 4, backgroundColor: '#0F172A', borderRadius: 4, alignItems: 'center' },
   chartTooltipText: { color: 'white', fontSize: 10, fontFamily: 'Manrope' },
-  chartLabels: { flexDirection: 'row', paddingHorizontal: 4, justifyContent: 'space-between' },
-  chartLabel: { color: '#94A3B8', fontSize: 10, fontFamily: 'Manrope', fontWeight: '500' },
+  chartLabels: { flexDirection: 'row', paddingHorizontal: 4, justifyContent: 'space-between', gap: 4 },
+  chartLabel: { flex: 1, textAlign: 'center', color: '#94A3B8', fontSize: 9, fontFamily: 'Manrope', fontWeight: '500' },
   chartLabelActive: { color: 'rgba(179, 103, 212, 0.84)', fontWeight: '700' },
-  // BPM card
-  wesadSummaryCard: { marginHorizontal: 16, marginBottom: 16, padding: 16, backgroundColor: 'white', borderRadius: 12, borderWidth: 1, borderColor: 'rgba(179, 103, 212, 0.15)', elevation: 1 },
-  wesadSummaryHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-  wesadSummaryTitle: { fontSize: 13, fontFamily: 'Manrope', fontWeight: '600', color: '#0F172A' },
-  wesadSummaryRow: { flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center' },
-  wesadSummaryItem: { alignItems: 'center', flex: 1 },
-  wesadSummaryDivider: { width: 1, height: 36, backgroundColor: '#E2E8F0' },
-  wesadSummaryValue: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', marginTop: 4 },
-  wesadSummaryLabel: { fontSize: 10, fontFamily: 'Manrope', color: '#94A3B8', marginTop: 2 },
-  sectionTitle: { color: '#64748B', fontSize: 14, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.7, marginHorizontal: 16, marginBottom: 12 },
+  chartFootnote: { color: '#94A3B8', fontSize: 10, fontFamily: 'Manrope', marginTop: 12, textAlign: 'center' },
+  sectionTitle: { color: '#64748B', fontSize: 14, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.7, marginHorizontal: 16, marginBottom: 12, marginTop: 8 },
   cardsContainer: { paddingHorizontal: 16, gap: 16, marginBottom: 24 },
   emptyFilter: { alignItems: 'center', paddingVertical: 32, gap: 12, marginBottom: 24 },
   emptyFilterText: { color: '#64748B', fontSize: 14, fontFamily: 'Manrope', fontWeight: '500' },
   alertCard: { padding: 16, backgroundColor: 'white', borderRadius: 12, borderWidth: 1, position: 'relative', overflow: 'hidden', marginBottom: 16, elevation: 1 },
   criticalCard: { borderColor: '#FECACA' },
   trendCard: { borderColor: '#FDE68A' },
+  stableCard: { borderColor: '#A7F3D0' },
   alertCardHeader: { flexDirection: 'row', alignItems: 'flex-start', gap: 16 },
   avatar: { width: 56, height: 56, borderRadius: 28, overflow: 'hidden', borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
   criticalAvatar: { borderColor: '#FEE2E2' },
   trendAvatar: { borderColor: '#FEF3C7' },
+  stableAvatar: { borderColor: '#D1FAE5' },
   alertCardInfo: { flex: 1 },
   alertCardNameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   alertCardBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -478,6 +596,7 @@ const styles = StyleSheet.create({
   statusBar: { position: 'absolute', left: 1, top: 1, width: 4, height: '100%' },
   criticalStatusBar: { backgroundColor: '#EF4444' },
   trendStatusBar: { backgroundColor: '#F59E0B' },
+  stableStatusBar: { backgroundColor: '#10B981' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(15, 23, 42, 0.50)', justifyContent: 'center', alignItems: 'center', padding: 32 },
   modalCard: { width: '100%', backgroundColor: 'white', borderRadius: 16, padding: 28, alignItems: 'center', elevation: 8 },
   modalIconCircle: { width: 64, height: 64, borderRadius: 32, backgroundColor: 'rgba(179, 103, 212, 0.12)', justifyContent: 'center', alignItems: 'center', marginBottom: 16 },

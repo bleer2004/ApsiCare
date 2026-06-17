@@ -142,7 +142,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     ]);
   };
 
-  // ── INSIGHTS ─────────────────────────────────────────────
+  // INSIGHTS 
   const carregarInsights = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -198,7 +198,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     finally { setLoadingInsights(false); }
   };
 
-  // ── DELETAR INSIGHT ──────────────────────────────────────
+  // DELETAR INSIGHT 
   const handleRemoverInsight = (insight) => {
     Alert.alert('Remover insight', 'Tem certeza?', [
       { text: 'Cancelar', style: 'cancel' },
@@ -219,45 +219,73 @@ const DashboardPaciente = ({ navigation, route }) => {
     ]);
   };
 
-  // ── EXPORTAR RELATÓRIO → S3 ──────────────────────────────
+  // EXPORTAR RELATÓRIO → S3 
   const handleExportarRelatorioS3 = async () => {
-    if (insightsList.length === 0) { Alert.alert('Aviso', 'Gere um relatório antes de exportar'); return; }
+    console.log('=== SALVAR S3 INICIADO ===');
+    console.log('insightsList.length:', insightsList.length);
+    
+    if (insightsList.length === 0) { 
+      Alert.alert('Aviso', 'Gere um relatório antes de exportar'); 
+      return; 
+    }
+    
     setExportandoRelatorio(true);
     try {
       const token = await AsyncStorage.getItem('token');
+      console.log('token ok:', !!token);
+      
       const ultimoInsight = insightsList[0];
-      const conteudo = [
-        `RELATÓRIO CLÍNICO — ${paciente.nome}`,
-        `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`,
-        `Diagnóstico: ${paciente.diagnosticoPrincipal || 'Não informado'}`,
-        '', '═══ INSIGHT SEMANAL ═══',
-        `Título: ${ultimoInsight.titulo}`, `Período: ${ultimoInsight.data}`,
-        '', ultimoInsight.texto, '',
-        '═══ DADOS FISIOLÓGICOS ═══',
-        `HR média: ${ultimoInsight.hr_mean} bpm`,
-        `RMSSD: ${ultimoInsight.rmssd} ms`,
-        `Perfil WESAD: ${ultimoInsight.perfil}`,
-        `Flag dominante: ${ultimoInsight.flag}`,
-        `Anxiety Risk: ${ultimoInsight.pct_anxiety_risk}% dos dias`,
-        `Alinhado: ${ultimoInsight.pct_aligned}% dos dias`,
-        '', '---', 'ApsiCare — Plataforma Clínica de Saúde Mental',
-      ].join('\n');
+      console.log('insight:', JSON.stringify(ultimoInsight));
+      
       const nomeArquivo = `relatorio_${paciente.nome.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0, 10)}.txt`;
+      const conteudo = `RELATÓRIO — ${paciente.nome}\n${ultimoInsight.titulo || ''}`;
+
+      console.log('Chamando POST /documents...');
+      console.log('URL completa:', `${API_URL}/patients/${paciente.id}/documents`);
+      console.log('paciente.id:', paciente.id);
       const response = await fetch(`${API_URL}/patients/${paciente.id}/documents`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nome: nomeArquivo, tipo: 'text/plain', tamanho: `${conteudo.length} bytes`, uploadedBy: 'clinician' }),
+        body: JSON.stringify({ nome: nomeArquivo, tipo: 'text/plain', tamanho: '1 bytes', uploadedBy: 'clinician' }),
       });
+      
+      console.log('POST status:', response.status);
       const data = await response.json();
-      if (!response.ok) { Alert.alert('Erro', data.error || 'Erro ao gerar URL de upload'); return; }
-      const s3Response = await fetch(data.uploadUrl, { method: 'PUT', headers: { 'Content-Type': 'text/plain' }, body: conteudo });
-      if (s3Response.ok) { Alert.alert('✅ Relatório exportado!', `"${nomeArquivo}" salvo nos documentos.`); await carregarArquivos(); }
-      else Alert.alert('Erro', 'Erro ao enviar relatório para o servidor');
-    } catch (err) { console.error('Erro export S3:', err); Alert.alert('Erro', 'Não foi possível exportar o relatório'); }
-    finally { setExportandoRelatorio(false); }
+      console.log('Response headers:', JSON.stringify([...response.headers.entries()]));
+      console.log('POST data:', JSON.stringify(data));
+      
+      if (!response.ok) { 
+        Alert.alert('Erro POST', data.error || `Status ${response.status}`); 
+        return; 
+      }
+      
+      console.log('uploadUrl:', data.uploadUrl?.slice(0, 80));
+      
+      const s3Response = await fetch(data.uploadUrl, { 
+        method: 'PUT', 
+        headers: { 'Content-Type': 'text/plain' }, 
+        body: conteudo 
+      });
+      
+      console.log('S3 status:', s3Response.status);
+      const s3Text = await s3Response.text();
+      console.log('S3 body:', s3Text.slice(0, 200));
+      
+      if (s3Response.ok) { 
+        Alert.alert('✅ Exportado!', nomeArquivo); 
+        await carregarArquivos(); 
+      } else { 
+        Alert.alert('Erro S3', `Status: ${s3Response.status}\n${s3Text.slice(0, 100)}`); 
+      }
+    } catch (err) { 
+      console.error('CATCH:', err);
+      Alert.alert('Erro catch', String(err)); 
+    } finally { 
+      setExportandoRelatorio(false); 
+    }
   };
 
-  // ── ARQUIVOS ─────────────────────────────────────────────
+  // ARQUIVOS 
   const carregarArquivos = async () => {
     setLoadingArquivos(true);
     try {
@@ -306,7 +334,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     finally { setUploadingArquivo(false); }
   };
 
-  // ── CONTATO DE EMERGÊNCIA ────────────────────────────────
+  // CONTATO DE EMERGÊNCIA 
   const carregarContatoEmergencia = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
@@ -338,18 +366,19 @@ const DashboardPaciente = ({ navigation, route }) => {
   };
 
   // ── DADOS DIÁRIOS WESAD (gráfico) ────────────────────────
-  const carregarDadosDiarios = async () => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      const response = await fetch(`${API_URL}/patients/${paciente.id}/insights/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'weekly-report' }),
-      });
-      const data = await response.json();
-      if (response.ok && data.relatorio?.dias?.length > 0) setDadosDiarios(data.relatorio.dias);
-    } catch (err) { console.error('Erro dados diários:', err); }
-  };
+const carregarDadosDiarios = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await fetch(`${API_URL}/patients/${paciente.id}/insights`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await response.json();
+    if (response.ok && data.insights?.length > 0) {
+      const ultimo = data.insights[0];
+      if (ultimo?.dias?.length > 0) setDadosDiarios(ultimo.dias);
+    }
+  } catch (err) { console.error('Erro dados diários:', err); }
+};
 
   // ── LEMBRETES ────────────────────────────────────────────
   const handleAdicionarLembrete = () => {
@@ -606,7 +635,11 @@ const DashboardPaciente = ({ navigation, route }) => {
         <Text style={styles.sectionTitle}>💡 Insights Clínicos</Text>
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {insightsList.length > 0 && (
-            <TouchableOpacity style={[styles.addButton, { backgroundColor: exportandoRelatorio ? '#E2E8F0' : 'rgba(16, 185, 129, 0.10)' }]} onPress={handleExportarRelatorioS3} disabled={exportandoRelatorio}>
+            <TouchableOpacity style={[styles.addButton, { backgroundColor: exportandoRelatorio ? '#E2E8F0' : 'rgba(16, 185, 129, 0.10)' }]} onPress={() => {
+                console.log('SALVAR CLICADO');
+                console.log('insightsList:', insightsList.length);
+                handleExportarRelatorioS3();
+              }} disabled={exportandoRelatorio}>
               {exportandoRelatorio ? <ActivityIndicator size="small" color="#10B981" /> : <><Icon name="upload-cloud" size={14} color="#10B981" /><Text style={[styles.addButtonText, { color: '#10B981' }]}>Salvar</Text></>}
             </TouchableOpacity>
           )}
@@ -673,37 +706,33 @@ const DashboardPaciente = ({ navigation, route }) => {
   );
 
   // ── REMOVER ARQUIVO (LOCAL) ──────────────────────────────
-  const handleRemoverArquivo = (id, nome) => {
-    Alert.alert(
-      'Remover arquivo',
-      `Tem certeza que deseja remover "${nome}"?`,
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Remover',
-          style: 'destructive',
-          onPress: () => {
-            // Remove o arquivo do estado local instantaneamente
-            setArquivosList(prevList => prevList.filter(doc => doc.id !== id));
-            Alert.alert('Sucesso', 'Arquivo removido da lista.');
-            
-            /* TODO: Quando o endpoint estiver pronto:
-            try {
-              const token = await AsyncStorage.getItem('token');
-              await fetch(`${API_URL}/patients/${paciente.id}/documents/${id}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
-              });
-              await carregarArquivos();
-            } catch {
-              Alert.alert('Erro', 'Não foi possível remover do servidor');
-            }
-            */
+const handleRemoverArquivo = (id, nome) => {
+  Alert.alert(
+    'Remover arquivo',
+    `Tem certeza que deseja remover "${nome}"?`,
+    [
+      { text: 'Cancelar', style: 'cancel' },
+      {
+        text: 'Remover',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await AsyncStorage.getItem('token');
+            const docId = encodeURIComponent(id);
+            await fetch(`${API_URL}/patients/${paciente.id}/documents/${docId}`, {
+              method: 'DELETE',
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            setArquivosList(prev => prev.filter(doc => doc.id !== id));
+            Alert.alert('Sucesso', 'Arquivo removido.');
+          } catch {
+            Alert.alert('Erro', 'Não foi possível remover');
           }
         }
-      ]
-    );
-  };
+      }
+    ]
+  );
+};
   
   // ── ABA ARQUIVOS ─────────────────────────────────────────
   const renderAbaArquivos = () => (
@@ -728,7 +757,13 @@ const DashboardPaciente = ({ navigation, route }) => {
             <View style={styles.arquivoActions}>
               <TouchableOpacity style={styles.analiseBtn} onPress={() => handleVerAnalise(arquivo)}><Icon name="cpu" size={16} color="#B367D4" /><Text style={styles.analiseBtnText}>Análise da IA</Text></TouchableOpacity>
               <TouchableOpacity style={styles.downloadBtn} onPress={() => handleBaixarArquivo(arquivo)}><Icon name="download" size={16} color="#10B981" /><Text style={styles.downloadBtnText}>Baixar</Text></TouchableOpacity>
-            </View>
+              <TouchableOpacity
+                onPress={() => handleRemoverArquivo(arquivo.id, arquivo.nome)}
+                style={{ padding: 6, backgroundColor: '#FEF2F2', borderRadius: 8 }}
+              >
+                <Icon name="trash-2" size={16} color="#EF4444" />
+              </TouchableOpacity>
+              </View>
           </View>
         ))}
       <View style={[styles.sectionHeader, { marginTop: 24 }]}>
@@ -764,8 +799,11 @@ const DashboardPaciente = ({ navigation, route }) => {
 
         <View style={styles.tabsContainer}>
           {[{ id: 'perfil', icon: 'user', label: 'Perfil' }, { id: 'metas', icon: 'target', label: 'Metas' }, { id: 'arquivos', icon: 'folder', label: 'Arquivos' }, { id: 'relatorios', icon: 'bar-chart-2', label: 'Relatórios' }].map(tab => (
-            <TouchableOpacity key={tab.id} style={[styles.tab, abaAtiva === tab.id && styles.tabActive]} onPress={() => setAbaAtiva(tab.id)}>
-              <Icon name={tab.icon} size={18} color={abaAtiva === tab.id ? '#B367D4' : '#94A3B8'} />
+          <TouchableOpacity key={tab.id} style={[styles.tab, abaAtiva === tab.id && styles.tabActive]} onPress={() => {
+            setAbaAtiva(tab.id);
+            if (tab.id === 'arquivos') carregarArquivos();
+          }}>             
+          <Icon name={tab.icon} size={18} color={abaAtiva === tab.id ? '#B367D4' : '#94A3B8'} />
               <Text style={[styles.tabText, abaAtiva === tab.id && styles.tabTextActive]}>{tab.label}</Text>
             </TouchableOpacity>
           ))}
