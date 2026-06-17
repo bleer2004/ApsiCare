@@ -166,13 +166,32 @@ const CadastroPaciente = ({ navigation }) => {
     setNovoContatoNome(''); setNovoContatoNumero(''); setShowEmergenciaModal(false);
   };
 
+  // FUNÇÃO ATUALIZADA: Permite remover qualquer contato, com confirmação para os padrão
   const handleRemoverContato = (id) => {
-    if (contatosEmergencia.find(c => c.id === id)?.isPreset) { Alert.alert('Atenção', 'Não é possível remover contatos padrão'); return; }
-    setContatosEmergencia(contatosEmergencia.filter(c => c.id !== id));
+    const contato = contatosEmergencia.find(c => c.id === id);
+    if (contato?.isPreset) {
+      Alert.alert(
+        'Remover contato padrão',
+        `Tem certeza que deseja remover "${contato.nome}" dos contatos de emergência?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { 
+            text: 'Remover', 
+            style: 'destructive',
+            onPress: () => setContatosEmergencia(contatosEmergencia.filter(c => c.id !== id))
+          }
+        ]
+      );
+    } else {
+      setContatosEmergencia(contatosEmergencia.filter(c => c.id !== id));
+    }
   };
 
   const handleEditarContato = (contato) => {
-    if (contato.isPreset) { Alert.alert('Atenção', 'Não é possível editar contatos padrão'); return; }
+    if (contato.isPreset) { 
+      Alert.alert('Atenção', 'Não é possível editar contatos padrão'); 
+      return; 
+    }
     setEditandoContato(contato);
     setNovoContatoNome(contato.nome);
     setNovoContatoNumero(contato.numero);
@@ -354,19 +373,20 @@ const CadastroPaciente = ({ navigation }) => {
                 <View style={styles.contatoInfo}>
                   <Text style={styles.contatoNome}>{contato.nome}</Text>
                   <Text style={styles.contatoNumero}>{contato.numero}</Text>
+                  {contato.isPreset && (
+                    <Text style={styles.contatoTag}>Padrão</Text>
+                  )}
                 </View>
                 <View style={styles.contatoActions}>
                   {!contato.isPreset && (
-                    <>
-                      <TouchableOpacity onPress={() => handleEditarContato(contato)}>
-                        <Icon name="edit-2" size={18} color="#B367D4" />
-                      </TouchableOpacity>
-                      <TouchableOpacity onPress={() => handleRemoverContato(contato.id)}>
-                        <Icon name="trash-2" size={18} color="#EF4444" />
-                      </TouchableOpacity>
-                    </>
+                    <TouchableOpacity onPress={() => handleEditarContato(contato)}>
+                      <Icon name="edit-2" size={18} color="#B367D4" />
+                    </TouchableOpacity>
                   )}
-                  {contato.isPreset && <Icon name="lock" size={16} color="#CBD5E1" />}
+                  {/* Botão de remover disponível para TODOS os contatos */}
+                  <TouchableOpacity onPress={() => handleRemoverContato(contato.id)}>
+                    <Icon name="trash-2" size={18} color="#EF4444" />
+                  </TouchableOpacity>
                 </View>
               </View>
             ))}
@@ -555,7 +575,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope', fontWeight: '700',
   },
 
-  // Sections com fundo branco, separação clara
   section: {
     backgroundColor: '#FFFFFF',
     marginTop: 12,
@@ -576,7 +595,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope', fontWeight: '600',
   },
 
-  // Inputs
   inputContainer: { marginBottom: 14 },
   inputLabel: {
     color: '#334155', fontSize: 13,
@@ -614,7 +632,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 
-  // IA Card
   iaCard: {
     padding: 16,
     backgroundColor: 'rgba(179, 103, 212, 0.05)',
@@ -665,7 +682,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope', fontWeight: '500',
   },
 
-  // Contatos de emergência — seção própria
   emergenciaSection: {
     backgroundColor: '#FFFFFF',
     marginTop: 12,
@@ -703,6 +719,11 @@ const styles = StyleSheet.create({
     color: '#64748B', fontSize: 12,
     fontFamily: 'Manrope', marginTop: 2,
   },
+  contatoTag: {
+    color: '#94A3B8', fontSize: 10,
+    fontFamily: 'Manrope', fontWeight: '500',
+    marginTop: 2,
+  },
   contatoActions: { flexDirection: 'row', gap: 16, paddingLeft: 12 },
   addContatoButton: {
     flexDirection: 'row',
@@ -715,7 +736,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope', fontWeight: '500',
   },
 
-  // Botões de ação
   inviteButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -751,7 +771,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope', fontWeight: '700',
   },
 
-  // Modais
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -822,7 +841,6 @@ const styles = StyleSheet.create({
     color: '#B367D4', fontWeight: '600',
   },
 
-  // Bottom nav
   bottomNavigation: {
     position: 'absolute',
     bottom: 0, left: 0, right: 0,

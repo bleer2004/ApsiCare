@@ -26,6 +26,7 @@ const DashboardPaciente = ({ navigation, route }) => {
   const [modalAnotacaoVisible, setModalAnotacaoVisible] = useState(false);
   const [anotacaoSelecionada, setAnotacaoSelecionada] = useState(null);
   const [modalContatoVisible, setModalContatoVisible] = useState(false);
+  const [modalEditarPacienteVisible, setModalEditarPacienteVisible] = useState(false);
 
   const calcularIdade = (birthDate) => {
     if (!birthDate) return null;
@@ -38,7 +39,7 @@ const DashboardPaciente = ({ navigation, route }) => {
   };
 
   const pacienteRaw = route?.params?.paciente;
-  const [paciente] = useState(pacienteRaw ? {
+  const [paciente, setPaciente] = useState(pacienteRaw ? {
     ...pacienteRaw,
     idade: pacienteRaw.idade || calcularIdade(pacienteRaw.birthDate),
   } : {
@@ -46,6 +47,16 @@ const DashboardPaciente = ({ navigation, route }) => {
     diagnosticoPrincipal: 'F41.1 - Transtorno de Ansiedade Generalizada (TAG)',
     condicao: 'Anorexia', statusEmocional: 'Estável', melhoraPercentual: 15,
   });
+
+  // Estado para edição do paciente
+  const [editNome, setEditNome] = useState('');
+  const [editSobrenome, setEditSobrenome] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editTelefone, setEditTelefone] = useState('');
+  const [editDataNascimento, setEditDataNascimento] = useState('');
+  const [editDiagnostico, setEditDiagnostico] = useState('');
+  const [editObservacoes, setEditObservacoes] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
 
   const [metasList, setMetasList] = useState([]);
   const [insightsList, setInsightsList] = useState([]);
@@ -89,6 +100,103 @@ const DashboardPaciente = ({ navigation, route }) => {
     carregarContatoEmergencia();
     carregarDadosDiarios();
   }, []);
+
+  // Carregar dados do paciente para edição
+  const carregarDadosPacienteParaEdicao = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/clinicians/patients/${paciente.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const partes = (data.name || '').trim().split(' ');
+        setEditNome(partes[0] || '');
+        setEditSobrenome(partes.slice(1).join(' ') || '');
+        setEditEmail(data.email || '');
+        setEditTelefone(formatTelefone(data.phone || ''));
+        setEditDataNascimento(data.birthDate ? formatDate(data.birthDate) : '');
+        setEditDiagnostico(data.diagnostico || '');
+        setEditObservacoes(data.observacoes || '');
+      }
+    } catch (err) {
+      console.error('Erro ao carregar dados do paciente:', err);
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    if (isNaN(date)) return dateString;
+    const dia = String(date.getDate()).padStart(2, '0');
+    const mes = String(date.getMonth() + 1).padStart(2, '0');
+    const ano = date.getFullYear();
+    return `${dia}/${mes}/${ano}`;
+  };
+
+  const formatTelefone = (text) => {
+    let cleaned = text.replace(/\D/g, '');
+    if (cleaned.length <= 2) return `(${cleaned}`;
+    else if (cleaned.length <= 6) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2)}`;
+    else if (cleaned.length <= 10) return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 6)}-${cleaned.slice(6)}`;
+    else return `(${cleaned.slice(0, 2)}) ${cleaned.slice(2, 7)}-${cleaned.slice(7, 11)}`;
+  };
+
+  const formatDateToAPI = (dateBR) => {
+    if (!dateBR) return null;
+    const [dia, mes, ano] = dateBR.split('/');
+    return `${ano}-${mes}-${dia}`;
+  };
+
+  const handleSalvarEdicaoPaciente = async () => {
+    if (!editNome) {
+      Alert.alert('Erro', 'O nome é obrigatório');
+      return;
+    }
+    setEditLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/clinicians/patients/${paciente.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: `${editNome} ${editSobrenome}`.trim(),
+          email: editEmail.trim(),
+          phone: editTelefone.replace(/\D/g, ''),
+          birthDate: editDataNascimento ? formatDateToAPI(editDataNascimento) : null,
+          diagnostico: editDiagnostico,
+          observacoes: editObservacoes,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        Alert.alert('Erro', data.error || 'Erro ao atualizar dados do paciente');
+        return;
+      }
+
+      // Atualizar o estado do paciente
+      setPaciente({
+        ...paciente,
+        nome: `${editNome} ${editSobrenome}`.trim(),
+        email: editEmail.trim(),
+        phone: editTelefone.replace(/\D/g, ''),
+        birthDate: editDataNascimento ? formatDateToAPI(editDataNascimento) : null,
+        diagnosticoPrincipal: editDiagnostico || paciente.diagnosticoPrincipal,
+        observacoes: editObservacoes || paciente.observacoes,
+      });
+
+      Alert.alert('Sucesso', 'Dados do paciente atualizados!');
+      setModalEditarPacienteVisible(false);
+    } catch (err) {
+      Alert.alert('Erro', 'Não foi possível atualizar os dados');
+    } finally {
+      setEditLoading(false);
+    }
+  };
 
   // ── METAS ────────────────────────────────────────────────
   const carregarMetas = async () => {
@@ -482,12 +590,27 @@ const carregarDadosDiarios = async () => {
       </View>
 
       <View style={styles.card}>
-        <View style={styles.cardHeader}><Text style={styles.cardTitle}>Status Emocional (Semana)</Text>{renderStatusBadge()}</View>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Status Emocional (Semana)</Text>
+          {renderStatusBadge()}
+        </View>
         <Text style={styles.melhoraText}>Melhora de {paciente.melhoraPercentual || 0}% em relação à semana anterior</Text>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
+          <TouchableOpacity 
+            style={styles.editPatientButton} 
+            onPress={() => {
+              carregarDadosPacienteParaEdicao();
+              setModalEditarPacienteVisible(true);
+            }}
+          >
+            <Icon name="edit-2" size={16} color="#B367D4" />
+            <Text style={styles.editPatientButtonText}>Editar</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.diagnosticoCodigo}>{paciente.diagnosticoPrincipal}</Text>
         <Text style={styles.diagnosticoDescricao}>Paciente apresenta sintomas persistentes de preocupação excessiva, tensão muscular.</Text>
       </View>
@@ -898,11 +1021,47 @@ const handleRemoverArquivo = (id, nome) => {
           </View>
         </View></View>
       </Modal>
+
+      {/* Modal Editar Paciente */}
+      <Modal animationType="slide" transparent visible={modalEditarPacienteVisible} onRequestClose={() => setModalEditarPacienteVisible(false)}>
+        <View style={styles.modalOverlay}><View style={[styles.modalContainer, { maxHeight: '85%' }]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Editar Dados do Paciente</Text>
+            <TouchableOpacity onPress={() => setModalEditarPacienteVisible(false)}><Icon name="x" size={24} color="#64748B" /></TouchableOpacity>
+          </View>
+          <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
+            <Text style={styles.inputLabel}>Nome *</Text>
+            <TextInput style={styles.modalInput} placeholder="Nome" placeholderTextColor="#94A3B8" value={editNome} onChangeText={setEditNome} />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>Sobrenome</Text>
+            <TextInput style={styles.modalInput} placeholder="Sobrenome" placeholderTextColor="#94A3B8" value={editSobrenome} onChangeText={setEditSobrenome} />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>E-mail *</Text>
+            <TextInput style={styles.modalInput} placeholder="exemplo@email.com" placeholderTextColor="#94A3B8" value={editEmail} onChangeText={setEditEmail} keyboardType="email-address" autoCapitalize="none" />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>Telefone</Text>
+            <TextInput style={styles.modalInput} placeholder="(00) 00000-0000" placeholderTextColor="#94A3B8" value={editTelefone} onChangeText={(t) => setEditTelefone(formatTelefone(t))} keyboardType="phone-pad" />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>Data de Nascimento</Text>
+            <TextInput style={styles.modalInput} placeholder="DD/MM/AAAA" placeholderTextColor="#94A3B8" value={editDataNascimento} onChangeText={setEditDataNascimento} />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>Diagnóstico Principal</Text>
+            <TextInput style={[styles.modalInput, { minHeight: 50 }]} placeholder="Diagnóstico" placeholderTextColor="#94A3B8" value={editDiagnostico} onChangeText={setEditDiagnostico} multiline />
+            
+            <Text style={[styles.inputLabel, { marginTop: 12 }]}>Observações / Resumo Clínico</Text>
+            <TextInput style={[styles.modalInput, { minHeight: 80 }]} placeholder="Observações sobre o paciente" placeholderTextColor="#94A3B8" value={editObservacoes} onChangeText={setEditObservacoes} multiline textAlignVertical="top" />
+            
+            <TouchableOpacity style={styles.modalButton} onPress={handleSalvarEdicaoPaciente} disabled={editLoading}>
+              {editLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.modalButtonText}>Salvar Alterações</Text>}
+            </TouchableOpacity>
+          </ScrollView>
+        </View></View>
+      </Modal>
     </SafeAreaView>
   );
 };
 
-// Cole aqui o StyleSheet do seu arquivo atual — não foi alterado
+// Estilos
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F6F6F8' },
   scrollView: { flex: 1 },
@@ -1028,6 +1187,8 @@ const styles = StyleSheet.create({
   anotacaoDataModal: { fontSize: 12, fontFamily: 'Manrope', color: '#94A3B8', marginBottom: 16 },
   anotacaoTextoModal: { fontSize: 15, fontFamily: 'Manrope', color: '#0F172A', lineHeight: 22 },
   modalScrollContent: { padding: 20 },
+  editPatientButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(179, 103, 212, 0.10)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, gap: 6 },
+  editPatientButtonText: { fontSize: 12, fontFamily: 'Manrope', fontWeight: '500', color: '#B367D4' },
 });
 
 export default DashboardPaciente;
