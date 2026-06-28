@@ -6,16 +6,15 @@ import {
   StatusBar, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import SmartwatchPaciente from '../../../src/screens/smartwatch/SmartWatchPaciente';
 
 const PerfilPaciente = ({ navigation }) => {
   const [paciente, setPaciente] = useState(null);
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [syncing, setSyncing] = useState(false);
-  
+
   // Novos estados para dados do paciente
   const [stats, setStats] = useState({
-    passos: 0,
     humorPrevalece: 'Neutro',
     scoreHumor: 0,
   });
@@ -86,14 +85,12 @@ const PerfilPaciente = ({ navigation }) => {
         });
         
         setStats({
-          passos: Math.floor(Math.random() * 5000) + 3000, // Mock - substituir por dados reais quando disponível
           humorPrevalece: humorPrevalece,
           scoreHumor: mediaScore,
         });
       } else {
         // Dados mock para quando não há dados reais
         setStats({
-          passos: 4820,
           humorPrevalece: 'Calmo',
           scoreHumor: 68,
         });
@@ -102,7 +99,6 @@ const PerfilPaciente = ({ navigation }) => {
       console.error('Erro ao carregar estatísticas:', err);
       // Dados mock em caso de erro
       setStats({
-        passos: 4820,
         humorPrevalece: 'Calmo',
         scoreHumor: 68,
       });
@@ -117,18 +113,6 @@ const PerfilPaciente = ({ navigation }) => {
         navigation.replace('LoginPaciente');
       }}
     ]);
-  };
-
-  const handleSync = () => {
-    setSyncing(true);
-    setTimeout(() => {
-      setSyncing(false);
-      Alert.alert('Sincronização completa', 'Seus dados foram sincronizados com sucesso!');
-    }, 2000);
-  };
-
-  const handleVerResumo = () => {
-    Alert.alert('Resumo médico', 'Funcionalidade em desenvolvimento');
   };
 
   const getDocIcon = (tipo) => {
@@ -177,14 +161,6 @@ const PerfilPaciente = ({ navigation }) => {
           <>
             {/* NOVA SEÇÃO: Cards de Estatísticas */}
             <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <View style={[styles.statIconWrapper, { backgroundColor: '#EFF6FF' }]}>
-                  <Icon name="activity" size={22} color="#3B82F6" />
-                </View>
-                <Text style={styles.statValue}>{stats.passos.toLocaleString()}</Text>
-                <Text style={styles.statLabel}>Passos hoje</Text>
-              </View>
-              
               <View style={styles.statCard}>
                 <View style={[styles.statIconWrapper, { backgroundColor: '#FEF3C7' }]}>
                   <Icon name="smile" size={22} color="#F59E0B" />
@@ -240,61 +216,16 @@ const PerfilPaciente = ({ navigation }) => {
               )}
             </View>
 
-            {/* Smartwatch Connection */}
-            <View style={styles.smartwatchSection}>
-              <View style={styles.smartwatchCard}>
-                <View style={styles.smartwatchGradient} />
-                <View style={styles.smartwatchIcon}>
-                  <Icon name="watch" size={42} color="#B367D4" />
-                </View>
-                <View style={styles.smartwatchBadge}>
-                  <Text style={styles.smartwatchBadgeText}>Conectado com smartwatch Galaxy 5</Text>
-                </View>
-              </View>
-            </View>
-
-            {/* Última Sincronização */}
-            <View style={styles.syncSection}>
-              <View style={styles.syncCard}>
-                <View>
-                  <Text style={styles.syncLabel}>Última sincronização</Text>
-                  <Text style={styles.syncValue}>Hoje, 10:30</Text>
-                </View>
-                <View style={styles.syncStatusIcon}>
-                  <Icon name="check-circle" size={24} color="#16A34A" />
-                </View>
-              </View>
-            </View>
-
-            {/* Resumo Médico */}
+            {/* Smartwatch / Health Connect */}
             <View style={styles.section}>
-              <Text style={styles.resumoTitle}>Resumo médico</Text>
-
-              <TouchableOpacity style={styles.healthCard} onPress={handleVerResumo}>
-                <View style={styles.healthHeader}>
-                  <View style={[styles.healthIcon, { backgroundColor: '#FEF2F2' }]}>
-                    <Icon name="heart" size={18} color="#EF4444" />
-                  </View>
-                  <View>
-                    <Text style={styles.healthTitle}>Saúde cardíaca</Text>
-                    <Text style={styles.healthSubtitle}>Seus batimentos estão estáveis</Text>
-                  </View>
-                </View>
-                <View style={styles.healthValueRow}>
-                  <Text style={styles.healthValue}>72</Text>
-                  <Text style={styles.healthUnit}>BPM</Text>
-                </View>
-                <View style={styles.healthProgressBar}>
-                  <View style={[styles.healthProgressFill, { width: '60%', backgroundColor: '#EF4444' }]} />
-                </View>
-              </TouchableOpacity>
+              <View style={styles.sectionHeader}>
+                <Icon name="watch" size={20} color="#B367D4" />
+                <Text style={styles.sectionTitle}>Smartwatch</Text>
+              </View>
+              <View style={styles.smartwatchEmbed}>
+                <SmartwatchPaciente paciente={paciente} standalone={false} />
+              </View>
             </View>
-
-            {/* Botão Sync */}
-            <TouchableOpacity style={styles.syncButton} onPress={handleSync} disabled={syncing}>
-              <Icon name="refresh-cw" size={18} color="#FFFFFF" style={styles.syncIcon} />
-              <Text style={styles.syncButtonText}>{syncing ? 'Sincronizando...' : 'Sync Now'}</Text>
-            </TouchableOpacity>
 
             {/* Sobre minha conta */}
             <View style={styles.section}>
@@ -423,31 +354,7 @@ const styles = StyleSheet.create({
   documentInfo: { flex: 1 },
   documentName: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 20 },
   documentMeta: { fontSize: 10, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', color: '#64748B', lineHeight: 15, letterSpacing: 0.5 },
-  smartwatchSection: { paddingHorizontal: 16, marginTop: 16 },
-  smartwatchCard: { backgroundColor: '#EEF2FF', borderRadius: 12, paddingVertical: 40, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(43, 108, 238, 0.10)', position: 'relative', overflow: 'hidden' },
-  smartwatchGradient: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.1 },
-  smartwatchIcon: { marginBottom: 20 },
-  smartwatchBadge: { backgroundColor: 'rgba(255, 255, 255, 0.80)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 4, borderWidth: 1, borderColor: 'rgba(43, 108, 238, 0.20)' },
-  smartwatchBadgeText: { fontSize: 12, fontFamily: 'Manrope', fontWeight: '600', color: '#B367D4', lineHeight: 16 },
-  syncSection: { paddingHorizontal: 16, marginTop: 16 },
-  syncCard: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, borderWidth: 1, borderColor: '#E2E8F0' },
-  syncLabel: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '500', color: '#64748B', lineHeight: 20 },
-  syncValue: { fontSize: 20, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 28, marginTop: 4 },
-  syncStatusIcon: { width: 48, height: 48, backgroundColor: '#DCFCE7', borderRadius: 24, justifyContent: 'center', alignItems: 'center' },
-  resumoTitle: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', color: '#64748B', lineHeight: 20, letterSpacing: 1.4, marginBottom: 16 },
-  healthCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 20, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  healthHeader: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
-  healthIcon: { width: 40, height: 40, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  healthTitle: { fontSize: 16, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 24 },
-  healthSubtitle: { fontSize: 12, fontFamily: 'Manrope', fontWeight: '400', color: '#64748B', lineHeight: 16 },
-  healthValueRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 12 },
-  healthValue: { fontSize: 30, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 36 },
-  healthUnit: { fontSize: 16, fontFamily: 'Manrope', fontWeight: '500', color: '#64748B', lineHeight: 24 },
-  healthProgressBar: { height: 6, backgroundColor: '#F1F5F9', borderRadius: 10, overflow: 'hidden' },
-  healthProgressFill: { height: '100%', borderRadius: 10 },
-  syncButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#B367D4', borderRadius: 12, marginHorizontal: 16, marginTop: 24, marginBottom: 16, paddingVertical: 16, elevation: 4 },
-  syncIcon: { marginRight: 8 },
-  syncButtonText: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#FFFFFF', lineHeight: 28 },
+  smartwatchEmbed: { backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
   infoCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', gap: 8 },
   infoLabel: { fontSize: 14, color: '#64748B', flex: 1 },

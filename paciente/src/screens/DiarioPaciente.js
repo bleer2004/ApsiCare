@@ -10,7 +10,6 @@ import Icon from 'react-native-vector-icons/Feather';
 const DiarioPaciente = ({ navigation }) => {
   const [selectedMood, setSelectedMood] = useState(null);
   const [anotacao, setAnotacao] = useState('');
-  const [sonhos, setSonhos] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
   const [breathingModalVisible, setBreathingModalVisible] = useState(false);
   const [breathingStep, setBreathingStep] = useState(1);
@@ -74,13 +73,12 @@ const DiarioPaciente = ({ navigation }) => {
       const data = await response.json();
       if (response.ok) {
         const formatados = (data.moods || [])
-          .filter(m => m.diaryText || m.dreamText)
+          .filter(m => m.diaryText)
           .map((m, i) => ({
             id: String(i),
             humor: m.contextTags?.[0] || 'neutro',
             titulo: `Se sentindo ${m.contextTags?.[0] || 'neutro'}`,
             texto: m.diaryText || '',
-            sonhos: m.dreamText || '',
             humorNota: m.moodScore || 5,
             impactoNota: m.impactScore || 3,
             contexto: m.context || '',
@@ -106,8 +104,8 @@ const DiarioPaciente = ({ navigation }) => {
       Alert.alert('Atenção', 'Selecione como você está se sentindo');
       return;
     }
-    if (!anotacao.trim() && !sonhos.trim()) {
-      Alert.alert('Atenção', 'Selecione como você está se sentindo');
+    if (!anotacao.trim()) {
+      Alert.alert('Atenção', 'Escreva algo nas anotações antes de salvar');
       return;
     }
 
@@ -126,7 +124,6 @@ const DiarioPaciente = ({ navigation }) => {
           arousalScore: mood.arousal,
           contextTags: [selectedMood],
           diaryText: anotacao,
-          dreamText: sonhos,
           moodScore: humorNota,
           impactScore: impactoNota,
           context: contexto,
@@ -136,7 +133,6 @@ const DiarioPaciente = ({ navigation }) => {
       if (response.ok) {
         setSelectedMood(null);
         setAnotacao('');
-        setSonhos('');
         setHumorNota(5);
         setImpactoNota(3);
         setContexto('');
@@ -171,7 +167,6 @@ const DiarioPaciente = ({ navigation }) => {
           arousalScore: mood.arousal,
           contextTags: [selectedMood],
           diaryText: anotacao,
-          dreamText: sonhos,
           moodScore: humorNota,
           impactScore: impactoNota,
           context: contexto,
@@ -182,7 +177,6 @@ const DiarioPaciente = ({ navigation }) => {
       if (response.ok) {
         setSelectedMood(null);
         setAnotacao('');
-        setSonhos('');
         setHumorNota(5);
         setImpactoNota(3);
         setContexto('');
@@ -235,7 +229,7 @@ const DiarioPaciente = ({ navigation }) => {
   };
 
   const handleEnviarAnotacaoAtual = () => {
-    if (!anotacao.trim() && !sonhos.trim()) {
+    if (!anotacao.trim()) {
       Alert.alert('Atenção', 'Escreva algo antes de enviar para o psicólogo');
       return;
     }
@@ -294,18 +288,25 @@ const DiarioPaciente = ({ navigation }) => {
         <View style={styles.moodSection}>
           <Text style={styles.moodTitle}>Como você está se sentindo hoje?</Text>
           <View style={styles.moodContainer}>
-            {moods.map((mood) => (
-              <TouchableOpacity
-                key={mood.id}
-                style={[styles.moodItem, selectedMood === mood.id && styles.moodItemSelected]}
-                onPress={() => setSelectedMood(mood.id)}
-              >
-                <View style={[styles.moodIconWrapper, { backgroundColor: mood.color }]}>
-                  <Text style={styles.moodEmoji}>{mood.emoji}</Text>
-                </View>
-                <Text style={styles.moodLabel}>{mood.label}</Text>
-              </TouchableOpacity>
-            ))}
+            {moods.map((mood) => {
+              const selecionado = selectedMood === mood.id;
+              return (
+                <TouchableOpacity
+                  key={mood.id}
+                  style={styles.moodItem}
+                  onPress={() => setSelectedMood(mood.id)}
+                >
+                  <View style={[
+                    styles.moodIconWrapper,
+                    { backgroundColor: mood.color },
+                    selecionado && styles.moodIconWrapperSelected,
+                  ]}>
+                    <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                  </View>
+                  <Text style={[styles.moodLabel, selecionado && styles.moodLabelSelected]}>{mood.label}</Text>
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
 
@@ -433,7 +434,7 @@ const DiarioPaciente = ({ navigation }) => {
                       <Text style={styles.cardDate}>{item.data}</Text>
                     </View>
                   </View>
-                  {!item.shared && (item.texto || item.sonhos) && (
+                  {!item.shared && item.texto && (
                     <TouchableOpacity 
                       style={styles.shareIconButton} 
                       onPress={() => handleEnviarParaPsicologo(item)}
@@ -524,14 +525,7 @@ const DiarioPaciente = ({ navigation }) => {
                   </>
                 )}
                 
-                {selectedAnotacao.sonhos && (
-                  <>
-                    <Text style={[styles.modalSubtitle, styles.modalSubtitleDream]}>🌙 Sonhos</Text>
-                    <Text style={[styles.modalText, styles.modalTextDream]}>{selectedAnotacao.sonhos}</Text>
-                  </>
-                )}
-                
-                {!selectedAnotacao.shared && (selectedAnotacao.texto || selectedAnotacao.sonhos) && (
+                {!selectedAnotacao.shared && selectedAnotacao.texto && (
                   <TouchableOpacity 
                     style={styles.modalPsychButton} 
                     onPress={() => {
@@ -641,9 +635,6 @@ const styles = StyleSheet.create({
     minWidth: 60,
     paddingHorizontal: 2,
   },
-  moodItemSelected: {
-    opacity: 0.7,
-  },
   moodIconWrapper: {
     width: 56,
     height: 56,
@@ -651,6 +642,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  moodIconWrapperSelected: {
+    borderColor: '#B367D4',
+    transform: [{ scale: 1.1 }],
   },
   moodEmoji: {
     fontSize: 24,
@@ -661,6 +658,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#475569',
     lineHeight: 16,
+  },
+  moodLabelSelected: {
+    color: '#B367D4',
+    fontWeight: '700',
   },
   // NOVOS ESTILOS
   ratingSection: {
@@ -874,28 +875,6 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
     minHeight: 150,
   },
-  dreamsSection: {
-    paddingHorizontal: 16,
-    marginBottom: 16,
-  },
-  dreamsContainer: {
-    minHeight: 140,
-    backgroundColor: '#1E1B4B',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-    padding: 16,
-  },
-  dreamsInput: {
-    flex: 1,
-    fontSize: 16,
-    fontFamily: 'Manrope',
-    fontWeight: '400',
-    color: '#FFFFFF',
-    lineHeight: 24,
-    textAlignVertical: 'top',
-    minHeight: 110,
-  },
   buttonsRow: {
     flexDirection: 'row',
     gap: 12,
@@ -1028,26 +1007,6 @@ const styles = StyleSheet.create({
     color: '#475569',
     lineHeight: 20,
   },
-  dreamsPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#E0E7FF',
-    backgroundColor: '#EFF6FF',
-    borderRadius: 10,
-    padding: 10,
-  },
-  dreamsPreviewText: {
-    fontSize: 13,
-    fontFamily: 'Manrope',
-    fontWeight: '500',
-    color: '#2563EB',
-    flex: 1,
-    lineHeight: 18,
-  },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -1173,9 +1132,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 16,
   },
-  modalSubtitleDream: {
-    color: '#2563EB',
-  },
   modalText: {
     fontSize: 16,
     fontFamily: 'Manrope',
@@ -1183,12 +1139,6 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     lineHeight: 24,
     marginBottom: 16,
-  },
-  modalTextDream: {
-    color: '#1D4ED8',
-    backgroundColor: '#EFF6FF',
-    padding: 12,
-    borderRadius: 12,
   },
   modalPsychButton: {
     flexDirection: 'row',

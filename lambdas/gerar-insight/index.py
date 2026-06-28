@@ -1,7 +1,7 @@
 import json
 import math
 import boto3
-from datetime import datetime
+from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
 
 dynamo = boto3.resource("dynamodb", region_name="sa-east-1")
@@ -29,6 +29,18 @@ def calc_stress_physio(hr, ibi, rmssd, hr_min, hr_max, ibi_min, ibi_max, rmssd_m
     ibi_n   = 1 - normaliza(ibi,   ibi_min,   ibi_max)
     rmssd_n = normaliza(rmssd, rmssd_min, rmssd_max)
     return round(0.40 * hr_n + 0.40 * ibi_n + 0.20 * rmssd_n, 4)
+
+def calc_stress_subjetivo(pk):
+    resp = table.query(
+        KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("MOOD#"),
+        ScanIndexForward=False,
+        Limit=1
+    )
+    moods = resp.get("Items", [])
+    if not moods:
+        return 0.30
+    emotional_score = float(moods[0].get("data", {}).get("emotionalScore", 50))
+    return round(1 - (emotional_score / 100), 4)
 
 def hora_para_label(hora):
     if 7 <= hora <= 9:     return "baseline"
@@ -114,18 +126,51 @@ def gerar_relatorio_semanal(event):
     wesad_id    = perfil_item.get("wesadId")
     pk_dados    = f"PATIENT#{wesad_id}" if wesad_id else pk
 
-    # busca os DAILY_NPS do sujeito WESAD
-    resp = table.query(
-        KeyConditionExpression=Key("PK").eq(pk_dados) & Key("SK").begins_with("DAILY_NPS#"),
-        ScanIndexForward=True
-    )
-    dias = resp.get("Items", [])
+    if wesad_id:
+        # contas demo: busca os DAILY_NPS do sujeito WESAD
+        resp = table.query(
+            KeyConditionExpression=Key("PK").eq(pk_dados) & Key("SK").begins_with("DAILY_NPS#"),
+            ScanIndexForward=True
+        )
+        dias = resp.get("Items", [])
+    else:
+        # pacientes reais: agrega os insights diários gerados pelo Health Connect na última semana
+        resp = table.query(
+            KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("INSIGHT#"),
+            ScanIndexForward=True,
+            Limit=50
+        )
+        uma_semana_atras = datetime.now() - timedelta(days=7)
+        dias = []
+        for item in resp.get("Items", []):
+            dados_item = item.get("data", {})
+            if "dias" in dados_item:
+                continue  # ignora relatórios semanais anteriores
+            if datetime.fromisoformat(item["createdAt"]) < uma_semana_atras:
+                continue
+            stress_subj_dia = float(dados_item.get("stress_subj", 0.30) or 0.30)
+            dias.append({
+                "timestamp":      item["createdAt"],
+                "flag":           dados_item.get("flag", "aligned"),
+                "divergence":     dados_item.get("divergence", "0"),
+                "HR":             dados_item.get("hr_mean", "0"),
+                "IBI":            dados_item.get("ibi_mean", "0"),
+                "RMSSD":          dados_item.get("rmssd", "0"),
+                "stress_physio":  dados_item.get("stress_physio", "0"),
+                "perfil":         dados_item.get("perfil", "neutro"),
+                "day":            len(dias) + 1,
+                "mood":           round((1 - stress_subj_dia) * 10),
+                "emotion_emoji":  "",
+                "context":        "",
+                "insight":        dados_item.get("body", ""),
+            })
 
     if not dias:
         return _resp(404, {
             "error": "Nenhum dado diário encontrado",
             "pk_dados": pk_dados,
-            "dica": "Salve os itens DAILY_NPS# no DynamoDB para PATIENT#S16_baseline_test"
+            "dica": "Salve os itens DAILY_NPS# no DynamoDB para PATIENT#S16_baseline_test" if wesad_id
+                    else "Sincronize o smartwatch ao menos uma vez na última semana para gerar insights diários"
         })
 
     # ── CHECAGEM DE DUPLICATA ─────────────────────────────────
@@ -141,7 +186,11 @@ def gerar_relatorio_semanal(event):
 
     for item in insights_existentes.get("Items", []):
         dados = item.get("data", {})
-        # Se já existe um insight desta mesma semana, retorna sem salvar novo
+        # Só conta como duplicata se for um RELATÓRIO SEMANAL anterior (tem campo "dias"),
+        # não um insight diário comum — os dois usam a mesma categoria e o mesmo weekStart.
+        if "dias" not in dados:
+            continue
+        # Se já existe um relatório semanal desta mesma semana, retorna sem salvar novo
         if dados.get("weekStart") == week_start and dados.get("category") in ("stress", "humor", "bem-estar"):
             dias_salvos = []
             try:
@@ -286,6 +335,21 @@ def gerar_relatorio_semanal(event):
         }
     })
 
+def encontrar_insight_diario_de_hoje(pk):
+    hoje = datetime.now().strftime("%Y-%m-%d")
+    resp = table.query(
+        KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("INSIGHT#"),
+        ScanIndexForward=False,
+        Limit=10
+    )
+    for item in resp.get("Items", []):
+        dados = item.get("data", {})
+        if "dias" in dados:
+            continue  # ignora relatórios semanais
+        if item.get("createdAt", "")[:10] == hoje:
+            return item
+    return None
+
 # ── INSIGHT DIÁRIO ───────────────────────────────────────────
 def gerar_insight_handler(event):
     pk, patient_id = resolver_patient_id(event)
@@ -342,7 +406,7 @@ def gerar_insight_handler(event):
 
     label_dominante = max(label_counts, key=label_counts.get) if label_counts else "baseline"
     fase_dia        = hora_para_label(datetime.now().hour)
-    ss              = 0.30
+    ss              = calc_stress_subjetivo(pk)
     sf_adj          = round(sf * 0.9, 4)
     divergence      = round(sf_adj - ss, 4)
 
@@ -352,23 +416,27 @@ def gerar_insight_handler(event):
 
     insight = gerar_insight_fixo(perfil, fase_dia, flag, divergence)
 
-    ts = datetime.now().isoformat()
+    agora = datetime.now().isoformat()
+    insight_de_hoje = encontrar_insight_diario_de_hoje(pk)
+    # Reaproveita a SK do insight de hoje (se já existir) pra ATUALIZAR em vez de criar um novo —
+    # faz mais sentido pra acompanhamento psicológico ter 1 registro por dia, sempre atualizado.
+    ts = insight_de_hoje["SK"].split("#", 1)[1] if insight_de_hoje else agora
     table.put_item(Item={
         "PK": pk, "SK": f"INSIGHT#{ts}", "type": "INSIGHT",
         "data": {
             "title": insight["title"], "body": insight["body"], "category": insight["category"],
             "weekStart": datetime.now().strftime("%Y-%m-%d"), "isRead": False,
             "perfil": perfil, "flag": flag, "divergence": str(divergence),
-            "stress_physio": str(sf), "hr_mean": str(round(hr_mean, 1)),
+            "stress_physio": str(sf), "stress_subj": str(ss), "hr_mean": str(round(hr_mean, 1)),
             "ibi_mean": str(round(ibi_mean, 1)), "rmssd": str(round(rmssd, 1)),
             "label": label_dominante, "amostras": n, "wesad_id": wesad_id or "proprio",
         },
-        "createdAt": ts
+        "createdAt": agora
     })
 
     return _resp(200, {
         "message": "Insight gerado com sucesso", "pk_paciente": pk, "pk_dados": pk_dados,
-        "perfil": perfil, "flag": flag, "divergence": divergence, "stress_physio": sf,
+        "perfil": perfil, "flag": flag, "divergence": divergence, "stress_physio": sf, "stress_subj": ss,
         "hr_mean": round(hr_mean, 1), "ibi_mean": round(ibi_mean, 1), "rmssd": round(rmssd, 1),
         "amostras": n, "insight": insight
     })

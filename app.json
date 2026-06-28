@@ -2,19 +2,37 @@
   "expo": {
     "name": "Apsicare",
     "slug": "apsicare",
-    "extra": {
-      "eas": {
-        "projectId": "dc57821e-c0a1-41cd-9b7e-49bfb1f18b5f"
-      }
-    },
+    "newArchEnabled": false,
     "ios": {
       "bundleIdentifier": "com.vewadie.apsicare",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
+    "android": {
+      "package": "com.vewadie.apsicare",
+      "permissions": [
+        "android.permission.health.READ_HEART_RATE"
+      ]
+    },
     "plugins": [
-      "@react-native-community/datetimepicker"
-    ]
+      "@react-native-community/datetimepicker",
+      "react-native-health-connect",
+      "./plugins/withHealthConnectMainActivity",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "minSdkVersion": 26
+          }
+        }
+      ]
+    ],
+    "owner": "ve_wadie",
+    "extra": {
+      "eas": {
+        "projectId": "bd8a2f36-05ac-400e-8d89-7c2b5173a5e4"
+      }
+    }
   }
 }
