@@ -11,6 +11,14 @@ import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';
 import RelatoriosPaciente from '../Files/RelatoriosPsicologo';
 
+// O backend (Python/AWS) salva os timestamps em UTC sem marcar isso explicitamente,
+// então o JS precisa ser avisado (sufixo "Z") pra não interpretar como horário local.
+const parseTimestampUTC = (ts) => {
+  if (!ts) return new Date();
+  const temTimezone = /Z$|[+-]\d{2}:?\d{2}$/.test(ts);
+  return new Date(temTimezone ? ts : `${ts}Z`);
+};
+
 const DashboardPaciente = ({ navigation, route }) => {
   const screenWidth = Dimensions.get('window').width;
   const [abaAtiva, setAbaAtiva] = useState('perfil');
@@ -54,6 +62,7 @@ const DashboardPaciente = ({ navigation, route }) => {
   const [loadingArquivos, setLoadingArquivos] = useState(false);
   const [uploadingArquivo, setUploadingArquivo] = useState(false);
   const [smartwatchData, setSmartwatchData] = useState({ batimentos: '--', nivelStress: '--', rmssd: '--', perfil: '--' });
+  const [statusClinico, setStatusClinico] = useState({ label: null, dataInsight: null });
   const [contatoEmergencia, setContatoEmergencia] = useState(null);
   const [nomeContato, setNomeContato] = useState('');
   const [telefoneContato, setTelefoneContato] = useState('');
@@ -164,13 +173,19 @@ const DashboardPaciente = ({ navigation, route }) => {
           pct_anxiety_risk: ins.pct_anxiety_risk,
           pct_aligned: ins.pct_aligned,
         })));
-        const ultimo = data.insights[0];
+        const ultimo = data.insights.find((i) => !i.dias);
         if (ultimo) {
           setSmartwatchData({
             batimentos: ultimo.hr_mean || '--',
             nivelStress: ultimo.flag === 'anxiety_risk' ? 'Alto' : ultimo.flag === 'overreported' ? 'Médio' : 'Baixo',
             rmssd: ultimo.rmssd || '--',
             perfil: ultimo.perfil || '--',
+            amostras: ultimo.amostras || null,
+            atualizadoEm: ultimo.timestamp || null,
+          });
+          setStatusClinico({
+            label: ultimo.flag === 'aligned' ? 'Estável' : 'Atenção',
+            dataInsight: ultimo.timestamp || null,
           });
         }
       }
@@ -374,8 +389,8 @@ const carregarDadosDiarios = async () => {
     });
     const data = await response.json();
     if (response.ok && data.insights?.length > 0) {
-      const ultimo = data.insights[0];
-      if (ultimo?.dias?.length > 0) setDadosDiarios(ultimo.dias);
+      const ultimo = data.insights.find((i) => i.dias?.length > 0);
+      if (ultimo) setDadosDiarios(ultimo.dias);
     }
   } catch (err) { console.error('Erro dados diários:', err); }
 };
@@ -425,11 +440,12 @@ const carregarDadosDiarios = async () => {
   };
 
   const renderStatusBadge = () => {
-    const isEstavel = paciente.statusEmocional === 'Estável';
+    if (!statusClinico.label) return null;
+    const isEstavel = statusClinico.label === 'Estável';
     return (
       <View style={[styles.statusBadge, isEstavel ? styles.statusEstavel : styles.statusInstavel]}>
         <Icon name={isEstavel ? 'check-circle' : 'alert-circle'} size={16} color={isEstavel ? '#10B981' : '#F59E0B'} />
-        <Text style={[styles.statusText, isEstavel ? styles.statusTextEstavel : styles.statusTextInstavel]}>{paciente.statusEmocional}</Text>
+        <Text style={[styles.statusText, isEstavel ? styles.statusTextEstavel : styles.statusTextInstavel]}>{statusClinico.label}</Text>
       </View>
     );
   };
@@ -449,16 +465,26 @@ const carregarDadosDiarios = async () => {
   const getFlagLabel = (flag) => flag === 'anxiety_risk' ? 'ATENÇÃO' : flag === 'overreported' ? 'ELEVADO' : 'ESTÁVEL';
 
   // ── DADOS DO GRÁFICO ─────────────────────────────────────
+  const formatarDataCurta = (raw) => {
+    if (!raw) return null;
+    const data = parseTimestampUTC(raw.length === 10 ? `${raw}T00:00:00` : raw.replace(' ', 'T'));
+    return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+  };
+
   const graficoDados = (() => {
     if (dadosDiarios && dadosDiarios.length > 0) {
+      const datas = dadosDiarios.map(d => formatarDataCurta(d.data)).filter(Boolean);
+      const inicio = datas[0];
+      const fim = datas[datas.length - 1];
       return {
         labels: dadosDiarios.map(d => `D${d.dia}`),
         stress: dadosDiarios.map(d => Math.round(parseFloat(d.stress_physio || 0) * 100)),
         humor: dadosDiarios.map(d => Math.round(parseInt(d.mood || 0) * 10)),
         isReal: true,
+        periodo: inicio ? (inicio === fim ? inicio : `${inicio} a ${fim}`) : null,
       };
     }
-    return { labels: ['D1','D2','D3','D4','D5'], stress: [65,65,65,65,65], humor: [30,40,30,40,50], isReal: false };
+    return { labels: ['D1','D2','D3','D4','D5'], stress: [65,65,65,65,65], humor: [30,40,30,40,50], isReal: false, periodo: null };
   })();
 
   const correlacaoData = {
@@ -482,13 +508,17 @@ const carregarDadosDiarios = async () => {
       </View>
 
       <View style={styles.card}>
-        <View style={styles.cardHeader}><Text style={styles.cardTitle}>Status Emocional (Semana)</Text>{renderStatusBadge()}</View>
-        <Text style={styles.melhoraText}>Melhora de {paciente.melhoraPercentual || 0}% em relação à semana anterior</Text>
+        <View style={styles.cardHeader}><Text style={styles.cardTitle}>Status Emocional</Text>{renderStatusBadge()}</View>
+        <Text style={styles.melhoraText}>
+          {statusClinico.dataInsight
+            ? `Com base no insight mais recente, de ${parseTimestampUTC(statusClinico.dataInsight).toLocaleDateString('pt-BR')}`
+            : 'Ainda sem insights gerados para este paciente'}
+        </Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
-        <Text style={styles.diagnosticoCodigo}>{paciente.diagnosticoPrincipal}</Text>
+        <Text style={styles.diagnosticoCodigo}>{paciente.diagnostico || 'Sem diagnóstico registrado'}</Text>
         <Text style={styles.diagnosticoDescricao}>Paciente apresenta sintomas persistentes de preocupação excessiva, tensão muscular.</Text>
       </View>
 
@@ -504,11 +534,17 @@ const carregarDadosDiarios = async () => {
       {/* Smartwatch */}
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Smartwatch</Text>
+        {smartwatchData.atualizadoEm && (
+          <Text style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Manrope', marginBottom: 8 }}>
+            Última sincronização: {parseTimestampUTC(smartwatchData.atualizadoEm).toLocaleString('pt-BR')}
+            {smartwatchData.amostras ? ` — média de ${smartwatchData.amostras} leitura${smartwatchData.amostras > 1 ? 's' : ''}` : ''}
+          </Text>
+        )}
         <View style={styles.smartwatchRow}>
           <View style={styles.smartwatchItem}>
             <Icon name="activity" size={24} color="#B367D4" />
             <Text style={styles.smartwatchValue}>{smartwatchData.batimentos}</Text>
-            <Text style={styles.smartwatchLabel}>BPM</Text>
+            <Text style={styles.smartwatchLabel}>BPM médio (dia)</Text>
           </View>
           <View style={styles.smartwatchDivider} />
           <View style={styles.smartwatchItem}>
@@ -562,7 +598,9 @@ const carregarDadosDiarios = async () => {
         <Text style={styles.cardTitle}>Correlação Semanal</Text>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <Text style={styles.correlacaoSubtitle}>
-            {graficoDados.isReal ? 'Dados reais WESAD — Jan 2025' : 'Aguardando dados...'}
+            {graficoDados.isReal
+              ? `Dados reais${graficoDados.periodo ? ` — ${graficoDados.periodo}` : ''}`
+              : 'Aguardando dados — gere um relatório semanal para ver o gráfico'}
           </Text>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>

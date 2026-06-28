@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,11 +7,32 @@ import {
   ScrollView,
   Alert,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from '../../services/api';
+import {
+  checkAvailability,
+  openHealthConnectInPlayStore,
+  requestHeartRatePermission,
+  hasHeartRatePermission,
+  readHeartRateSince,
+  mapToHealthIngestSamples,
+} from '../../services/healthConnect';
+
+const SYNC_WINDOW_HOURS = 24;
+
+const stressLabelFromScore = (stressPhysio) => {
+  const score = Number(stressPhysio);
+  if (Number.isNaN(score)) return '--';
+  if (score >= 0.6) return 'Alto';
+  if (score >= 0.3) return 'Médio';
+  return 'Baixo';
+};
 
 const SmartwatchPaciente = ({ paciente, standalone = false }) => {
-  const [conectado, setConectado] = useState(false); // false = sem conexão
+  const [conectado, setConectado] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [dadosSmartwatch, setDadosSmartwatch] = useState({
     batimentos: '--',
@@ -19,40 +40,128 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
     ultimaSincronizacao: null,
   });
 
-  const handleConectar = () => {
-    Alert.alert(
-      'Conectar Smartwatch',
-      'Para conectar seu dispositivo wearable, siga os passos:\n\n1. Abra o app do seu smartwatch\n2. Ative o Bluetooth\n3. Autorize a conexão com o ApsiCare\n\nDeseja tentar conectar agora?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Conectar', 
-          onPress: () => {
-            // Simular conexão
-            Alert.alert('Conectando...', 'Aguardando pareamento do dispositivo');
-            setTimeout(() => {
-              setConectado(true);
-              setDadosSmartwatch({
-                batimentos: '72',
-                nivelStress: 'Baixo',
-                ultimaSincronizacao: new Date().toLocaleString(),
-              });
-              Alert.alert('Sucesso!', 'Smartwatch conectado com sucesso');
-            }, 2000);
-          }
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+    (async () => {
+      try {
+        const { available } = await checkAvailability();
+        if (!available) return;
+        const jaConectado = await hasHeartRatePermission();
+        if (jaConectado) {
+          setConectado(true);
+          await sincronizar(true);
         }
-      ]
-    );
+      } catch (err) {
+        console.error('Erro ao verificar permissão Health Connect:', err);
+      }
+    })();
+  }, [paciente?.id]);
+
+  const sincronizar = async (silencioso = false) => {
+    if (!paciente?.id) {
+      if (!silencioso) Alert.alert('Erro', 'Paciente não identificado.');
+      return;
+    }
+
+    setRefreshing(true);
+    try {
+      const records = await readHeartRateSince(SYNC_WINDOW_HOURS);
+      const samples = mapToHealthIngestSamples(records);
+
+      if (samples.length === 0) {
+        if (!silencioso) {
+          Alert.alert(
+            'Nenhuma medição encontrada',
+            'Para sincronizar, primeiro meça sua frequência cardíaca no relógio (abra o app de batimentos nele, ou aguarde uma medição automática). Depois volte aqui e toque em "Sincronizar Agora" de novo.'
+          );
+        }
+        return;
+      }
+
+      const token = await AsyncStorage.getItem('token');
+
+      await fetch(`${API_URL}/health`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: paciente.id, samples }),
+      });
+
+      await fetch(`${API_URL}/patients/${paciente.id}/insights/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({}),
+      });
+
+      const insightsResponse = await fetch(`${API_URL}/patients/${paciente.id}/insights`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const insightsData = await insightsResponse.json();
+      const ultimoInsight = insightsData?.insights?.find((i) => !i.dias);
+
+      const ultimaAmostra = samples.reduce((mais_recente, s) =>
+        new Date(s.time_s) > new Date(mais_recente.time_s) ? s : mais_recente
+      );
+
+      setDadosSmartwatch({
+        batimentos: String(Math.round(ultimaAmostra.hr)),
+        nivelStress: stressLabelFromScore(ultimoInsight?.stress_physio),
+        ultimaSincronizacao: new Date().toLocaleString(),
+      });
+
+      if (!silencioso) Alert.alert('Sincronizado!', 'Dados do smartwatch atualizados com sucesso.');
+    } catch (err) {
+      console.error('Erro ao sincronizar Health Connect:', err);
+      if (!silencioso) Alert.alert('Erro ao sincronizar', 'Não foi possível ler ou enviar os dados do smartwatch.');
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const handleConectar = async () => {
+    try {
+      const { available, reason } = await checkAvailability();
+
+      if (!available) {
+        if (reason === 'provider_update_required' || reason === 'unavailable') {
+          Alert.alert(
+            'Health Connect não disponível',
+            'Para conectar seu smartwatch, instale ou atualize o app Health Connect.',
+            [
+              { text: 'Cancelar', style: 'cancel' },
+              { text: 'Abrir Play Store', onPress: openHealthConnectInPlayStore },
+            ]
+          );
+        } else {
+          Alert.alert('Não suportado', 'Esse recurso está disponível apenas em dispositivos Android.');
+        }
+        return;
+      }
+
+      const granted = await requestHeartRatePermission();
+      if (!granted) {
+        Alert.alert(
+          'Permissão negada',
+          'Sem a permissão de leitura de batimentos cardíacos não é possível sincronizar os dados do seu smartwatch.'
+        );
+        return;
+      }
+
+      setConectado(true);
+      await sincronizar();
+    } catch (err) {
+      console.error('Erro ao conectar Health Connect:', err);
+      Alert.alert('Erro', 'Não foi possível conectar ao Health Connect.');
+    }
   };
 
   const handleDesconectar = () => {
     Alert.alert(
       'Desconectar Smartwatch',
-      'Tem certeza que deseja desconectar seu dispositivo?',
+      'Isso só remove a conexão dentro do app. Para revogar a permissão de leitura, use as configurações do Health Connect no seu celular.',
       [
         { text: 'Cancelar', style: 'cancel' },
-        { 
-          text: 'Desconectar', 
+        {
+          text: 'Desconectar',
           style: 'destructive',
           onPress: () => {
             setConectado(false);
@@ -61,9 +170,8 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
               nivelStress: '--',
               ultimaSincronizacao: null,
             });
-            Alert.alert('Desconectado', 'Smartwatch desconectado com sucesso');
-          }
-        }
+          },
+        },
       ]
     );
   };
@@ -73,18 +181,20 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
       Alert.alert('Dispositivo não conectado', 'Conecte seu smartwatch para sincronizar os dados');
       return;
     }
-    
-    setRefreshing(true);
-    setTimeout(() => {
-      setDadosSmartwatch({
-        batimentos: String(Math.floor(Math.random() * (90 - 65 + 1) + 65)),
-        nivelStress: ['Baixo', 'Médio', 'Alto'][Math.floor(Math.random() * 3)],
-        ultimaSincronizacao: new Date().toLocaleString(),
-      });
-      setRefreshing(false);
-      Alert.alert('Sincronizado!', 'Dados do smartwatch atualizados');
-    }, 1500);
+    sincronizar();
   };
+
+  const renderNaoSuportado = () => (
+    <View style={styles.emptyState}>
+      <View style={styles.emptyIcon}>
+        <Icon name="watch" size={64} color="#D1D5DB" />
+      </View>
+      <Text style={styles.emptyTitle}>Recurso não disponível</Text>
+      <Text style={styles.emptyText}>
+        A sincronização com smartwatch via Health Connect está disponível apenas em dispositivos Android.
+      </Text>
+    </View>
+  );
 
   const renderDesconectado = () => (
     <View style={styles.emptyState}>
@@ -99,11 +209,11 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
         <Icon name="bluetooth" size={20} color="#FFFFFF" />
         <Text style={styles.conectarButtonText}>Conectar Smartwatch</Text>
       </TouchableOpacity>
-      
+
       <View style={styles.infoBox}>
         <Icon name="info" size={16} color="#6366F1" />
         <Text style={styles.infoText}>
-          Compatível com Apple Watch, Galaxy Watch, Fitbit e dispositivos Wear OS
+          Conecte via Health Connect — funciona com qualquer app de smartwatch que sincronize dados de saúde com ele (Galaxy Wearable, Mi Fitness, Wear OS, entre outros).
         </Text>
       </View>
     </View>
@@ -111,7 +221,6 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
 
   const renderConectado = () => (
     <>
-      {/* Status da Conexão */}
       <View style={styles.statusCard}>
         <View style={styles.statusHeader}>
           <View style={styles.statusBadge}>
@@ -127,7 +236,15 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
         </Text>
       </View>
 
-      {/* Cards de Dados */}
+      {dadosSmartwatch.batimentos === '--' && (
+        <View style={styles.infoBox}>
+          <Icon name="info" size={16} color="#6366F1" />
+          <Text style={styles.infoText}>
+            Nenhuma medição ainda. Meça sua frequência cardíaca no relógio (abra o app de batimentos nele) e depois toque em "Sincronizar Agora".
+          </Text>
+        </View>
+      )}
+
       <View style={styles.statsGrid}>
         <View style={styles.statCard}>
           <View style={[styles.statIcon, { backgroundColor: '#FEE2E2' }]}>
@@ -136,31 +253,8 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
           <Text style={styles.statValue}>{dadosSmartwatch.batimentos}</Text>
           <Text style={styles.statLabel}>BPM</Text>
         </View>
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: '#D1FAE5' }]}>
-            <Icon name="moon" size={24} color="#10B981" />
-          </View>
-        </View>
       </View>
 
-      <View style={styles.statsGrid}>
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: '#E0E7FF' }]}>
-            <Icon name="trending-up" size={24} color="#6366F1" />
-          </View>
-          <Text style={styles.statValue}>{dadosSmartwatch.passos}</Text>
-          <Text style={styles.statLabel}>Passos (hoje)</Text>
-        </View>
-        <View style={styles.statCard}>
-          <View style={[styles.statIcon, { backgroundColor: '#FEF3C7' }]}>
-            <Icon name="flame" size={24} color="#F59E0B" />
-          </View>
-          <Text style={styles.statValue}>{dadosSmartwatch.calorias}</Text>
-          <Text style={styles.statLabel}>Calorias (hoje)</Text>
-        </View>
-      </View>
-
-      {/* Nível de Stress */}
       <View style={styles.stressCard}>
         <Text style={styles.stressTitle}>Nível de Stress</Text>
         <View style={styles.stressLevel}>
@@ -174,7 +268,7 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
           </Text>
         </View>
         <View style={styles.stressBarContainer}>
-          <View style={[styles.stressBar, { width: dadosSmartwatch.nivelStress === 'Baixo' ? '33%' : dadosSmartwatch.nivelStress === 'Médio' ? '66%' : '100%' }]} />
+          <View style={[styles.stressBar, { width: dadosSmartwatch.nivelStress === 'Baixo' ? '33%' : dadosSmartwatch.nivelStress === 'Médio' ? '66%' : dadosSmartwatch.nivelStress === 'Alto' ? '100%' : '0%' }]} />
         </View>
         <Text style={styles.stressDesc}>
           {dadosSmartwatch.nivelStress === 'Baixo' && 'Você está com níveis saudáveis de stress. Continue com suas práticas de mindfulness!'}
@@ -183,16 +277,29 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
         </Text>
       </View>
 
-      {/* Botão Sincronizar */}
-      <TouchableOpacity style={styles.sincronizarButton} onPress={onRefresh}>
+      <TouchableOpacity style={styles.sincronizarButton} onPress={onRefresh} disabled={refreshing}>
         <Icon name="refresh-cw" size={18} color="#6366F1" />
-        <Text style={styles.sincronizarText}>Sincronizar Agora</Text>
+        <Text style={styles.sincronizarText}>{refreshing ? 'Sincronizando...' : 'Sincronizar Agora'}</Text>
       </TouchableOpacity>
     </>
   );
 
+  if (!isAndroid()) {
+    return (
+      <View style={styles.contentContainer}>
+        {renderNaoSuportado()}
+      </View>
+    );
+  }
+
+  const conteudo = !conectado ? renderDesconectado() : renderConectado();
+
+  if (!standalone) {
+    return <View style={styles.contentContainer}>{conteudo}</View>;
+  }
+
   return (
-    <ScrollView 
+    <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
       showsVerticalScrollIndicator={false}
@@ -200,10 +307,12 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      {!conectado ? renderDesconectado() : renderConectado()}
+      {conteudo}
     </ScrollView>
   );
 };
+
+const isAndroid = () => Platform.OS === 'android';
 
 const styles = StyleSheet.create({
   container: {
@@ -214,7 +323,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 32,
   },
-  // Estado Desconectado
   emptyState: {
     alignItems: 'center',
     paddingVertical: 40,
@@ -271,7 +379,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#4338CA',
   },
-  // Estado Conectado
   statusCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 16,

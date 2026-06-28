@@ -54,9 +54,12 @@ export const handler = async (event) => {
       rmssd: item.data?.rmssd,
       perfil: item.data?.perfil,
       stress_physio: item.data?.stress_physio,
+      stress_subj: item.data?.stress_subj,
       pct_anxiety_risk: item.data?.pct_anxiety_risk,
       pct_aligned: item.data?.pct_aligned,
       divergence: item.data?.divergence,
+      amostras: item.data?.amostras,
+      dias: item.data?.dias ? JSON.parse(item.data.dias) : undefined,
     }));
 
     return response(200, { insights });
