@@ -26,6 +26,7 @@ export const handler = async (event) => {
     }));
 
     const moods = result.Items.map(item => ({
+      id: item.SK.split('#')[1],
       timestamp: item.data.timestamp,
       valenceScore: item.data.valenceScore,
       arousalScore: item.data.arousalScore,
@@ -34,7 +35,11 @@ export const handler = async (event) => {
       stressScore: item.data.stressScore,
       sleepQuality: item.data.sleepQuality,
       energyLevel: item.data.energyLevel,
-      diaryText: item.data.diaryText
+      diaryText: item.data.diaryText,
+      moodScore: item.data.moodScore || null,
+      impactScore: item.data.impactScore || null,
+      context: item.data.context || null,
+      sharedWithPsychologist: item.data.sharedWithPsychologist || false,
     }));
 
     return response(200, { moods });

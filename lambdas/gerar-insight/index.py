@@ -7,6 +7,10 @@ from boto3.dynamodb.conditions import Key
 dynamo = boto3.resource("dynamodb", region_name="sa-east-1")
 table  = dynamo.Table("ApsiCare")
 
+HR_MIN, HR_MAX       = 50, 110
+IBI_MIN, IBI_MAX     = 545, 1200
+RMSSD_MIN, RMSSD_MAX = 10, 60
+
 PERFIS_WESAD = {
     "S14": "hiperreativo",
     "S16": "dissociativo",
@@ -24,10 +28,10 @@ def calc_rmssd(ibis):
     diffs = [ibis[i+1] - ibis[i] for i in range(len(ibis)-1)]
     return math.sqrt(sum(d**2 for d in diffs) / len(diffs))
 
-def calc_stress_physio(hr, ibi, rmssd, hr_min, hr_max, ibi_min, ibi_max, rmssd_min, rmssd_max):
-    hr_n    = normaliza(hr,    hr_min,    hr_max)
-    ibi_n   = 1 - normaliza(ibi,   ibi_min,   ibi_max)
-    rmssd_n = normaliza(rmssd, rmssd_min, rmssd_max)
+def calc_stress_physio(hr, ibi, rmssd):
+    hr_n    = normaliza(hr,    HR_MIN,    HR_MAX)
+    ibi_n   = 1 - normaliza(ibi,   IBI_MIN,   IBI_MAX)
+    rmssd_n = 1 - normaliza(rmssd, RMSSD_MIN, RMSSD_MAX)
     return round(0.40 * hr_n + 0.40 * ibi_n + 0.20 * rmssd_n, 4)
 
 def calc_stress_subjetivo(pk):
@@ -391,11 +395,7 @@ def gerar_insight_handler(event):
     ibi_mean = sum(ibis) / len(ibis) if ibis else 850.0
     rmssd    = calc_rmssd(ibis) if len(ibis) >= 2 else 0.0
 
-    hr_min, hr_max       = min(hrs), max(hrs)
-    ibi_min, ibi_max     = (min(ibis), max(ibis)) if ibis else (600, 1300)
-    rmssd_min, rmssd_max = 0.0, max(rmssd * 2, 1.0)
-
-    sf = calc_stress_physio(hr_mean, ibi_mean, rmssd, hr_min, hr_max, ibi_min, ibi_max, rmssd_min, rmssd_max)
+    sf = calc_stress_physio(hr_mean, ibi_mean, rmssd)
 
     subject_key = (wesad_id or patient_id).split("_")[0].upper()
     perfil = PERFIS_WESAD.get(subject_key)

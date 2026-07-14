@@ -9,7 +9,7 @@ export const handler = async (event) => {
   try {
     const patientId = event.pathParameters?.patientId;
     const body = JSON.parse(event.body);
-    const { valenceScore, arousalScore, contextTags, stressScore, sleepQuality, energyLevel, diaryText } = body;
+    const { valenceScore, arousalScore, contextTags, stressScore, sleepQuality, energyLevel, diaryText, moodScore, impactScore, context, sharedWithPsychologist } = body;
 
     if (!patientId || !valenceScore || !arousalScore) {
       return response(400, { error: "Campos obrigatórios: valenceScore, arousalScore" });
@@ -43,6 +43,10 @@ export const handler = async (event) => {
         sleepQuality: sleepQuality || null,
         energyLevel: energyLevel || null,
         diaryText: diaryText || null,
+        moodScore: moodScore || null,
+        impactScore: impactScore || null,
+        context: context || null,
+        sharedWithPsychologist: sharedWithPsychologist || false,
         timestamp: now
       }
     };
