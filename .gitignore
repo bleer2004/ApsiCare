@@ -1,5 +1,7 @@
 dataset/
 .venv/
+.env
+.env.local
 lambdas/**/node_modules/
 node_modules/
 *.json
