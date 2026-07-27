@@ -93,13 +93,18 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
       const allMoods = moodsData.moods || [];
       const moodCount = allMoods.length;
       const syncCount = (insightsData.insights || []).filter(i => !i.dias).length;
-      const umaSemanaMsAtras = Date.now() - 7 * 24 * 60 * 60 * 1000;
-      const diariosRecentes = allMoods
-        .filter(m => m.diaryText && new Date(m.timestamp + 'Z').getTime() > umaSemanaMsAtras)
-        .slice(0, 10);
+      const diariosComTexto = allMoods.filter(m => m.diaryText).slice(0, 15);
+
+      // resumo calculado localmente: emoção mais frequente + média de score
+      const tagCount = {};
+      allMoods.forEach(m => (m.contextTags || []).forEach(t => { tagCount[t] = (tagCount[t] || 0) + 1; }));
+      const topTag = Object.entries(tagCount).sort((a, b) => b[1] - a[1])[0]?.[0] || null;
+      const scores = allMoods.map(m => m.emotionalScore).filter(s => typeof s === 'number');
+      const avgScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+
       setContagensPorPaciente(prev => ({
         ...prev,
-        [patientId]: { moods: moodCount, syncs: syncCount, diarios: diariosRecentes },
+        [patientId]: { moods: moodCount, syncs: syncCount, diarios: diariosComTexto, topTag, avgScore },
       }));
     } catch (err) {
       console.error('Erro contagens:', patientId, err);
@@ -124,14 +129,14 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
   // ── ANALISAR COM IA 
   const handleAnalisarIA = async (relatorio) => {
     if (relatorio.tipo === 'anotacoes') {
-      const diarios = contagensPorPaciente[relatorio.pacienteId]?.diarios || [];
+      const c = contagensPorPaciente[relatorio.pacienteId] || {};
       setAnaliseSelecionada({
-        titulo: relatorio.titulo,
+        titulo: 'Anotações do Diário',
         pacienteNome: relatorio.pacienteNome,
         data: relatorio.data,
         tipo: 'anotacoes',
-        analise: diarios.length > 0 ? null : 'Nenhuma anotação com texto encontrada na última semana.',
-        diarios,
+        diarios: c.diarios || [],
+        resumo: { topTag: c.topTag, avgScore: c.avgScore, total: c.moods || 0 },
       });
       setModalAnaliseVisible(true);
       return;
@@ -243,8 +248,8 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
 
       <View style={styles.relatorioActions}>
         <TouchableOpacity style={styles.analisarBtn} onPress={() => handleAnalisarIA(relatorio)}>
-          <Icon name="cpu" size={18} color="#B367D4" />
-          <Text style={styles.analisarBtnText}>Analisar com IA</Text>
+          <Icon name={relatorio.tipo === 'anotacoes' ? 'book-open' : 'cpu'} size={18} color="#B367D4" />
+          <Text style={styles.analisarBtnText}>{relatorio.tipo === 'anotacoes' ? 'Ver anotações' : 'Analisar com IA'}</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.baixarBtn} onPress={() => handleBaixarRelatorio(relatorio)}>
           <Icon name="download" size={18} color="#10B981" />
@@ -381,19 +386,40 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
 
                   {analiseSelecionada.tipo === 'anotacoes' ? (
                     <>
-                      <Text style={styles.analiseSectionTitle}>📓 Anotações da Semana</Text>
+                      {/* Resumo calculado localmente */}
+                      {(analiseSelecionada.resumo?.total > 0) && (
+                        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 16 }}>
+                          <View style={{ flex: 1, backgroundColor: '#F8F5FF', borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                            <Text style={{ fontSize: 22, fontFamily: 'Manrope', fontWeight: '800', color: '#B367D4' }}>{analiseSelecionada.resumo.total}</Text>
+                            <Text style={{ fontSize: 10, fontFamily: 'Manrope', color: '#64748B', marginTop: 2 }}>registros totais</Text>
+                          </View>
+                          {analiseSelecionada.resumo.avgScore !== null && (
+                            <View style={{ flex: 1, backgroundColor: '#F0FDF4', borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                              <Text style={{ fontSize: 22, fontFamily: 'Manrope', fontWeight: '800', color: '#22C55E' }}>{analiseSelecionada.resumo.avgScore}%</Text>
+                              <Text style={{ fontSize: 10, fontFamily: 'Manrope', color: '#64748B', marginTop: 2 }}>média emocional</Text>
+                            </View>
+                          )}
+                          {analiseSelecionada.resumo.topTag && (
+                            <View style={{ flex: 1, backgroundColor: '#FEF3C7', borderRadius: 10, padding: 12, alignItems: 'center' }}>
+                              <Text style={{ fontSize: 14, fontFamily: 'Manrope', fontWeight: '800', color: '#D97706' }}>{analiseSelecionada.resumo.topTag}</Text>
+                              <Text style={{ fontSize: 10, fontFamily: 'Manrope', color: '#64748B', marginTop: 2 }}>humor freq.</Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                      <Text style={styles.analiseSectionTitle}>📓 Anotações com texto</Text>
                       {analiseSelecionada.diarios?.length > 0 ? (
                         analiseSelecionada.diarios.map((m, idx) => (
                           <View key={idx} style={{ marginBottom: 12, padding: 12, backgroundColor: '#FAFAFA', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: '#B367D4' }}>
                             <Text style={{ fontSize: 11, fontFamily: 'Manrope', fontWeight: '700', color: '#94A3B8', marginBottom: 4 }}>
-                              {new Date(m.timestamp + 'Z').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                              {new Date(m.timestamp?.endsWith('Z') ? m.timestamp : (m.timestamp ?? '') + 'Z').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
                               {m.contextTags?.[0] ? `  •  ${m.contextTags[0]}` : ''}
                             </Text>
                             <Text style={{ fontSize: 13, fontFamily: 'Manrope', color: '#334155', lineHeight: 20 }}>{m.diaryText}</Text>
                           </View>
                         ))
                       ) : (
-                        <Text style={styles.analiseText}>{analiseSelecionada.analise}</Text>
+                        <Text style={styles.analiseText}>Nenhuma anotação com texto registrada.</Text>
                       )}
                     </>
                   ) : (
