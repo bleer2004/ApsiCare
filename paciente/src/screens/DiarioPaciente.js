@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../../src/services/api';
+import { API_URL, GROQ_API_KEY } from '../../../src/services/api';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, Modal, ActivityIndicator,
+  StatusBar, ScrollView, Alert, Modal, ActivityIndicator, Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import * as Audio from 'expo-av/build/Audio';
 
 const DiarioPaciente = ({ navigation }) => {
   const [selectedMood, setSelectedMood] = useState(null);
@@ -18,10 +19,13 @@ const DiarioPaciente = ({ navigation }) => {
   const [sharingId, setSharingId] = useState(null);
   const [anotacoes, setAnotacoes] = useState([]);
 
-  // NOVOS ESTADOS
   const [humorNota, setHumorNota] = useState(5);
   const [impactoNota, setImpactoNota] = useState(3);
   const [contexto, setContexto] = useState('');
+
+  const [gravando, setGravando] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const recordingRef = useRef(null);
 
   const contextos = [
     { id: 'estudando', label: '📚 Estudando', icon: 'book' },
@@ -99,7 +103,60 @@ const DiarioPaciente = ({ navigation }) => {
     return ctx ? ctx.label : contextoId;
   };
 
+  const iniciarGravacao = async () => {
+    try {
+      const { granted } = await Audio.requestPermissionsAsync();
+      if (!granted) {
+        Alert.alert('Permissão negada', 'Autorize o uso do microfone nas configurações.');
+        return;
+      }
+      await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      recordingRef.current = recording;
+      setGravando(true);
+    } catch (e) {
+      Alert.alert('Erro ao gravar', e?.message || String(e));
+    }
+  };
+
+  const pararGravacaoETranscrever = async () => {
+    if (!recordingRef.current) return;
+    setGravando(false);
+    setTranscrevendo(true);
+    try {
+      await recordingRef.current.stopAndUnloadAsync();
+      const uri = recordingRef.current.getURI();
+      recordingRef.current = null;
+
+      const formData = new FormData();
+      formData.append('file', { uri, type: 'audio/m4a', name: 'recording.m4a' });
+      formData.append('model', 'whisper-large-v3-turbo');
+      formData.append('language', 'pt');
+
+      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
+        body: formData,
+      });
+      const data = await res.json();
+      console.log('[transcrever] groq status:', res.status, JSON.stringify(data).slice(0, 200));
+      if (res.ok && data.text) {
+        setAnotacao(prev => prev ? `${prev} ${data.text}` : data.text);
+      } else {
+        Alert.alert('Erro na transcrição', data.error?.message || `Status ${res.status}`);
+      }
+    } catch (e) {
+      console.error('[transcrever] erro geral:', e?.message);
+      Alert.alert('Erro', e?.message || String(e));
+    } finally {
+      setTranscrevendo(false);
+    }
+  };
+
   const handleSalvar = async () => {
+    console.log('[salvar] chamado, mood:', selectedMood, 'loading:', loading, 'transcrevendo:', transcrevendo);
     if (!selectedMood) {
       Alert.alert('Atenção', 'Selecione como você está se sentindo');
       return;
@@ -138,8 +195,13 @@ const DiarioPaciente = ({ navigation }) => {
         setContexto('');
         Alert.alert('Sucesso', 'Anotação salva com sucesso!');
         await carregarHistorico();
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        console.error('[salvar] erro API:', response.status, JSON.stringify(errData));
+        Alert.alert('Erro', errData.message || `Status ${response.status}`);
       }
     } catch (err) {
+      console.error('[salvar] catch:', err);
       Alert.alert('Erro', 'Não foi possível salvar a anotação');
     } finally {
       setLoading(false);
@@ -383,11 +445,25 @@ const DiarioPaciente = ({ navigation }) => {
           <View style={styles.sectionLabelContainer}>
             <Icon name="edit-2" size={16} color="#B367D4" />
             <Text style={styles.sectionLabel}>Anotações do dia</Text>
+            <TouchableOpacity
+              style={[styles.voiceButton, gravando && styles.voiceButtonGravando]}
+              onPress={gravando ? pararGravacaoETranscrever : iniciarGravacao}
+              disabled={transcrevendo}
+            >
+              {transcrevendo ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Icon name={gravando ? 'square' : 'mic'} size={16} color="#FFFFFF" />
+              )}
+              <Text style={styles.voiceButtonText}>
+                {transcrevendo ? 'Transcrevendo...' : gravando ? 'Parar' : 'Gravar voz'}
+              </Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.anotacaoContainer}>
             <TextInput
               style={styles.anotacaoInput}
-              placeholder="Este é um local seguro, expresse suas ideias, pensamentos..."
+              placeholder="Escreva ou grave sua voz para preencher automaticamente..."
               placeholderTextColor="#94A3B8"
               multiline
               value={anotacao}
@@ -845,6 +921,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     marginBottom: 12,
+    flexWrap: 'wrap',
+  },
+  voiceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#B367D4',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginLeft: 'auto',
+  },
+  voiceButtonGravando: {
+    backgroundColor: '#EF4444',
+  },
+  voiceButtonText: {
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
   sectionLabel: {
     fontSize: 14,

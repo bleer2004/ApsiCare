@@ -68,34 +68,36 @@ const VisaoGeral = ({ navigation }) => {
       });
       const data = await response.json();
       if (response.ok && data.insights?.length > 0) {
-        const ultimo = data.insights[0];
-        setDadosWesadPorPaciente(prev => ({
-          ...prev,
-          [patientId]: {
-            hr_mean: ultimo.hr_mean,
-            rmssd: ultimo.rmssd,
-            perfil: ultimo.perfil,
-            flag: ultimo.flag,
-            nivelStress: ultimo.flag === 'anxiety_risk' ? 'Alto' : ultimo.flag === 'overreported' ? 'Médio' : 'Baixo',
-          },
-        }));
+        const ultimo = data.insights.find(i => !i.dias);
+        if (ultimo) {
+          setDadosWesadPorPaciente(prev => ({
+            ...prev,
+            [patientId]: {
+              hr_mean: ultimo.hr_mean,
+              rmssd: ultimo.rmssd,
+              perfil: ultimo.perfil,
+              flag: ultimo.flag,
+              nivelStress: ultimo.flag === 'anxiety_risk' ? 'Alto' : ultimo.flag === 'overreported' ? 'Médio' : 'Baixo',
+            },
+          }));
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar insight:', err);
     }
   };
 
-  // Busca o relatório semanal (com array "dias": HR, mood, stress_physio por dia)
   const carregarRelatorioSemanal = async (patientId, token) => {
     try {
-      const response = await fetch(`${API_URL}/patients/${patientId}/insights/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ action: 'weekly-report' }),
+      const response = await fetch(`${API_URL}/patients/${patientId}/insights`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      if (response.ok && data.relatorio?.dias?.length > 0) {
-        setRelatoriosPorPaciente(prev => ({ ...prev, [patientId]: data.relatorio.dias }));
+      if (response.ok && data.insights) {
+        const relatorio = data.insights.find(i => i.dias?.length > 0);
+        if (relatorio) {
+          setRelatoriosPorPaciente(prev => ({ ...prev, [patientId]: relatorio.dias }));
+        }
       }
     } catch (err) {
       console.error('Erro ao carregar relatório semanal:', err);
@@ -127,8 +129,10 @@ const VisaoGeral = ({ navigation }) => {
         descricao: dadosWesad
           ? `HR ${dadosWesad.hr_mean} bpm • Stress ${dadosWesad.nivelStress} • Perfil ${dadosWesad.perfil}`
           : 'Aguardando dados fisiológicos',
-        tempo: 'Atualizado hoje',
-        origem: 'Dataset WESAD',
+        tempo: dadosWesad?.atualizadoEm
+          ? new Date(`${dadosWesad.atualizadoEm}Z`.replace('ZZ','Z')).toLocaleDateString('pt-BR')
+          : (dadosWesad ? 'Atualizado hoje' : 'Sem dados'),
+        origem: p.wesadId ? 'Dataset WESAD' : 'Dados reais',
         cor: classificacao.cor,
         corBg: classificacao.corBg,
         icon: classificacao.icon,
@@ -168,12 +172,7 @@ const VisaoGeral = ({ navigation }) => {
     return [...reaisComRisco, pacienteMockAtencao];
   }, [pacientesReais, pacienteMockAtencao]);
 
-  const pacientesUrgencias = [
-    { id: 'u1', nome: 'Mariana Lopes', motivo: 'Queda de humor superior a 50% em 48h', detalhe: 'Score caiu de 80 para 32 entre segunda e quarta-feira.', tipo: 'piora', tempo: 'Detectado há 1 dia' },
-    { id: 'u2', nome: 'Pedro Henrique', motivo: 'Ligou para emergência (CVV)', detalhe: 'Registro de contato com linha de crise em 20/05/2025.', tipo: 'emergencia', tempo: 'Há 4 dias' },
-    { id: 'u3', nome: 'Julia Santos', motivo: 'Piora progressiva nas últimas 2 semanas', detalhe: 'Relatórios diários indicam deterioração contínua.', tipo: 'piora', tempo: 'Detectado há 2 dias' },
-    { id: 'u4', nome: 'Carlos Ferreira', motivo: 'Ligou para SAMU — episódio de pânico', detalhe: 'Ocorrência registrada em 22/05/2025.', tipo: 'emergencia', tempo: 'Há 2 dias' },
-  ];
+  const pacientesUrgencias = [];
 
   const tendenciaPiora = useMemo(() => {
     return pacientesAtencao.map(p => p.nome.split(' ')[0]);

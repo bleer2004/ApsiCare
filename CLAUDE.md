@@ -30,9 +30,23 @@ Itens DynamoDB relevantes (`PK`/`SK`):
 ### Pipeline de insight (`lambdas/gerar-insight/index.py`)
 
 - Mapeia sujeitos do dataset acadêmico **WESAD** (S14/S16/S17) para "perfis" psicológicos fixos (`hiperreativo`/`dissociativo`/`neutro`) via `PERFIS_WESAD`, usados nas **contas demo** do TCC.
-- Resolve `wesad_id` a partir do campo `wesadId` no perfil do paciente. **Se `wesadId` estiver vazio (paciente real), cai automaticamente no fallback de usar a própria PK** — ou seja, o pipeline já funciona com dados reais sem mudança de código, basta gravar `HEALTH_BATCH#` com `dataPoints` contendo `hr`/`ibi`/(`temp` opcional) sob a PK do próprio paciente.
+- Resolve `wesad_id` a partir do campo `wesadId` no perfil do paciente. **Se `wesadId` estiver vazio (paciente real), cai automaticamente no fallback de usar a própria PK**.
 - Calcula RMSSD internamente a partir da lista de IBIs (`calc_rmssd`) — quem grava dados não precisa calcular RMSSD, só mandar `hr`/`ibi`.
-- `ss = 0.30` (stress subjetivo) está **hardcoded** no insight diário — não vem de dados reais de humor ainda.
+- Stress fisiológico usa **thresholds absolutos** de HRV (Shaffer & Ginsberg 2017): HR 50–110bpm, IBI 545–1200ms, RMSSD 10–60ms (normalização relativa ao batch foi removida — era bug). RMSSD é invertido na fórmula (RMSSD alto = relaxamento).
+- Stress subjetivo (`ss`) combina 4 parâmetros com pesos: `0.30 × emocao + 0.20 × humor + 0.20 × impacto + 0.30 × texto_llm`. O `texto_llm` vem da análise do diário via LLM (OpenRouter + Llama 3.2 1B). Fallback para 0.5 se LLM indisponível.
+
+### Pipeline LLM — análise de texto e voz (implementado 2026-07)
+
+Dois lambdas novos em Python:
+- `lambdas/analisar-texto/index.py` — `POST /analisar-texto`: recebe `{ diaryText }`, chama OpenRouter (Llama 3.2 1B), devolve `{ stress_score, sentimento, palavras_chave }`. Variável de ambiente: `OPENROUTER_API_KEY`.
+- `lambdas/transcrever-voz/index.py` — `POST /transcrever-voz`: recebe `{ audio_base64 }` (WAV), chama HuggingFace Inference API (Whisper Large V3, gratuito), devolve `{ text }`. Variável de ambiente: `HF_TOKEN`.
+
+Fluxo de voz no app: paciente grava → `transcrever-voz` (Whisper) → texto aparece no campo do diário pra revisar → salva como `diaryText` → na geração de insight, `gerar-insight` chama OpenRouter internamente e incorpora o score na fórmula.
+
+**Frontend** — `paciente/src/screens/DiarioPaciente.js`:
+- Botão "Gravar voz" ao lado do título "Anotações do dia" (Android only).
+- Grava com `expo-av`, converte pra base64, envia ao `/transcrever-voz`, texto transcrito preenche o campo automaticamente (append se já havia texto).
+- iOS mostra mensagem de indisponível.
 
 ### Endpoints de ingestão
 
@@ -43,7 +57,9 @@ Itens DynamoDB relevantes (`PK`/`SK`):
 
 - Sem validação de schema/JWT em lambdas de dados — não adicionar isoladamente sem o usuário pedir, para não quebrar consistência com o resto do backend.
 - Sem comentários longos / documentação extensa em código — preferir nomes claros.
-- Pacotes nativos (ex.: Health Connect) exigem development build (EAS) — Expo Go não roda módulos nativos customizados.
+- Pacotes nativos (ex.: Health Connect, expo-av) exigem development build (EAS) — Expo Go não roda módulos nativos customizados.
+- Lambdas Python precisam ter handler configurado como `index.handler` no console da AWS (padrão da AWS é `lambda_function.lambda_handler` e quebra).
+- Variáveis de ambiente dos lambdas LLM: `OPENROUTER_API_KEY` em `analisar-texto` e `gerar-insight`; `HF_TOKEN` em `transcrever-voz`.
 
 ## Status: integração Health Connect — CONCLUÍDA e validada ponta a ponta (2026-06-18 a 2026-06-22)
 

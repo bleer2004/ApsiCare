@@ -80,11 +80,12 @@ const SmartwatchPaciente = ({ paciente, standalone = false }) => {
 
       const token = await AsyncStorage.getItem('token');
 
-      await fetch(`${API_URL}/health`, {
+      const healthRes = await fetch(`${API_URL}/health`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ userId: paciente.id, samples }),
       });
+      if (!healthRes.ok) throw new Error(`health-ingest retornou ${healthRes.status}`);
 
       await fetch(`${API_URL}/patients/${paciente.id}/insights/generate`, {
         method: 'POST',

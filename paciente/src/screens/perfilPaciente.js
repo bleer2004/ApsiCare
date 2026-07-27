@@ -88,20 +88,9 @@ const PerfilPaciente = ({ navigation }) => {
           humorPrevalece: humorPrevalece,
           scoreHumor: mediaScore,
         });
-      } else {
-        // Dados mock para quando não há dados reais
-        setStats({
-          humorPrevalece: 'Calmo',
-          scoreHumor: 68,
-        });
       }
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err);
-      // Dados mock em caso de erro
-      setStats({
-        humorPrevalece: 'Calmo',
-        scoreHumor: 68,
-      });
     }
   };
 
@@ -201,7 +190,7 @@ const PerfilPaciente = ({ navigation }) => {
                 documentos.map((doc) => {
                   const docStyle = getDocIcon(doc.tipo);
                   return (
-                    <TouchableOpacity key={doc.id} style={styles.documentCard}>
+                    <View key={doc.id} style={styles.documentCard}>
                       <View style={[styles.documentIcon, { backgroundColor: docStyle.bg }]}>
                         <Icon name={docStyle.icon} size={20} color={docStyle.color} />
                       </View>
@@ -209,8 +198,7 @@ const PerfilPaciente = ({ navigation }) => {
                         <Text style={styles.documentName}>{doc.nome}</Text>
                         <Text style={styles.documentMeta}>{doc.tipo} • {doc.tamanho}</Text>
                       </View>
-                      <Icon name="download" size={16} color="#94A3B8" />
-                    </TouchableOpacity>
+                    </View>
                   );
                 })
               )}

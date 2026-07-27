@@ -83,17 +83,9 @@ const DashboardPaciente = ({ navigation, route }) => {
   const [exportandoRelatorio, setExportandoRelatorio] = useState(false);
   const [dadosDiarios, setDadosDiarios] = useState(null);
 
-  const [anotacoesList] = useState([
-    { id: '1', titulo: 'Diário - Semana 1', texto: 'Hoje me senti mais ansiosa. Consegui fazer os exercícios de respiração.', data: '18/05/2024', analise: 'IA detectou padrão de ansiedade noturna. Sugerir técnicas de relaxamento antes de dormir.' },
-    { id: '2', titulo: 'Reflexão sobre a terapia', texto: 'A sessão de hoje me fez pensar sobre meus gatilhos emocionais.', data: '15/05/2024', analise: 'Paciente demonstrando autoconhecimento. Progresso na identificação de gatilhos emocionais.' },
-    { id: '3', titulo: 'Desafio da semana', texto: 'Consegui sair com amigos no fim de semana!', data: '12/05/2024', analise: 'Evento social positivo. Indica melhora no engajamento social.' },
-  ]);
+  const [anotacoesList, setAnotacoesList] = useState([]);
 
-  const [lembretesList, setLembretesList] = useState([
-    { id: '1', texto: 'Praticar 10 minutos de mindfulness antes de dormir', dia: 'segunda', enviado: false },
-    { id: '2', texto: 'Realizar o diário emocional', dia: 'quarta', enviado: false },
-    { id: '3', texto: 'Exercício físico de 30 minutos', dia: 'sexta', enviado: false },
-  ]);
+  const [lembretesList, setLembretesList] = useState([]);
 
   const diasSemana = [
     { id: 'segunda', label: 'Segunda' }, { id: 'terca', label: 'Terça' },
@@ -108,7 +100,30 @@ const DashboardPaciente = ({ navigation, route }) => {
     carregarArquivos();
     carregarContatoEmergencia();
     carregarDadosDiarios();
+    carregarAnotacoes();
   }, []);
+
+  const carregarAnotacoes = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/patients/${paciente.id}/moods?limit=20`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        const lista = (data.moods || [])
+          .filter(m => m.diaryText)
+          .map(m => ({
+            id: m.id,
+            titulo: `Se sentindo ${m.contextTags?.[0] || 'neutro'}`,
+            texto: m.diaryText,
+            data: parseTimestampUTC(m.timestamp).toLocaleDateString('pt-BR'),
+            analise: '',
+          }));
+        setAnotacoesList(lista);
+      }
+    } catch (err) { console.error('Erro anotações:', err); }
+  };
 
   // Carregar dados do paciente para edição
   const carregarDadosPacienteParaEdicao = async () => {
@@ -135,7 +150,7 @@ const DashboardPaciente = ({ navigation, route }) => {
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
+    const date = new Date(`${dateString}T12:00:00`);
     if (isNaN(date)) return dateString;
     const dia = String(date.getDate()).padStart(2, '0');
     const mes = String(date.getMonth() + 1).padStart(2, '0');
@@ -237,11 +252,12 @@ const DashboardPaciente = ({ navigation, route }) => {
   const handleAtualizarStatusMeta = async (id, novoStatus) => {
     try {
       const token = await AsyncStorage.getItem('token');
-      await fetch(`${API_URL}/patients/${paciente.id}/goals/${id}`, {
+      const res = await fetch(`${API_URL}/patients/${paciente.id}/goals/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ status: novoStatus, progresso: novoStatus === 'concluido' ? 'Concluído!' : 'Em andamento' }),
       });
+      if (!res.ok) { Alert.alert('Erro', 'Não foi possível atualizar a meta'); return; }
       await carregarMetas();
     } catch { Alert.alert('Erro', 'Não foi possível atualizar a meta'); }
   };
@@ -419,7 +435,7 @@ const DashboardPaciente = ({ navigation, route }) => {
         setArquivosList((data.documents || []).map(doc => ({
           id: doc.id, nome: doc.nome, tipo: doc.tipo?.toUpperCase() || 'PDF',
           tamanho: doc.tamanho || '--',
-          data: doc.createdAt ? new Date(doc.createdAt).toLocaleDateString('pt-BR') : '--',
+          data: doc.createdAt ? parseTimestampUTC(doc.createdAt).toLocaleDateString('pt-BR') : '--',
           downloadUrl: doc.downloadUrl, analise: 'Documento clínico compartilhado pelo psicólogo.',
         })));
       }
@@ -580,7 +596,7 @@ const carregarDadosDiarios = async () => {
   };
 
   const graficoDados = (() => {
-    if (dadosDiarios && dadosDiarios.length > 0) {
+    if (dadosDiarios && dadosDiarios.length >= 2) {
       const datas = dadosDiarios.map(d => formatarDataCurta(d.data)).filter(Boolean);
       const inicio = datas[0];
       const fim = datas[datas.length - 1];
@@ -627,16 +643,27 @@ const carregarDadosDiarios = async () => {
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Diagnóstico Principal</Text>
         <Text style={styles.diagnosticoCodigo}>{paciente.diagnostico || 'Sem diagnóstico registrado'}</Text>
-        <Text style={styles.diagnosticoDescricao}>Paciente apresenta sintomas persistentes de preocupação excessiva, tensão muscular.</Text>
       </View>
 
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>Resumo Clínico</Text>
-        <Text style={styles.resumoTexto}>{paciente.observacoes || 'O paciente apresenta melhora nos episódios depressivos, com maior engajamento em atividades sociais.'}</Text>
-        <View style={styles.tagsContainer}>
-          <View style={styles.tag}><Icon name="check-circle" size={14} color="#10B981" /><Text style={styles.tagText}>ADESÃO MEDICAMENTOSA</Text></View>
-          <View style={styles.tag}><Icon name="heart" size={14} color="#B367D4" /><Text style={styles.tagText}>MINDFULNESS SEMANAL</Text></View>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>Resumo Clínico</Text>
+          <TouchableOpacity onPress={() => {
+            const partes = (paciente.nome || '').trim().split(' ');
+            setEditNome(partes[0] || '');
+            setEditSobrenome(partes.slice(1).join(' ') || '');
+            setEditEmail(paciente.email || '');
+            setEditTelefone(formatTelefone(paciente.telefone || paciente.phone || ''));
+            setEditDataNascimento(paciente.birthDate ? formatDate(paciente.birthDate) : '');
+            setEditDiagnostico(paciente.diagnostico || '');
+            setEditObservacoes(paciente.observacoes || '');
+            setModalEditarPacienteVisible(true);
+            carregarDadosPacienteParaEdicao();
+          }}>
+            <Icon name="edit-2" size={16} color="#B367D4" />
+          </TouchableOpacity>
         </View>
+        <Text style={styles.resumoTexto}>{paciente.observacoes || 'Sem observações registradas.'}</Text>
       </View>
 
       {/* Smartwatch */}
@@ -721,27 +748,38 @@ const carregarDadosDiarios = async () => {
             </View>
           </View>
         </View>
-        <LineChart
-          data={correlacaoData}
-          width={screenWidth - 64}
-          height={220}
-          chartConfig={{
-            backgroundColor: '#FFFFFF', backgroundGradientFrom: '#FFFFFF', backgroundGradientTo: '#FFFFFF',
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(179, 103, 212, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
-            style: { borderRadius: 16 },
-            propsForDots: { r: '5', strokeWidth: '2' },
-          }}
-          bezier
-          style={styles.chart}
-          formatYLabel={(v) => `${v}%`}
-          withLegend={false}
-        />
-        {graficoDados.isReal && (
-          <Text style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Manrope', textAlign: 'center', marginTop: 8 }}>
-            Stress alto + humor baixo → padrão dissociativo confirmado
-          </Text>
+        {graficoDados.isReal ? (
+          <>
+            <LineChart
+              data={correlacaoData}
+              width={screenWidth - 64}
+              height={220}
+              chartConfig={{
+                backgroundColor: '#FFFFFF', backgroundGradientFrom: '#FFFFFF', backgroundGradientTo: '#FFFFFF',
+                decimalPlaces: 0,
+                color: (opacity = 1) => `rgba(179, 103, 212, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(107, 114, 128, ${opacity})`,
+                style: { borderRadius: 16 },
+                propsForDots: { r: '5', strokeWidth: '2' },
+              }}
+              bezier
+              style={styles.chart}
+              formatYLabel={(v) => `${v}%`}
+              withLegend={false}
+            />
+            {smartwatchData.perfil && smartwatchData.perfil !== '--' && (
+              <Text style={{ fontSize: 11, color: '#94A3B8', fontFamily: 'Manrope', textAlign: 'center', marginTop: 8 }}>
+                Perfil identificado: {smartwatchData.perfil}
+              </Text>
+            )}
+          </>
+        ) : (
+          <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+            <Icon name="bar-chart-2" size={40} color="#D1D5DB" />
+            <Text style={{ fontSize: 13, color: '#94A3B8', fontFamily: 'Manrope', textAlign: 'center', marginTop: 12 }}>
+              Gere um relatório semanal para ver o gráfico de correlação
+            </Text>
+          </View>
         )}
       </View>
     </>
@@ -923,9 +961,11 @@ const handleRemoverArquivo = (id, nome) => {
               <Icon name="chevron-right" size={20} color="#9CA3AF" />
             </View>
             <Text style={styles.anotacaoTexto} numberOfLines={2}>{anotacao.texto}</Text>
-            <TouchableOpacity style={styles.analiseBtn} onPress={() => handleVerAnalise(anotacao)}>
-              <Icon name="cpu" size={14} color="#B367D4" /><Text style={styles.analiseBtnText}>Ver análise da IA</Text>
-            </TouchableOpacity>
+            {anotacao.analise ? (
+              <TouchableOpacity style={styles.analiseBtn} onPress={() => handleVerAnalise(anotacao)}>
+                <Icon name="cpu" size={14} color="#B367D4" /><Text style={styles.analiseBtnText}>Ver análise da IA</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </TouchableOpacity>
       ))}

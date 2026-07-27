@@ -80,6 +80,8 @@ const HomePaciente = ({ navigation }) => {
       if (response.ok) {
         Alert.alert('Humor registrado!', `Você está se sentindo ${mood.label} hoje.`);
         await carregarMoods(user.id);
+      } else {
+        Alert.alert('Erro', 'Não foi possível registrar o humor');
       }
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível registrar o humor');
@@ -91,16 +93,17 @@ const HomePaciente = ({ navigation }) => {
   // Gráfico corrigido - com largura adequada para não cortar
   const chartWidth = screenWidth - 60;
   
+  const moodHistorySlice = moodHistory.length >= 2 ? moodHistory.slice(0, 7).reverse() : [];
   const chartData = {
-    labels: moodHistory.length > 0
-      ? moodHistory.slice(0, 7).reverse().map((_, i) => {
+    labels: moodHistorySlice.length >= 2
+      ? moodHistorySlice.map((_, i) => {
           const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
           return dias[i] || '';
         })
       : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
     datasets: [{
-      data: moodHistory.length > 0
-        ? moodHistory.slice(0, 7).reverse().map(m => m.emotionalScore || 50)
+      data: moodHistorySlice.length >= 2
+        ? moodHistorySlice.map(m => m.emotionalScore || 50)
         : [42, 74, 53, 95, 68, 47, 21],
       color: (opacity = 1) => `rgba(179, 103, 212, ${opacity})`,
       strokeWidth: 2,

@@ -1,8 +1,60 @@
 import json
 import math
+import os
+import urllib.request
+import urllib.error
 import boto3
 from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
+
+OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_MODEL   = "meta-llama/llama-3.2-1b-instruct"
+
+SYSTEM_PROMPT = """Você é um analisador de bem-estar emocional clínico.
+Analise o texto do diário de um paciente em acompanhamento psicológico.
+Retorne APENAS um JSON válido, sem texto adicional, sem markdown, sem explicação."""
+
+def analisar_texto_llm(diary_text):
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key or not diary_text:
+        return 0.5
+
+    prompt = f"""Analise o texto do diário abaixo e retorne um JSON com exatamente estes campos:
+- stress_score: número de 0.0 a 1.0 (0.0 = sem stress, 1.0 = stress máximo)
+- sentimento: uma das opções "positivo", "neutro" ou "negativo"
+- palavras_chave: lista com até 3 palavras que resumem o estado emocional
+
+Texto do diário: "{diary_text}"
+
+Responda APENAS com o JSON. Exemplo:
+{{"stress_score": 0.7, "sentimento": "negativo", "palavras_chave": ["ansiedade", "cansaço", "trabalho"]}}"""
+
+    try:
+        payload = json.dumps({
+            "model": OPENROUTER_MODEL,
+            "messages": [
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user",   "content": prompt},
+            ],
+            "max_tokens": 120,
+            "temperature": 0.1,
+        }).encode("utf-8")
+
+        req = urllib.request.Request(
+            OPENROUTER_API_URL, data=payload,
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+
+        raw = result["choices"][0]["message"]["content"].strip()
+        start, end = raw.find("{"), raw.rfind("}") + 1
+        parsed = json.loads(raw[start:end])
+        score = float(parsed.get("stress_score", 0.5))
+        return max(0.0, min(1.0, score))
+    except Exception:
+        return 0.5
 
 dynamo = boto3.resource("dynamodb", region_name="sa-east-1")
 table  = dynamo.Table("ApsiCare")
@@ -43,8 +95,26 @@ def calc_stress_subjetivo(pk):
     moods = resp.get("Items", [])
     if not moods:
         return 0.30
-    emotional_score = float(moods[0].get("data", {}).get("emotionalScore", 50))
-    return round(1 - (emotional_score / 100), 4)
+
+    data = moods[0].get("data", {})
+
+    # emocao: valence+arousal já ponderados (0-100 → invertido pra stress)
+    ss_emocao = 1 - float(data.get("emotionalScore", 50)) / 100
+
+    # humor: moodScore 1-9, alto humor = baixo stress
+    mood_score = float(data.get("moodScore") or 5)
+    ss_humor = 1 - (mood_score - 1) / 8
+
+    # impacto: impactScore 1-5, alto impacto = alto stress
+    impact_score = float(data.get("impactScore") or 3)
+    ss_impacto = (impact_score - 1) / 4
+
+    # texto: LLM analisa o diário e devolve score 0-1
+    diary_text = data.get("diaryText") or ""
+    ss_texto = analisar_texto_llm(diary_text)
+
+    ss = 0.30 * ss_emocao + 0.20 * ss_humor + 0.20 * ss_impacto + 0.30 * ss_texto
+    return round(ss, 4)
 
 def hora_para_label(hora):
     if 7 <= hora <= 9:     return "baseline"

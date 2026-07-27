@@ -101,7 +101,7 @@ const LoginPaciente = ({ navigation }) => {
                     onChangeText={setSenha}
                   />
                   <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                    <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} color="#94A3B8" />
+                    <Icon name={showPassword ? 'eye' : 'eye-off'} size={18} color="#94A3B8" />
                   </TouchableOpacity>
                 </View>
               </View>

@@ -22,8 +22,8 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
   const [showPacienteDropdown, setShowPacienteDropdown] = useState(false);
   const [pacientesList, setPacientesList] = useState([]);
 
-  // Relatórios dinâmicos — um card de smartwatch por paciente real
   const [relatorios, setRelatorios] = useState([]);
+  const [contagensPorPaciente, setContagensPorPaciente] = useState({});
 
   useEffect(() => {
     carregarPacientes();
@@ -45,39 +45,65 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
           nome: p.name,
         }));
         setPacientesList(ps);
+        ps.forEach(p => carregarContagens(p.id, token));
 
-        // Gera um card de smartwatch por paciente + card de anotações fixo
-        const cards = ps.map((p, i) => ({
+        const swCards = ps.map(p => ({
           id: `sw_${p.id}`,
           pacienteNome: p.nome,
           pacienteId: p.id,
           tipo: 'smartwatch',
-          titulo: `Relatório Semanal — Dados Fisiológicos WESAD`,
+          titulo: 'Relatório Semanal — Dados Fisiológicos',
           data: new Date().toLocaleDateString('pt-BR'),
-          descricao: 'Análise de dados fisiológicos (HR, IBI, RMSSD) derivados do dataset WESAD vinculado ao paciente.',
+          descricao: 'Análise de dados fisiológicos (HR, IBI, RMSSD) do paciente.',
           analiseIA: null,
         }));
 
-        // Se veio como componente filho de DashboardPaciente, filtra só o paciente atual
+        const anotacoesCards = ps.map(p => ({
+          id: `anotacoes_${p.id}`,
+          pacienteNome: p.nome,
+          pacienteId: p.id,
+          tipo: 'anotacoes',
+          titulo: 'Anotações do Diário - Semana Atual',
+          data: new Date().toLocaleDateString('pt-BR'),
+          descricao: 'Registros diários de humor e reflexões do paciente.',
+          analiseIA: null,
+        }));
+
         if (paciente?.id) {
-          setRelatorios(cards.filter(c => c.pacienteId === paciente.id));
-        } else {
           setRelatorios([
-            ...cards,
-            {
-              id: 'anotacoes_1',
-              pacienteNome: ps[0]?.nome || 'Paciente',
-              pacienteId: ps[0]?.id || '',
-              tipo: 'anotacoes',
-              titulo: 'Anotações do Diário - Semana Atual',
-              data: new Date().toLocaleDateString('pt-BR'),
-              descricao: 'Registros diários de humor e reflexões do paciente.',
-              analiseIA: 'IA identificou padrão de ansiedade no início da semana, com melhora progressiva após a sessão de terapia. Evento social positivo indica progresso no engajamento social.',
-            },
+            ...swCards.filter(c => c.pacienteId === paciente.id),
+            ...anotacoesCards.filter(c => c.pacienteId === paciente.id),
           ]);
+        } else {
+          setRelatorios([...swCards, ...anotacoesCards]);
         }
       }
     } catch (err) { console.error('Erro ao carregar pacientes:', err); }
+  };
+
+  const carregarContagens = async (patientId, token) => {
+    try {
+      const storedToken = token || await AsyncStorage.getItem('token');
+      const [moodsRes, insightsRes] = await Promise.all([
+        fetch(`${API_URL}/patients/${patientId}/moods?limit=200`, { headers: { Authorization: `Bearer ${storedToken}` } }),
+        fetch(`${API_URL}/patients/${patientId}/insights`, { headers: { Authorization: `Bearer ${storedToken}` } }),
+      ]);
+      const moodsData = moodsRes.ok ? await moodsRes.json() : {};
+      const insightsData = insightsRes.ok ? await insightsRes.json() : {};
+      const allMoods = moodsData.moods || [];
+      const moodCount = allMoods.length;
+      const syncCount = (insightsData.insights || []).filter(i => !i.dias).length;
+      const umaSemanaMsAtras = Date.now() - 7 * 24 * 60 * 60 * 1000;
+      const diariosRecentes = allMoods
+        .filter(m => m.diaryText && new Date(m.timestamp + 'Z').getTime() > umaSemanaMsAtras)
+        .slice(0, 10);
+      setContagensPorPaciente(prev => ({
+        ...prev,
+        [patientId]: { moods: moodCount, syncs: syncCount, diarios: diariosRecentes },
+      }));
+    } catch (err) {
+      console.error('Erro contagens:', patientId, err);
+    }
   };
 
  const handleRemoverRelatorio = (id, titulo) => {
@@ -98,13 +124,14 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
   // ── ANALISAR COM IA 
   const handleAnalisarIA = async (relatorio) => {
     if (relatorio.tipo === 'anotacoes') {
+      const diarios = contagensPorPaciente[relatorio.pacienteId]?.diarios || [];
       setAnaliseSelecionada({
         titulo: relatorio.titulo,
         pacienteNome: relatorio.pacienteNome,
         data: relatorio.data,
         tipo: 'anotacoes',
-        analise: relatorio.analiseIA,
-        dias: null,
+        analise: diarios.length > 0 ? null : 'Nenhuma anotação com texto encontrada na última semana.',
+        diarios,
       });
       setModalAnaliseVisible(true);
       return;
@@ -282,7 +309,17 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
 
       {/* Stats */}
       <View style={styles.statsContainer}>
-        {[{ num: filteredRelatorios.length, label: 'Encontrados' }, { num: filteredRelatorios.filter(r => r.tipo === 'smartwatch').length, label: 'Smartwatch' }, { num: filteredRelatorios.filter(r => r.tipo === 'anotacoes').length, label: 'Anotações' }].map((s, i) => (
+        {(() => {
+          const uniqueIds = [...new Set(filteredRelatorios.map(r => r.pacienteId))];
+          const allLoaded = uniqueIds.every(id => contagensPorPaciente[id] !== undefined);
+          const totalSyncs = uniqueIds.reduce((s, id) => s + (contagensPorPaciente[id]?.syncs ?? 0), 0);
+          const totalMoods = uniqueIds.reduce((s, id) => s + (contagensPorPaciente[id]?.moods ?? 0), 0);
+          return [
+            { num: uniqueIds.length, label: 'Pacientes' },
+            { num: allLoaded ? totalSyncs : '...', label: 'Dias c/ dados' },
+            { num: allLoaded ? totalMoods : '...', label: 'Registros' },
+          ];
+        })().map((s, i) => (
           <View key={i} style={styles.statCard}>
             <Text style={styles.statNumber}>{s.num}</Text>
             <Text style={styles.statLabel}>{s.label}</Text>
@@ -328,7 +365,7 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
               {loadingAnalise ? (
                 <View style={{ alignItems: 'center', paddingVertical: 40 }}>
                   <ActivityIndicator size="large" color="#B367D4" />
-                  <Text style={{ marginTop: 16, color: '#64748B', fontFamily: 'Manrope', fontSize: 14 }}>Gerando análise com dados do WESAD...</Text>
+                  <Text style={{ marginTop: 16, color: '#64748B', fontFamily: 'Manrope', fontSize: 14 }}>Gerando análise...</Text>
                 </View>
               ) : analiseSelecionada ? (
                 <>
@@ -341,8 +378,30 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
                   )}
                   <Text style={styles.analiseTitulo}>{analiseSelecionada.titulo}</Text>
                   <View style={styles.analiseDivider} />
-                  <Text style={styles.analiseSectionTitle}>🤖 Análise Inteligente</Text>
-                  <Text style={styles.analiseText}>{analiseSelecionada.analise}</Text>
+
+                  {analiseSelecionada.tipo === 'anotacoes' ? (
+                    <>
+                      <Text style={styles.analiseSectionTitle}>📓 Anotações da Semana</Text>
+                      {analiseSelecionada.diarios?.length > 0 ? (
+                        analiseSelecionada.diarios.map((m, idx) => (
+                          <View key={idx} style={{ marginBottom: 12, padding: 12, backgroundColor: '#FAFAFA', borderRadius: 10, borderLeftWidth: 3, borderLeftColor: '#B367D4' }}>
+                            <Text style={{ fontSize: 11, fontFamily: 'Manrope', fontWeight: '700', color: '#94A3B8', marginBottom: 4 }}>
+                              {new Date(m.timestamp + 'Z').toLocaleDateString('pt-BR', { weekday: 'short', day: '2-digit', month: '2-digit' })}
+                              {m.contextTags?.[0] ? `  •  ${m.contextTags[0]}` : ''}
+                            </Text>
+                            <Text style={{ fontSize: 13, fontFamily: 'Manrope', color: '#334155', lineHeight: 20 }}>{m.diaryText}</Text>
+                          </View>
+                        ))
+                      ) : (
+                        <Text style={styles.analiseText}>{analiseSelecionada.analise}</Text>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Text style={styles.analiseSectionTitle}>🤖 Análise Inteligente</Text>
+                      <Text style={styles.analiseText}>{analiseSelecionada.analise}</Text>
+                    </>
+                  )}
 
                   {analiseSelecionada.tipo === 'smartwatch' && analiseSelecionada.hr_media && (
                     <View style={styles.detalhesContainer}>
