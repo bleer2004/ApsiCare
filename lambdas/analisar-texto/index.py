@@ -6,20 +6,82 @@ import urllib.error
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL   = "meta-llama/llama-3.2-1b-instruct"
 
-SYSTEM_PROMPT = """Você é um analisador de bem-estar emocional clínico.
-Analise o texto do diário de um paciente em acompanhamento psicológico.
-Retorne APENAS um JSON válido, sem texto adicional, sem markdown, sem explicação."""
+SYSTEM_PROMPT = """
+Você é um assistente utilizado em um projeto acadêmico de apoio à saúde mental.
+
+IMPORTANTE
+
+- Não faça diagnóstico.
+- Não invente sintomas.
+- Considere apenas o texto informado.
+- Não interprete informações implícitas.
+- Caso o texto seja muito curto ou não contenha informações suficientes, utilize apenas as evidências disponíveis e evite superestimar o nível de estresse.
+
+Avalie:
+
+1. intensidade do estresse percebido
+2. intensidade emocional
+3. eventos negativos descritos
+4. fatores de recuperação
+5. contexto
+
+Depois sintetize tudo em um único stress_score entre 0 e 1.
+
+0 = nenhum estresse
+
+1 = estresse extremo
+
+Retorne APENAS JSON.
+
+"""
 
 def montar_prompt(diary_text):
-    return f"""Analise o texto do diário abaixo e retorne um JSON com exatamente estes campos:
-- stress_score: número de 0.0 a 1.0 (0.0 = sem stress, 1.0 = stress máximo)
-- sentimento: uma das opções "positivo", "neutro" ou "negativo"
-- palavras_chave: lista com até 3 palavras que resumem o estado emocional
+    return f"""
+Analise o autorrelato abaixo.
 
-Texto do diário: "{diary_text}"
+Avalie EXCLUSIVAMENTE as informações presentes no texto.
 
-Responda APENAS com o JSON. Exemplo:
-{{"stress_score": 0.7, "sentimento": "negativo", "palavras_chave": ["ansiedade", "cansaço", "trabalho"]}}"""
+Critérios para avaliação:
+
+1. stress_score
+- Valor entre   0.0 e 1.0
+- 0.0 = ausência de estresse.
+- 0.5 = presença moderada de estresse.
+- 1.0 = estresse intenso claramente descrito pelo autorrelato.
+
+Considere:
+- intensidade emocional;
+- sensação de sobrecarga;
+- preocupação ou ansiedade;
+- eventos negativos descritos;
+- sinais físicos relacionados ao estresse (quando mencionados);
+- fatores de recuperação ou melhora.
+
+2. sentimento
+Escolha apenas um:
+- positivo
+- neutro
+- negativo
+
+3. palavras_chave
+Retorne até 3 palavras que melhor resumam o estado emocional descrito.
+
+Autorrelato:
+"{diary_text}"
+
+Responda APENAS com um JSON válido no formato:
+
+{{
+    "stress_score": 0.73,
+    "sentimento": "negativo", 
+    "palavras_chave": [
+        "ansiedade", 
+        "cansaço", 
+        "trabalho"
+    ]  
+}}
+
+"""
 
 def chamar_llm(diary_text):
     api_key = os.environ.get("OPENROUTER_API_KEY")
