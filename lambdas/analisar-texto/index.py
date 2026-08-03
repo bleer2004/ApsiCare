@@ -10,7 +10,7 @@ SYSTEM_PROMPT = """
 Você é um assistente utilizado em um projeto acadêmico de apoio à saúde mental.
 
 IMPORTANTE
-
+ 
 - Não faça diagnóstico.
 - Não invente sintomas.
 - Considere apenas o texto informado.
@@ -69,16 +69,16 @@ Retorne até 3 palavras que melhor resumam o estado emocional descrito.
 Autorrelato:
 "{diary_text}"
 
-Responda APENAS com um JSON válido no formato:
+Responda APENAS com um JSON válido no formato abaixo, substituindo os valores pelos que você calculou para ESTE autorrelato específico (não copie os exemplos):
 
 {{
-    "stress_score": 0.73,
-    "sentimento": "negativo", 
+    "stress_score": <número entre 0.0 e 1.0 calculado agora>,
+    "sentimento": "<positivo, neutro ou negativo>",
     "palavras_chave": [
-        "ansiedade", 
-        "cansaço", 
-        "trabalho"
-    ]  
+        "<palavra 1>",
+        "<palavra 2>",
+        "<palavra 3>"
+    ]
 }}
 
 """
