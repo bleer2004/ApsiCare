@@ -35,11 +35,15 @@ Itens DynamoDB relevantes (`PK`/`SK`):
 - Stress fisiológico usa **thresholds absolutos** de HRV (Shaffer & Ginsberg 2017): HR 50–110bpm, IBI 545–1200ms, RMSSD 10–60ms (normalização relativa ao batch foi removida — era bug). RMSSD é invertido na fórmula (RMSSD alto = relaxamento).
 - Stress subjetivo (`ss`) combina 4 parâmetros com pesos: `0.30 × emocao + 0.20 × humor + 0.20 × impacto + 0.30 × texto_llm`. O `texto_llm` vem da análise do diário via LLM (OpenRouter + Llama 3.2 1B). Fallback para 0.5 se LLM indisponível.
 
-### Pipeline LLM — análise de texto e voz (implementado 2026-07)
+### Pipeline LLM — análise de texto e voz (implementado 2026-07, modelo trocado 2026-08-04)
 
 Dois lambdas novos em Python:
-- `lambdas/analisar-texto/index.py` — `POST /analisar-texto`: recebe `{ diaryText }`, chama OpenRouter (Llama 3.2 1B), devolve `{ stress_score, sentimento, palavras_chave }`. Variável de ambiente: `OPENROUTER_API_KEY`.
+- `lambdas/analisar-texto/index.py` — `POST /analisar-texto`: recebe `{ diaryText }`, chama OpenRouter (`meta-llama/llama-3.1-8b-instruct`), devolve `{ stress_score, sentimento, palavras_chave }`. Variável de ambiente: `OPENROUTER_API_KEY`.
 - `lambdas/transcrever-voz/index.py` — `POST /transcrever-voz`: recebe `{ audio_base64 }` (WAV), chama HuggingFace Inference API (Whisper Large V3, gratuito), devolve `{ text }`. Variável de ambiente: `HF_TOKEN`.
+
+**Bug corrigido (2026-08-04):** modelo original (`meta-llama/llama-3.2-1b-instruct`) retornava `stress_score` sempre igual, não importa o texto. Causa raiz em duas partes: (1) o prompt continha um exemplo de JSON com valores numéricos concretos (`0.73`, `"negativo"`, etc.) e o modelo simplesmente copiava o exemplo literalmente — corrigido trocando por placeholders (`<número entre 0.0 e 1.0 calculado agora>`); (2) mesmo depois disso, o 1B continuava "chutando" `stress_score: 0.5` sempre — confirmado adicionando um campo temporário `_debug_raw` na resposta pra inspecionar o JSON bruto do modelo (removido depois do diagnóstico). Modelos de 1B parâmetro são fracos em gerar um float contínuo coerente; `sentimento` e `palavras_chave` (classificação categórica/extração) sempre funcionaram bem, só o score numérico era ruim. Solução: trocado para `meta-llama/llama-3.1-8b-instruct` (mesma troca em `gerar-insight`, que também chama a LLM internamente) — custo desprezível (~$0.000016/chamada) dado o crédito disponível na conta OpenRouter.
+
+**LGPD / dados sensíveis — discutido, adiado para outra etapa:** cogitado usar Gemini Nano (on-device, via ML Kit GenAI/AICore) pra manter o texto do diário no próprio celular sem passar por nuvem, mas descartado por ora — exigiria development build + módulo nativo Android, só funciona em aparelhos com suporte a AICore. Caminho mais viável, ainda não implementado: (1) ativar Zero Data Retention no painel da OpenRouter, (2) tela de consentimento explícito no `DiarioPaciente.js` antes de habilitar voz/diário, (3) documentar transferência internacional de dados (LGPD Art. 33) como limitação conhecida no texto do TCC.
 
 Fluxo de voz no app: paciente grava → `transcrever-voz` (Whisper) → texto aparece no campo do diário pra revisar → salva como `diaryText` → na geração de insight, `gerar-insight` chama OpenRouter internamente e incorpora o score na fórmula.
 

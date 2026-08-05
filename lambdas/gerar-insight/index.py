@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 from boto3.dynamodb.conditions import Key
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL   = "meta-llama/llama-3.2-1b-instruct"
+OPENROUTER_MODEL   = "meta-llama/llama-3.1-8b-instruct"
 
 SYSTEM_PROMPT = """Você é um analisador de bem-estar emocional clínico.
 Analise o texto do diário de um paciente em acompanhamento psicológico.

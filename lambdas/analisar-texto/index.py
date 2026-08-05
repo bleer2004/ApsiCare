@@ -4,7 +4,7 @@ import urllib.request
 import urllib.error
 
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
-OPENROUTER_MODEL   = "meta-llama/llama-3.2-1b-instruct"
+OPENROUTER_MODEL   = "meta-llama/llama-3.1-8b-instruct"
 
 SYSTEM_PROMPT = """
 Você é um assistente utilizado em um projeto acadêmico de apoio à saúde mental.
@@ -17,21 +17,17 @@ IMPORTANTE
 - Não interprete informações implícitas.
 - Caso o texto seja muito curto ou não contenha informações suficientes, utilize apenas as evidências disponíveis e evite superestimar o nível de estresse.
 
-Avalie:
+Avalie tanto sinais de estresse quanto sinais de bem-estar:
 
 1. intensidade do estresse percebido
-2. intensidade emocional
+2. intensidade emocional (positiva ou negativa)
 3. eventos negativos descritos
-4. fatores de recuperação
+4. fatores de recuperação, alívio ou coisas boas descritas
 5. contexto
 
-Depois sintetize tudo em um único stress_score entre 0 e 1.
+Se o relato descrever um dia bom, tranquilo ou positivo, sem sinais de estresse, o stress_score deve ficar baixo (perto de 0.0) e o sentimento deve ser "positivo". Não assuma estresse quando o texto não descreve nenhum.
 
-0 = nenhum estresse
-
-1 = estresse extremo
-
-Retorne APENAS JSON.
+Retorne APENAS JSON, sempre incluindo os três campos: stress_score, sentimento, palavras_chave.
 
 """
 
@@ -94,8 +90,8 @@ def chamar_llm(diary_text):
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": montar_prompt(diary_text)},
         ],
-        "max_tokens": 120,
-        "temperature": 0.1,
+        "max_tokens": 200,
+        "temperature": 0.2,
     }).encode("utf-8")
 
     req = urllib.request.Request(
