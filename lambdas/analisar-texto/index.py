@@ -79,12 +79,13 @@ Responda APENAS com um JSON válido no formato abaixo, substituindo os valores p
 
 """
 
-def chamar_llm(diary_text):
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key:
-        raise ValueError("OPENROUTER_API_KEY não configurado nas variáveis de ambiente do Lambda")
-
-    payload = json.dumps({
+def _montar_payload(diary_text, exigir_zdr):
+    """
+    exigir_zdr=True  -> só roteia para endpoints com política de Zero Data Retention.
+                         Se nenhum existir para o modelo/provedor, o OpenRouter retorna erro.
+    exigir_zdr=False -> roteamento normal, sem restrição de ZDR (fallback).
+    """
+    payload = {
         "model": OPENROUTER_MODEL,
         "messages": [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -92,20 +93,44 @@ def chamar_llm(diary_text):
         ],
         "max_tokens": 200,
         "temperature": 0.2,
-    }).encode("utf-8")
+    }
+    if exigir_zdr:
+        payload["provider"] = {"zdr": True}
+    return json.dumps(payload).encode("utf-8")
 
+
+def _fazer_requisicao(api_key, diary_text, exigir_zdr):
     req = urllib.request.Request(
         OPENROUTER_API_URL,
-        data=payload,
+        data=_montar_payload(diary_text, exigir_zdr),
         headers={
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         },
         method="POST",
     )
-
     with urllib.request.urlopen(req, timeout=15) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+        return json.loads(resp.read().decode("utf-8"))
+
+
+def chamar_llm(diary_text):
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise ValueError("OPENROUTER_API_KEY não configurado nas variáveis de ambiente do Lambda")
+
+    zdr_aplicado = True
+    try:
+        # Tentativa 1: exige ZDR (melhor caso de privacidade)
+        result = _fazer_requisicao(api_key, diary_text, exigir_zdr=True)
+    except urllib.error.HTTPError as e:
+        corpo_erro = e.read().decode("utf-8", errors="ignore")
+        print(f"[ZDR] Requisição com zdr=true falhou ({e.code}): {corpo_erro}")
+
+        # Erro típico quando não há endpoint elegível com ZDR para o modelo/provedor.
+        # Nesse caso, registramos e decidimos explicitamente seguir sem ZDR,
+        # em vez de deixar a exceção estourar como 500 genérico.
+        zdr_aplicado = False
+        result = _fazer_requisicao(api_key, diary_text, exigir_zdr=False)
 
     raw = result["choices"][0]["message"]["content"].strip()
 
@@ -121,6 +146,7 @@ def chamar_llm(diary_text):
         "stress_score":   round(stress_score, 4),
         "sentimento":     parsed.get("sentimento", "neutro"),
         "palavras_chave": parsed.get("palavras_chave", []),
+        "zdr_aplicado":   zdr_aplicado,  # útil para logging/auditoria e para o TCC
     }
 
 def handler(event, context):
@@ -139,10 +165,14 @@ def handler(event, context):
         return _resp(200, resultado)
 
     except urllib.error.HTTPError as e:
+        corpo_erro = e.read().decode("utf-8", errors="ignore")
+        print(f"[OpenRouter] HTTPError {e.code}: {corpo_erro}")
         return _resp(502, {"error": f"Erro na OpenRouter API: {e.code} {e.reason}"})
     except (KeyError, ValueError, json.JSONDecodeError) as e:
+        print(f"[Parsing] Erro ao interpretar resposta: {str(e)}")
         return _resp(502, {"error": f"Resposta inesperada do modelo: {str(e)}"})
     except Exception as e:
+        print(f"[Erro inesperado] {str(e)}")
         return _resp(500, {"error": str(e)})
 
 def _resp(code, body):

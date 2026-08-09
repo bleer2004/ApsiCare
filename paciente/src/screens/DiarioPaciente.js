@@ -12,6 +12,7 @@ const DiarioPaciente = ({ navigation }) => {
   const [selectedMood, setSelectedMood] = useState(null);
   const [anotacao, setAnotacao] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
+  const [consentModalVisible, setConsentModalVisible] = useState(false);
   const [breathingModalVisible, setBreathingModalVisible] = useState(false);
   const [breathingStep, setBreathingStep] = useState(1);
   const [selectedAnotacao, setSelectedAnotacao] = useState(null);
@@ -46,9 +47,25 @@ const DiarioPaciente = ({ navigation }) => {
 
   useEffect(() => {
     carregarHistorico();
+    verificarConsentimento();
+  }, []);
+
+  const verificarConsentimento = async () => {
+    const aceito = await AsyncStorage.getItem('diarioLgpdConsent');
+    if (aceito === 'true') {
+      setBreathingModalVisible(true);
+      iniciarContagemRespiração();
+    } else {
+      setConsentModalVisible(true);
+    }
+  };
+
+  const aceitarConsentimento = async () => {
+    await AsyncStorage.setItem('diarioLgpdConsent', 'true');
+    setConsentModalVisible(false);
     setBreathingModalVisible(true);
     iniciarContagemRespiração();
-  }, []);
+  };
 
   const iniciarContagemRespiração = () => {
     let step = 1;
@@ -305,6 +322,36 @@ const DiarioPaciente = ({ navigation }) => {
     );
   };
 
+  const renderConsentModal = () => (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={consentModalVisible}
+      onRequestClose={() => {}}
+    >
+      <View style={styles.breathingOverlay}>
+        <View style={styles.consentContainer}>
+          <Icon name="shield" size={40} color="#B367D4" />
+          <Text style={styles.consentTitle}>Sua privacidade importa</Text>
+          <Text style={styles.consentText}>
+            O texto que você escreve ou grava aqui é enviado para serviços de
+            inteligência artificial de terceiros (para transcrição de voz e
+            análise de sentimento/estresse), com o objetivo de gerar insights
+            para você e seu psicólogo.{'\n\n'}
+            Não envie dados como CPF, endereço ou outras informações que não
+            sejam sobre como você está se sentindo.
+          </Text>
+          <TouchableOpacity
+            style={styles.consentButton}
+            onPress={aceitarConsentimento}
+          >
+            <Text style={styles.consentButtonText}>Entendi e aceito</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
   const renderBreathingModal = () => (
     <Modal
       animationType="fade"
@@ -336,6 +383,7 @@ const DiarioPaciente = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
       
+      {renderConsentModal()}
       {renderBreathingModal()}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -1124,6 +1172,43 @@ const styles = StyleSheet.create({
   breathingContainer: {
     alignItems: 'center',
     padding: 32,
+  },
+  consentContainer: {
+    alignItems: 'center',
+    padding: 32,
+    backgroundColor: '#1E1B2E',
+    borderRadius: 24,
+    marginHorizontal: 24,
+  },
+  consentTitle: {
+    fontSize: 20,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginTop: 16,
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  consentText: {
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    color: '#CBD5E1',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  consentButton: {
+    backgroundColor: '#B367D4',
+    borderRadius: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+  },
+  consentButtonText: {
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    color: '#FFFFFF',
   },
   breathingCircle: {
     width: 120,
