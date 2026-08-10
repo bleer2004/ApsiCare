@@ -59,6 +59,28 @@ Responda APENAS com o JSON. Exemplo:
 dynamo = boto3.resource("dynamodb", region_name="sa-east-1")
 table  = dynamo.Table("ApsiCare")
 
+EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send"
+
+def enviar_push(push_token, title, body, data=None):
+    if not push_token:
+        return {"ok": False}
+    try:
+        payload = json.dumps({
+            "to": push_token, "title": title, "body": body,
+            "data": data or {}, "sound": "default", "channelId": "default",
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            EXPO_PUSH_URL, data=payload,
+            headers={"Content-Type": "application/json", "Accept": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            result = json.loads(resp.read().decode("utf-8"))
+        return {"ok": result.get("data", {}).get("status") == "ok"}
+    except Exception as e:
+        print(f"[push] falha ao enviar: {e}")
+        return {"ok": False}
+
 HR_MIN, HR_MAX       = 50, 110
 IBI_MIN, IBI_MAX     = 545, 1200
 RMSSD_MIN, RMSSD_MAX = 10, 60
@@ -503,6 +525,25 @@ def gerar_insight_handler(event):
         },
         "createdAt": agora
     })
+
+    flag_anterior = insight_de_hoje.get("data", {}).get("flag") if insight_de_hoje else None
+    if flag == "anxiety_risk" and flag_anterior != "anxiety_risk":
+        clinician_id = perfil_item.get("clinicianId")
+        if clinician_id:
+            clinician_item = table.get_item(Key={"PK": f"CLINICIAN#{clinician_id}", "SK": "PROFILE"}).get("Item", {})
+            push_token = clinician_item.get("pushToken")
+            nome_paciente = perfil_item.get("name", "Um paciente")
+            titulo_push = "Alerta de risco"
+            corpo_push = f"{nome_paciente} pode estar com sinais de ansiedade elevados hoje."
+            resultado_push = enviar_push(push_token, titulo_push, corpo_push, {"category": "risk_alert", "patientId": patient_id})
+            table.put_item(Item={
+                "PK": f"CLINICIAN#{clinician_id}", "SK": f"NOTIFICATION#{agora}", "type": "NOTIFICATION",
+                "createdAt": agora,
+                "data": {
+                    "category": "risk_alert", "title": titulo_push, "body": corpo_push,
+                    "isRead": False, "pushSent": resultado_push["ok"], "relatedId": ts,
+                },
+            })
 
     return _resp(200, {
         "message": "Insight gerado com sucesso", "pk_paciente": pk, "pk_dados": pk_dados,
