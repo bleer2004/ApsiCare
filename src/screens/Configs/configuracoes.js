@@ -111,7 +111,8 @@ const Configuracoes = ({ navigation }) => {
         setEspecialidade(d.especialidade || '');
         setClinica(d.clinica || '');
         setEnderecoClinica(d.enderecoClinica || '');
-        
+        setNotificacoes(d.notificationsEnabled !== false);
+
         if (d.birthDate) {
           setDataNascimento(formatDate(d.birthDate));
         }
@@ -199,7 +200,8 @@ const Configuracoes = ({ navigation }) => {
         birthDate: dataNascimento ? formatDateToAPI(dataNascimento) : null,
         especialidade,
         clinica,
-        enderecoClinica
+        enderecoClinica,
+        notificationsEnabled: notificacoes
       };
 
       const profileResponse = await fetch(`${API_URL}/clinicians/${clinicianId}`, {

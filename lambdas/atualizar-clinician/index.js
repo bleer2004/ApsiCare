@@ -59,7 +59,8 @@ export const handler = async (event) => {
       clinica: body.clinica,
       enderecoClinica: body.enderecoClinica,
       birthDate: body.birthDate,
-      email: body.email 
+      email: body.email,
+      notificationsEnabled: body.notificationsEnabled
     };
 
     Object.keys(fields).forEach(key => {

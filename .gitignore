@@ -5,6 +5,7 @@ dataset/
 lambdas/**/node_modules/
 node_modules/
 *.json
+!google-services.json
 node_modules/.package-lock.json
 package.json
 package.json

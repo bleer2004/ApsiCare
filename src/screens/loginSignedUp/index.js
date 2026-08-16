@@ -4,7 +4,7 @@ import {
   ScrollView, SafeAreaView, Alert, ActivityIndicator,
   StyleSheet, Dimensions, Keyboard, TouchableWithoutFeedback,
 } from 'react-native';
-import { API_URL } from '../../services/api';
+import { API_URL, registerForPushNotificationsAsync } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Feather';
 
@@ -38,6 +38,7 @@ const LoginSignedUp = ({ navigation }) => {
       const tokenToSave = data.token || String(data.user.id);
       await AsyncStorage.setItem('token', tokenToSave);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      registerForPushNotificationsAsync('clinician');
       navigation.replace('VisaoGeral');
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível conectar ao servidor.');

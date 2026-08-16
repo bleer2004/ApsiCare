@@ -1,6 +1,17 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import * as Notifications from 'expo-notifications';
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 // Tela de seleção de ambiente
 import AmbienteTeste from './src/screens/ambienteTeste';
@@ -15,6 +26,7 @@ import DashboardPaciente from './src/screens/userPorfile/perfilUsuario';
 import CadastroPaciente from './src/screens/userSignUp/cadastroPaciente';
 import Configuracoes from './src/screens/Configs/configuracoes';
 import Relatorios from './src/screens/Files/RelatoriosPsicologo';
+import NotificacoesPsicologo from './src/screens/notificacoes/NotificacoesPsicologo';
 
 // Telas do Paciente
 import LoginPaciente from './paciente/src/screens/LoginPaciente';
@@ -45,6 +57,7 @@ export default function App() {
         <Stack.Screen name="CadastroPaciente" component={CadastroPaciente} options={{ headerShown: false }} />
         <Stack.Screen name="Configuracoes" component={Configuracoes} options={{ headerShown: false }} />
         <Stack.Screen name="Relatorios" component={Relatorios} options={{ headerShown: false }} />
+        <Stack.Screen name="NotificacoesPsicologo" component={NotificacoesPsicologo} options={{ headerShown: false }} />
 
         {/* Telas do Paciente */}
         <Stack.Screen name="LoginPaciente" component={LoginPaciente} options={{ headerShown: false }} />

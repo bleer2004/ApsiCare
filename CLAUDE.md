@@ -26,6 +26,7 @@ Itens DynamoDB relevantes (`PK`/`SK`):
 - `PATIENT#<id>` / `MOOD#<timestamp>` — humor/diário (`lambdas/registrar-mood`).
 - `PATIENT#<id>` / `INSIGHT#<timestamp>` — insight gerado (`lambdas/gerar-insight` escreve, `lambdas/listar-insights` lê).
 - `PATIENT#<wesadId>` / `DAILY_NPS#<date>` — dados diários agregados do dataset WESAD (só contas demo).
+- `CLINICIAN#<id>` / `NOTIFICATION#<timestamp>` — notificação in-app do clínico (`category`, `title`, `body`, `isRead`, `pushSent`, `patientId`, `patientName`, `relatedId`). Ver seção "Notificações push".
 
 ### Pipeline de insight (`lambdas/gerar-insight/index.py`)
 
@@ -58,6 +59,37 @@ Fluxo de voz no app: paciente grava → `transcrever-voz` (Whisper) → texto ap
 
 - `health-ingest`: `POST {userId, samples: [...]}` → 1 write (`HEALTH_BATCH#`). Preferir este para qualquer sync em lote.
 - `registrar-physio`: 1 write por amostra (`PHYSIO#`) — mais caro, evitar para sync frequente.
+
+### Notificações push (parte 1: 2026-08-09, parte 2: 2026-08-15)
+
+Push notifications via Expo Push Service (`exp.host`), só **Android** — iOS exigiria Apple Developer Program pago (US$99/ano), fora do escopo (mesma decisão já tomada pra Health Connect/gravação de voz: recurso Android-only, iOS mostra indisponível). Só o **clínico** recebe push hoje; não existe notificação para o paciente ainda.
+
+**Setup obrigatório fora do código (Firebase/FCM), sem isso `getExpoPushTokenAsync()` falha sempre com `E_REGISTRATION_FAILED` num build standalone (Expo Go não precisa disso, só falha em APK real):**
+1. Projeto no Firebase Console + app Android `com.vewadie.apsicare` → `google-services.json` na raiz do repo (`!google-services.json` no `.gitignore`, que por padrão ignora `*.json` — chave da API do Google não é secreta, é restrita por package/SHA, então pode ficar versionado).
+2. `app.json` → `expo.android.googleServicesFile: "./google-services.json"` (aplica o plugin `com.google.gms.google-services` automaticamente no `expo prebuild`, sem precisar mexer em gradle na mão).
+3. Firebase Console → Configurações do projeto → Contas de serviço → gerar chave privada → upload dessa chave em expo.dev (`accounts/ve_wadie/projects/apsicare/credentials` → Android → FCM V1 service account key). Sem isso o Expo não consegue *entregar* o push mesmo com o app registrando token certinho.
+4. Depois de mexer em `app.json`/gradle: `npx expo prebuild --platform android` de novo + `cd android && ./gradlew assembleRelease` pra gerar um APK novo.
+
+**Bug conhecido, não corrigido (não é nosso código):** o plugin da lib `react-native-health-connect` duplica o `<intent-filter>` de `ACTION_SHOW_PERMISSIONS_RATIONALE` no `AndroidManifest.xml` toda vez que roda `expo prebuild` (não é idempotente). Cosmético — Android tolera duplicata, não afeta funcionamento — não vale a pena patchar lib de terceiro por isso.
+
+**Backend:**
+- `lambdas/registrar-push-token/index.js` — `POST /push-token` `{userId, userType, pushToken}`, salva `pushToken` no perfil (`PATIENT#`/`PROFILE` ou `CLINICIAN#`/`PROFILE`). Chamado no login (`registerForPushNotificationsAsync` em `src/services/api.ts`), tanto paciente quanto clínico pedem permissão e registram token, mas só o clínico de fato recebe push hoje.
+- `lambdas/compartilhar-mood/index.js` e `lambdas/gerar-insight/index.py` disparam push + gravam `NOTIFICATION#` pro clínico dono do paciente: `compartilhar-mood` quando o paciente compartilha uma anotação do diário (`category: share_alert`); `gerar-insight` quando o flag de um paciente **passa a ser** `anxiety_risk` (só na transição, não repete todo dia com o mesmo flag) (`category: risk_alert`).
+- **Importante:** em ambos, todo o bloco de notificação (busca de clínico, envio de push, gravação do item) está isolado num `try/catch`/`try/except` próprio, separado do fluxo principal — se a notificação falhar por qualquer motivo (token inválido, Dynamo fora do ar, etc.), o compartilhamento/geração de insight continua retornando sucesso normalmente, só loga o erro. Decisão explícita: notificação nunca pode quebrar o fluxo principal.
+- Ambos checam `clinician.notificationsEnabled !== false` antes de notificar (default ligado se o campo não existir ainda).
+- `lambdas/listar-notificacoes/index.js` — `GET /clinicians/{clinicianId}/notifications`, até 50 mais recentes.
+- `lambdas/marcar-notificacao-lida/index.js` — `PATCH /clinicians/{clinicianId}/notifications/{notificationId}/read`.
+- `lambdas/atualizar-clinician/index.js` — aceita `notificationsEnabled` no PUT do perfil (toggle em Configurações).
+
+**Frontend:**
+- `src/screens/notificacoes/NotificacoesPsicologo.js` (tela nova, registrada em `App.js`) — lista as notificações do clínico, toque marca como lida e navega pro paciente relacionado (busca o paciente completo via `GET /clinicians/{id}/patients`, já que `DashboardPaciente` espera o objeto `paciente` inteiro via `route.params`, não um id solto).
+- `src/screens/visionBoard/visaoGeral.js` — sino no header com badge de não lidas, recarrega notificações toda vez que a tela ganha foco. Card "Urgências" (que antes tinha a lista sempre vazia, mock removido sem substituto) agora é populado com os `NOTIFICATION#` de `category: risk_alert` reais.
+- `src/screens/Configs/configuracoes.js` — switch "Notificações" agora persiste de verdade (`notificationsEnabled`) via o PUT existente de perfil do clínico; antes era só estado local sem efeito.
+
+**Pendências conhecidas:**
+- Toggle "Notificações" desligado impede o *backend* de mandar push/gravar notificação nova, mas não desregistra o token nem revoga a permissão do SO — se o clínico reativar o toggle sem reinstalar o app, volta a funcionar sem precisar logar de novo (comportamento esperado, mas vale checar).
+- Sem notificação nenhuma pro lado do paciente ainda (ex.: lembrete de diário, resposta do clínico).
+- `deploy manual`: os 2 lambdas novos (`listar-notificacoes`, `marcar-notificacao-lida`) e as 2 novas rotas de API Gateway (`GET /clinicians/{clinicianId}/notifications`, `PATCH /clinicians/{clinicianId}/notifications/{notificationId}/read`) ainda precisam ser criados manualmente no console AWS — zips já estão prontos em `lambdas/zips/`.
 
 ## Convenções a manter
 

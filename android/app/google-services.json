@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "889976597286",
+    "project_id": "apsicare",
+    "storage_bucket": "apsicare.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:889976597286:android:4b94d5386806fa6ae4afe7",
+        "android_client_info": {
+          "package_name": "com.vewadie.apsicare"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD0bc4LnrSGL4JGcYcbbGirYCw50IXU1Rw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

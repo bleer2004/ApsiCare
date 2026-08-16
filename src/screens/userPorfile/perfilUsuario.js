@@ -21,7 +21,7 @@ const parseTimestampUTC = (ts) => {
 
 const DashboardPaciente = ({ navigation, route }) => {
   const screenWidth = Dimensions.get('window').width;
-  const [abaAtiva, setAbaAtiva] = useState('perfil');
+  const [abaAtiva, setAbaAtiva] = useState(route?.params?.abaInicial || 'perfil');
 
   const [modalMetasVisible, setModalMetasVisible] = useState(false);
   const [novaMeta, setNovaMeta] = useState('');
@@ -124,6 +124,16 @@ const DashboardPaciente = ({ navigation, route }) => {
       }
     } catch (err) { console.error('Erro anotações:', err); }
   };
+
+  useEffect(() => {
+    const abrirId = route?.params?.abrirAnotacaoId;
+    if (!abrirId || anotacoesList.length === 0) return;
+    const alvo = anotacoesList.find(a => a.id === abrirId);
+    if (alvo) {
+      setAnotacaoSelecionada(alvo);
+      setModalAnotacaoVisible(true);
+    }
+  }, [anotacoesList]);
 
   // Carregar dados do paciente para edição
   const carregarDadosPacienteParaEdicao = async () => {
@@ -1059,10 +1069,6 @@ const handleRemoverArquivo = (id, nome) => {
           <ScrollView style={styles.modalScrollContent}>
             <Text style={styles.anotacaoDataModal}>{anotacaoSelecionada?.data}</Text>
             <Text style={styles.anotacaoTextoModal}>{anotacaoSelecionada?.texto}</Text>
-            <View style={styles.analiseSection}>
-              <View style={styles.analiseSectionHeader}><Icon name="cpu" size={18} color="#B367D4" /><Text style={styles.analiseSectionTitle}>Análise da IA</Text></View>
-              <Text style={styles.analiseSectionText}>{anotacaoSelecionada?.analise}</Text>
-            </View>
           </ScrollView>
         </View></View>
       </Modal>

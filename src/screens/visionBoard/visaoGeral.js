@@ -19,10 +19,29 @@ const VisaoGeral = ({ navigation }) => {
 
   const [dadosWesadPorPaciente, setDadosWesadPorPaciente] = useState({});
   const [relatoriosPorPaciente, setRelatoriosPorPaciente] = useState({});
+  const [notificacoes, setNotificacoes] = useState([]);
 
   useEffect(() => {
     carregarDados();
+    carregarNotificacoes();
+    const unsubscribe = navigation.addListener('focus', carregarNotificacoes);
+    return unsubscribe;
   }, []);
+
+  const carregarNotificacoes = async () => {
+    try {
+      const userStr = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userStr);
+      const token = await AsyncStorage.getItem('token');
+      const response = await fetch(`${API_URL}/clinicians/${user.id}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) setNotificacoes(data.notifications || []);
+    } catch (err) {
+      console.error('Erro ao carregar notificações:', err);
+    }
+  };
 
   const carregarDados = async () => {
     try {
@@ -172,7 +191,20 @@ const VisaoGeral = ({ navigation }) => {
     return [...reaisComRisco, pacienteMockAtencao];
   }, [pacientesReais, pacienteMockAtencao]);
 
-  const pacientesUrgencias = [];
+  const pacientesUrgencias = useMemo(() => {
+    return notificacoes
+      .filter(n => n.category === 'risk_alert')
+      .map(n => ({
+        id: n.id,
+        nome: n.patientName || 'Paciente',
+        tipo: 'piora',
+        motivo: n.title,
+        detalhe: n.body,
+        tempo: n.createdAt ? new Date(n.createdAt).toLocaleDateString('pt-BR') : '',
+      }));
+  }, [notificacoes]);
+
+  const notificacoesNaoLidas = useMemo(() => notificacoes.filter(n => !n.isRead).length, [notificacoes]);
 
   const tendenciaPiora = useMemo(() => {
     return pacientesAtencao.map(p => p.nome.split(' ')[0]);
@@ -413,6 +445,14 @@ const VisaoGeral = ({ navigation }) => {
             <Icon name="activity" size={20} color="#B367D4" />
             <Text style={styles.headerTitle}>Visão geral</Text>
           </View>
+          <TouchableOpacity style={styles.bellButton} onPress={() => navigation.navigate('NotificacoesPsicologo')}>
+            <Icon name="bell" size={22} color="#0F172A" />
+            {notificacoesNaoLidas > 0 && (
+              <View style={styles.bellBadge}>
+                <Text style={styles.bellBadgeText}>{notificacoesNaoLidas > 9 ? '9+' : notificacoesNaoLidas}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -534,6 +574,9 @@ const styles = StyleSheet.create({
   headerContent: { padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   headerTitle: { color: '#0F172A', fontSize: 20, fontFamily: 'Manrope', fontWeight: '700' },
+  bellButton: { padding: 4 },
+  bellBadge: { position: 'absolute', top: -2, right: -2, minWidth: 16, height: 16, borderRadius: 8, backgroundColor: '#DC2626', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 },
+  bellBadgeText: { color: '#fff', fontSize: 9, fontFamily: 'Manrope', fontWeight: '700' },
   backButton: { marginRight: 12, padding: 4 },
   scrollView: { flex: 1 },
   filtersContainer: { flexDirection: 'row', padding: 16, gap: 12 },

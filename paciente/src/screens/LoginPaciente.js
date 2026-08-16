@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../../src/services/api';
+import { API_URL, registerForPushNotificationsAsync } from '../../../src/services/api';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
   SafeAreaView, StatusBar, KeyboardAvoidingView, Platform,
@@ -46,6 +46,7 @@ const LoginPaciente = ({ navigation }) => {
       }
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      registerForPushNotificationsAsync('patient');
       navigation.replace('HomePaciente');
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
