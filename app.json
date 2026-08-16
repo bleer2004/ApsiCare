@@ -11,6 +11,7 @@
     },
     "android": {
       "package": "com.vewadie.apsicare",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.health.READ_HEART_RATE",
         "android.permission.RECORD_AUDIO",

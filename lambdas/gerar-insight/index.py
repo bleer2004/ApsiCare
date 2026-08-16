@@ -526,24 +526,29 @@ def gerar_insight_handler(event):
         "createdAt": agora
     })
 
-    flag_anterior = insight_de_hoje.get("data", {}).get("flag") if insight_de_hoje else None
-    if flag == "anxiety_risk" and flag_anterior != "anxiety_risk":
-        clinician_id = perfil_item.get("clinicianId")
-        if clinician_id:
-            clinician_item = table.get_item(Key={"PK": f"CLINICIAN#{clinician_id}", "SK": "PROFILE"}).get("Item", {})
-            push_token = clinician_item.get("pushToken")
-            nome_paciente = perfil_item.get("name", "Um paciente")
-            titulo_push = "Alerta de risco"
-            corpo_push = f"{nome_paciente} pode estar com sinais de ansiedade elevados hoje."
-            resultado_push = enviar_push(push_token, titulo_push, corpo_push, {"category": "risk_alert", "patientId": patient_id})
-            table.put_item(Item={
-                "PK": f"CLINICIAN#{clinician_id}", "SK": f"NOTIFICATION#{agora}", "type": "NOTIFICATION",
-                "createdAt": agora,
-                "data": {
-                    "category": "risk_alert", "title": titulo_push, "body": corpo_push,
-                    "isRead": False, "pushSent": resultado_push["ok"], "relatedId": ts,
-                },
-            })
+    try:
+        flag_anterior = insight_de_hoje.get("data", {}).get("flag") if insight_de_hoje else None
+        if flag == "anxiety_risk" and flag_anterior != "anxiety_risk":
+            clinician_id = perfil_item.get("clinicianId")
+            if clinician_id:
+                clinician_item = table.get_item(Key={"PK": f"CLINICIAN#{clinician_id}", "SK": "PROFILE"}).get("Item", {})
+                if clinician_item.get("notificationsEnabled") is not False:
+                    push_token = clinician_item.get("pushToken")
+                    nome_paciente = perfil_item.get("name", "Um paciente")
+                    titulo_push = "Alerta de risco"
+                    corpo_push = f"{nome_paciente} pode estar com sinais de ansiedade elevados hoje."
+                    resultado_push = enviar_push(push_token, titulo_push, corpo_push, {"category": "risk_alert", "patientId": patient_id})
+                    table.put_item(Item={
+                        "PK": f"CLINICIAN#{clinician_id}", "SK": f"NOTIFICATION#{agora}", "type": "NOTIFICATION",
+                        "createdAt": agora,
+                        "data": {
+                            "category": "risk_alert", "title": titulo_push, "body": corpo_push,
+                            "isRead": False, "pushSent": resultado_push["ok"], "relatedId": ts,
+                            "patientId": patient_id, "patientName": nome_paciente,
+                        },
+                    })
+    except Exception as e:
+        print(f"[notificacao] falha ao notificar clínico, insight já foi salvo normalmente: {e}")
 
     return _resp(200, {
         "message": "Insight gerado com sucesso", "pk_paciente": pk, "pk_dados": pk_dados,

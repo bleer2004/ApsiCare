@@ -41,42 +41,51 @@ export const handler = async (event) => {
       ExpressionAttributeValues: { ":val": true },
     }));
 
-    const patient = await dynamo.send(new GetCommand({
-      TableName: TABLE_NAME,
-      Key: { PK: `PATIENT#${patientId}`, SK: `PATIENT#${patientId}` },
-    }));
-    const clinicianId = patient.Item?.clinicianId;
-
-    if (clinicianId) {
-      const clinician = await dynamo.send(new GetCommand({
+    try {
+      const patient = await dynamo.send(new GetCommand({
         TableName: TABLE_NAME,
-        Key: { PK: `CLINICIAN#${clinicianId}`, SK: "PROFILE" },
+        Key: { PK: `PATIENT#${patientId}`, SK: `PATIENT#${patientId}` },
       }));
-      const pushToken = clinician.Item?.pushToken;
-      const nomePaciente = patient.Item?.name || "Um paciente";
-      const titulo = "Anotação compartilhada";
-      const corpo = `${nomePaciente} compartilhou uma anotação do diário com você.`;
+      const clinicianId = patient.Item?.clinicianId;
 
-      const resultado = await enviarPush(pushToken, titulo, corpo, { category: "share_alert", patientId });
+      if (clinicianId) {
+        const clinician = await dynamo.send(new GetCommand({
+          TableName: TABLE_NAME,
+          Key: { PK: `CLINICIAN#${clinicianId}`, SK: "PROFILE" },
+        }));
 
-      const agora = new Date().toISOString();
-      await dynamo.send(new PutCommand({
-        TableName: TABLE_NAME,
-        Item: {
-          PK: `CLINICIAN#${clinicianId}`,
-          SK: `NOTIFICATION#${agora}`,
-          type: "NOTIFICATION",
-          createdAt: agora,
-          data: {
-            category: "share_alert",
-            title: titulo,
-            body: corpo,
-            isRead: false,
-            pushSent: resultado.ok,
-            relatedId: moodId,
-          },
-        },
-      }));
+        if (clinician.Item?.notificationsEnabled !== false) {
+          const pushToken = clinician.Item?.pushToken;
+          const nomePaciente = patient.Item?.name || "Um paciente";
+          const titulo = "Anotação compartilhada";
+          const corpo = `${nomePaciente} compartilhou uma anotação do diário com você.`;
+
+          const resultado = await enviarPush(pushToken, titulo, corpo, { category: "share_alert", patientId });
+
+          const agora = new Date().toISOString();
+          await dynamo.send(new PutCommand({
+            TableName: TABLE_NAME,
+            Item: {
+              PK: `CLINICIAN#${clinicianId}`,
+              SK: `NOTIFICATION#${agora}`,
+              type: "NOTIFICATION",
+              createdAt: agora,
+              data: {
+                category: "share_alert",
+                title: titulo,
+                body: corpo,
+                isRead: false,
+                pushSent: resultado.ok,
+                relatedId: moodId,
+                patientId,
+                patientName: nomePaciente,
+              },
+            },
+          }));
+        }
+      }
+    } catch (notifErr) {
+      console.error("[notificacao] falha ao notificar clínico, compartilhamento já foi salvo normalmente:", notifErr);
     }
 
     return response(200, { message: "Anotação compartilhada com sucesso" });
