@@ -48,7 +48,8 @@ Dois lambdas novos em Python:
 
 **LGPD / dados sensíveis (2026-08-05):** cogitado usar Gemini Nano (on-device, via ML Kit GenAI/AICore) pra manter o texto do diário no próprio celular sem passar por nuvem, mas descartado — exigiria development build + módulo nativo Android, só funciona em aparelhos com suporte a AICore. Implementado em vez disso:
 - **Tela de consentimento** em `paciente/src/screens/DiarioPaciente.js`: no primeiro acesso ao Diário, mostra um modal explicando que o texto/voz é enviado a serviços de IA de terceiros (OpenRouter para análise de sentimento/estresse, Groq para transcrição de voz) antes de liberar a tela. Aceite salvo em `AsyncStorage` (`diarioLgpdConsent`), não repete depois da primeira vez. Modal roda antes do modal de respiração já existente.
-- **Pendente ainda:** ativar Zero Data Retention no painel da OpenRouter (config manual, fora do código) e documentar transferência internacional de dados (LGPD Art. 33) como limitação conhecida no texto do TCC.
+- **ZDR validado empiricamente (2026-08-16, ver `docs/teste.txt`):** não existe um toggle de "ativar ZDR" separado no painel da OpenRouter — a seção "Data Training" do painel é outra coisa (o próprio painel avisa isso). ZDR é controlado só pelo parâmetro `provider: {zdr: true}` por requisição, que o código já usa (com fallback se não achar endpoint elegível). Testado via Postman contra `/analisar-texto`: `zdr_aplicado: true` em 2 chamadas reais com textos diferentes — funcionando de verdade, não é só tentativa. Não é mais pendência.
+- **Pendente ainda:** documentar transferência internacional de dados (LGPD Art. 33) como limitação conhecida no texto do TCC.
 
 Fluxo de voz no app: paciente grava → `transcrever-voz` (Whisper) → texto aparece no campo do diário pra revisar → salva como `diaryText` → na geração de insight, `gerar-insight` chama OpenRouter internamente e incorpora o score na fórmula.
 
