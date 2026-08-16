@@ -12,48 +12,63 @@ OPENROUTER_MODEL   = "meta-llama/llama-3.1-8b-instruct"
 
 SYSTEM_PROMPT = """Você é um analisador de bem-estar emocional clínico.
 Analise o texto do diário de um paciente em acompanhamento psicológico.
+Não faça diagnóstico, não invente sintomas, considere apenas o texto informado.
+Se o relato descrever um dia bom, tranquilo ou positivo, sem sinais de estresse, o stress_score deve ficar baixo (perto de 0.0).
 Retorne APENAS um JSON válido, sem texto adicional, sem markdown, sem explicação."""
 
-def analisar_texto_llm(diary_text):
-    api_key = os.environ.get("OPENROUTER_API_KEY")
-    if not api_key or not diary_text:
-        return 0.5
-
-    prompt = f"""Analise o texto do diário abaixo e retorne um JSON com exatamente estes campos:
+def _montar_prompt_texto(diary_text):
+    return f"""Analise o texto do diário abaixo e retorne um JSON com exatamente estes campos:
 - stress_score: número de 0.0 a 1.0 (0.0 = sem stress, 1.0 = stress máximo)
 - sentimento: uma das opções "positivo", "neutro" ou "negativo"
 - palavras_chave: lista com até 3 palavras que resumem o estado emocional
 
 Texto do diário: "{diary_text}"
 
-Responda APENAS com o JSON. Exemplo:
-{{"stress_score": 0.7, "sentimento": "negativo", "palavras_chave": ["ansiedade", "cansaço", "trabalho"]}}"""
+Responda APENAS com o JSON, substituindo os valores pelos que você calculou para ESTE texto (não copie os exemplos):
+{{"stress_score": <número entre 0.0 e 1.0 calculado agora>, "sentimento": "<positivo, neutro ou negativo>", "palavras_chave": ["<palavra 1>", "<palavra 2>", "<palavra 3>"]}}"""
+
+def _requisitar_openrouter(api_key, diary_text, exigir_zdr):
+    payload = {
+        "model": OPENROUTER_MODEL,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user",   "content": _montar_prompt_texto(diary_text)},
+        ],
+        "max_tokens": 120,
+        "temperature": 0.1,
+    }
+    if exigir_zdr:
+        payload["provider"] = {"zdr": True}
+    req = urllib.request.Request(
+        OPENROUTER_API_URL, data=json.dumps(payload).encode("utf-8"),
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
+def analisar_texto_llm(diary_text):
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key or not diary_text:
+        return 0.5
 
     try:
-        payload = json.dumps({
-            "model": OPENROUTER_MODEL,
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user",   "content": prompt},
-            ],
-            "max_tokens": 120,
-            "temperature": 0.1,
-        }).encode("utf-8")
-
-        req = urllib.request.Request(
-            OPENROUTER_API_URL, data=payload,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
-            method="POST",
-        )
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
+        try:
+            # Tentativa 1: exige Zero Data Retention (melhor caso de privacidade)
+            result = _requisitar_openrouter(api_key, diary_text, exigir_zdr=True)
+        except urllib.error.HTTPError as e:
+            corpo_erro = e.read().decode("utf-8", errors="ignore")
+            print(f"[ZDR] Requisição com zdr=true falhou ({e.code}): {corpo_erro}")
+            # Sem endpoint elegível com ZDR pra esse modelo/provedor: segue sem ZDR.
+            result = _requisitar_openrouter(api_key, diary_text, exigir_zdr=False)
 
         raw = result["choices"][0]["message"]["content"].strip()
         start, end = raw.find("{"), raw.rfind("}") + 1
         parsed = json.loads(raw[start:end])
         score = float(parsed.get("stress_score", 0.5))
         return max(0.0, min(1.0, score))
-    except Exception:
+    except Exception as e:
+        print(f"[analisar_texto_llm] falha, usando fallback 0.5: {e}")
         return 0.5
 
 dynamo = boto3.resource("dynamodb", region_name="sa-east-1")
