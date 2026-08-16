@@ -7,6 +7,8 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import SmartwatchPaciente from '../../../src/screens/smartwatch/SmartWatchPaciente';
+import { useAccessibility } from '../contexts/AccessibilityContext';
+import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const PerfilPaciente = ({ navigation }) => {
   const [paciente, setPaciente] = useState(null);
@@ -14,9 +16,24 @@ const PerfilPaciente = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
 
-  // Estados para configurações de acessibilidade
-  const [baixaVisao, setBaixaVisao] = useState(false);
-  const [daltonismo, setDaltonismo] = useState(false);
+  // Contexto de acessibilidade
+  const { configuracoes, atualizarConfiguracoes, recarregar } = useAccessibility();
+  const [baixaVisaoLocal, setBaixaVisaoLocal] = useState(configuracoes.baixaVisao);
+  const [daltonismoLocal, setDaltonismoLocal] = useState(configuracoes.daltonismo);
+
+  // Hooks de estilos
+  const {
+    baixaVisao,
+    daltonismo,
+    getColors,
+    getTextStyle,
+    getIconProps,
+    getSpacing,
+    getCardStyle,
+    adaptarCor,
+  } = useAccessibilityStyles();
+
+  const colors = getColors();
 
   // Novos estados para dados do paciente
   const [stats, setStats] = useState({
@@ -28,18 +45,18 @@ const PerfilPaciente = ({ navigation }) => {
     carregarDados();
   }, []);
 
+  // Sincronizar com o contexto quando as configs mudarem
+  useEffect(() => {
+    setBaixaVisaoLocal(configuracoes.baixaVisao);
+    setDaltonismoLocal(configuracoes.daltonismo);
+  }, [configuracoes]);
+
   const carregarDados = async () => {
     try {
       const token = await AsyncStorage.getItem('token');
       const userStr = await AsyncStorage.getItem('user');
       const user = JSON.parse(userStr);
       setPaciente(user);
-
-      // Carregar configurações de acessibilidade do paciente
-      if (user.configuracoesApp?.acessibilidade) {
-        setBaixaVisao(user.configuracoesApp.acessibilidade.baixaVisao || false);
-        setDaltonismo(user.configuracoesApp.acessibilidade.daltonismo || false);
-      }
 
       // Carregar documentos
       const response = await fetch(`${API_URL}/patients/${user.id}/documents`, {
@@ -103,9 +120,16 @@ const PerfilPaciente = ({ navigation }) => {
   };
 
   // Função para salvar configurações de acessibilidade
-  const salvarConfiguracoesAcessibilidade = async () => {
+  const salvarConfiguracoesAcessibilidade = async (novaBaixaVisao, novoDaltonismo) => {
     setSalvando(true);
     try {
+      // Atualizar no contexto global
+      await atualizarConfiguracoes({
+        baixaVisao: novaBaixaVisao,
+        daltonismo: novoDaltonismo,
+      });
+
+      // Atualizar no backend
       const token = await AsyncStorage.getItem('token');
       const userStr = await AsyncStorage.getItem('user');
       const user = JSON.parse(userStr);
@@ -120,8 +144,8 @@ const PerfilPaciente = ({ navigation }) => {
           configuracoesApp: {
             ...user.configuracoesApp,
             acessibilidade: {
-              baixaVisao,
-              daltonismo
+              baixaVisao: novaBaixaVisao,
+              daltonismo: novoDaltonismo,
             }
           }
         }),
@@ -149,16 +173,14 @@ const PerfilPaciente = ({ navigation }) => {
 
   // Função para alternar baixa visão
   const toggleBaixaVisao = (value) => {
-    setBaixaVisao(value);
-    // Salvar automaticamente
-    setTimeout(() => salvarConfiguracoesAcessibilidade(), 100);
+    setBaixaVisaoLocal(value);
+    salvarConfiguracoesAcessibilidade(value, daltonismoLocal);
   };
 
   // Função para alternar daltonismo
   const toggleDaltonismo = (value) => {
-    setDaltonismo(value);
-    // Salvar automaticamente
-    setTimeout(() => salvarConfiguracoesAcessibilidade(), 100);
+    setDaltonismoLocal(value);
+    salvarConfiguracoesAcessibilidade(baixaVisaoLocal, value);
   };
 
   const handleLogout = async () => {
@@ -192,8 +214,8 @@ const PerfilPaciente = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={baixaVisao ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
 
       <ScrollView
         style={styles.scrollView}
@@ -201,69 +223,106 @@ const PerfilPaciente = ({ navigation }) => {
         contentContainerStyle={styles.scrollContent}
       >
         {/* Header */}
-        <View style={styles.header}>
+        <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={20} color="#334155" />
+            <Icon name="arrow-left" {...getIconProps('arrow-left', 'medium', colors.text)} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Meus dados</Text>
+          <Text style={[styles.headerTitle, getTextStyle('large', colors.text, '700')]}>Meus dados</Text>
           <TouchableOpacity onPress={handleLogout}>
-            <Icon name="log-out" size={20} color="#EF4444" />
+            <Icon name="log-out" {...getIconProps('log-out', 'medium', adaptarCor('#EF4444'))} />
           </TouchableOpacity>
         </View>
 
         {loading ? (
-          <ActivityIndicator size="large" color="#B367D4" style={{ marginTop: 60 }} />
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 60 }} />
         ) : (
           <>
             {/* Cards de Estatísticas */}
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
+            <View style={[styles.statsGrid, { paddingHorizontal: getSpacing('small'), gap: getSpacing('small') }]}>
+              <View style={[
+                styles.statCard,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  padding: baixaVisao ? 18 : 14,
+                }
+              ]}>
                 <View style={[styles.statIconWrapper, { backgroundColor: '#FEF3C7' }]}>
-                  <Icon name="smile" size={22} color="#F59E0B" />
+                  <Icon name="smile" size={baixaVisao ? 28 : 22} color="#F59E0B" />
                 </View>
-                <Text style={styles.statValue}>{stats.humorPrevalece}</Text>
-                <Text style={styles.statLabel}>Humor que prevalece</Text>
+                <Text style={[styles.statValue, getTextStyle('large', colors.text, '800')]}>{stats.humorPrevalece}</Text>
+                <Text style={[styles.statLabel, getTextStyle('small', colors.textSecondary)]}>Humor que prevalece</Text>
               </View>
               
-              <View style={styles.statCard}>
+              <View style={[
+                styles.statCard,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  padding: baixaVisao ? 18 : 14,
+                }
+              ]}>
                 <View style={[styles.statIconWrapper, { backgroundColor: '#DCFCE7' }]}>
-                  <Icon name="trending-up" size={22} color="#22C55E" />
+                  <Icon name="trending-up" size={baixaVisao ? 28 : 22} color="#22C55E" />
                 </View>
-                <Text style={[styles.statValue, { color: getScoreColor(stats.scoreHumor) }]}>
+                <Text style={[
+                  styles.statValue,
+                  getTextStyle('large', getScoreColor(stats.scoreHumor), '800')
+                ]}>
                   {stats.scoreHumor}%
                 </Text>
-                <Text style={styles.statLabel}>Score de humor</Text>
+                <Text style={[styles.statLabel, getTextStyle('small', colors.textSecondary)]}>Score de humor</Text>
                 <View style={[styles.scoreBadge, { backgroundColor: getScoreColor(stats.scoreHumor) + '20' }]}>
-                  <Text style={[styles.scoreBadgeText, { color: getScoreColor(stats.scoreHumor) }]}>
+                  <Text style={[
+                    styles.scoreBadgeText,
+                    getTextStyle('small', getScoreColor(stats.scoreHumor), '700')
+                  ]}>
                     {getScoreLabel(stats.scoreHumor)}
                   </Text>
                 </View>
               </View>
             </View>
 
-            {/* NOVA SEÇÃO: Configurações de Acessibilidade */}
-            <View style={styles.section}>
+            {/* Seção de Acessibilidade */}
+            <View style={[styles.section, { paddingHorizontal: getSpacing('medium') }]}>
               <View style={styles.sectionHeader}>
-                <Icon name="eye" size={20} color="#B367D4" />
-                <Text style={styles.sectionTitle}>Acessibilidade</Text>
+                <Icon name="eye" {...getIconProps('eye', 'medium', colors.primary)} />
+                <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700')]}>Acessibilidade</Text>
               </View>
               
-              <View style={styles.acessibilidadeCard}>
+              <View style={[
+                styles.acessibilidadeCard,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  padding: baixaVisao ? 20 : 16,
+                }
+              ]}>
                 {/* Baixa Visão */}
                 <View style={styles.acessibilidadeRow}>
                   <View style={styles.acessibilidadeInfo}>
-                    <View style={[styles.acessibilidadeIconWrapper, { backgroundColor: baixaVisao ? '#FEF3C7' : '#F1F5F9' }]}>
-                      <Icon name="eye" size={20} color={baixaVisao ? '#F59E0B' : '#94A3B8'} />
+                    <View style={[
+                      styles.acessibilidadeIconWrapper,
+                      {
+                        backgroundColor: baixaVisaoLocal ? '#FEF3C7' : '#F1F5F9',
+                        width: baixaVisao ? 48 : 40,
+                        height: baixaVisao ? 48 : 40,
+                        borderRadius: baixaVisao ? 24 : 20,
+                      }
+                    ]}>
+                      <Icon name="eye" size={baixaVisao ? 24 : 20} color={baixaVisaoLocal ? '#F59E0B' : '#94A3B8'} />
                     </View>
                     <View style={styles.acessibilidadeText}>
-                      <Text style={styles.acessibilidadeTitle}>Modo Baixa Visão</Text>
-                      <Text style={styles.acessibilidadeDescription}>
+                      <Text style={[styles.acessibilidadeTitle, getTextStyle('medium', colors.text, '600')]}>
+                        Modo Baixa Visão
+                      </Text>
+                      <Text style={[styles.acessibilidadeDescription, getTextStyle('small', colors.textSecondary)]}>
                         Aumenta o tamanho das fontes, ícones e melhora o contraste
                       </Text>
                     </View>
                   </View>
                   <Switch 
-                    value={baixaVisao} 
+                    value={baixaVisaoLocal} 
                     onValueChange={toggleBaixaVisao} 
                     trackColor={{ false: '#CBD5E1', true: '#F59E0B' }} 
                     thumbColor="#FFFFFF"
@@ -271,23 +330,33 @@ const PerfilPaciente = ({ navigation }) => {
                   />
                 </View>
 
-                <View style={styles.divider} />
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
                 {/* Daltonismo */}
                 <View style={styles.acessibilidadeRow}>
                   <View style={styles.acessibilidadeInfo}>
-                    <View style={[styles.acessibilidadeIconWrapper, { backgroundColor: daltonismo ? '#DCFCE7' : '#F1F5F9' }]}>
-                      <Icon name="eye-off" size={20} color={daltonismo ? '#22C55E' : '#94A3B8'} />
+                    <View style={[
+                      styles.acessibilidadeIconWrapper,
+                      {
+                        backgroundColor: daltonismoLocal ? '#DCFCE7' : '#F1F5F9',
+                        width: baixaVisao ? 48 : 40,
+                        height: baixaVisao ? 48 : 40,
+                        borderRadius: baixaVisao ? 24 : 20,
+                      }
+                    ]}>
+                      <Icon name="eye-off" size={baixaVisao ? 24 : 20} color={daltonismoLocal ? '#22C55E' : '#94A3B8'} />
                     </View>
                     <View style={styles.acessibilidadeText}>
-                      <Text style={styles.acessibilidadeTitle}>Modo Daltonismo</Text>
-                      <Text style={styles.acessibilidadeDescription}>
+                      <Text style={[styles.acessibilidadeTitle, getTextStyle('medium', colors.text, '600')]}>
+                        Modo Daltonismo
+                      </Text>
+                      <Text style={[styles.acessibilidadeDescription, getTextStyle('small', colors.textSecondary)]}>
                         Substitui cores por padrões amigáveis para daltônicos
                       </Text>
                     </View>
                   </View>
                   <Switch 
-                    value={daltonismo} 
+                    value={daltonismoLocal} 
                     onValueChange={toggleDaltonismo} 
                     trackColor={{ false: '#CBD5E1', true: '#22C55E' }} 
                     thumbColor="#FFFFFF"
@@ -297,36 +366,60 @@ const PerfilPaciente = ({ navigation }) => {
 
                 {salvando && (
                   <View style={styles.salvandoIndicator}>
-                    <ActivityIndicator size="small" color="#B367D4" />
-                    <Text style={styles.salvandoText}>Salvando alterações...</Text>
+                    <ActivityIndicator size="small" color={colors.primary} />
+                    <Text style={[styles.salvandoText, getTextStyle('small', colors.textSecondary)]}>
+                      Salvando alterações...
+                    </Text>
                   </View>
                 )}
               </View>
             </View>
 
             {/* Documentos Compartilhados */}
-            <View style={styles.section}>
+            <View style={[styles.section, { paddingHorizontal: getSpacing('medium') }]}>
               <View style={styles.sectionHeader}>
-                <Icon name="folder" size={20} color="#B367D4" />
-                <Text style={styles.sectionTitle}>Documentos Compartilhados</Text>
+                <Icon name="folder" {...getIconProps('folder', 'medium', colors.primary)} />
+                <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700')]}>Documentos Compartilhados</Text>
               </View>
 
               {documentos.length === 0 ? (
-                <View style={styles.emptyDocs}>
-                  <Icon name="folder" size={40} color="#D1D5DB" />
-                  <Text style={styles.emptyDocsText}>Nenhum documento compartilhado</Text>
+                <View style={[
+                  styles.emptyDocs,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: colors.border,
+                    borderRadius: 12,
+                    borderWidth: 1,
+                    padding: baixaVisao ? 40 : 32,
+                  }
+                ]}>
+                  <Icon name="folder" {...getIconProps('folder', 'xlarge', colors.textMuted)} />
+                  <Text style={[styles.emptyDocsText, getTextStyle('medium', colors.textSecondary)]}>
+                    Nenhum documento compartilhado
+                  </Text>
                 </View>
               ) : (
                 documentos.map((doc) => {
                   const docStyle = getDocIcon(doc.tipo);
                   return (
-                    <View key={doc.id} style={styles.documentCard}>
+                    <View key={doc.id} style={[
+                      styles.documentCard,
+                      {
+                        backgroundColor: colors.cardBackground,
+                        borderColor: colors.border,
+                        padding: baixaVisao ? 16 : 12,
+                      }
+                    ]}>
                       <View style={[styles.documentIcon, { backgroundColor: docStyle.bg }]}>
-                        <Icon name={docStyle.icon} size={20} color={docStyle.color} />
+                        <Icon name={docStyle.icon} size={baixaVisao ? 24 : 20} color={docStyle.color} />
                       </View>
                       <View style={styles.documentInfo}>
-                        <Text style={styles.documentName}>{doc.nome}</Text>
-                        <Text style={styles.documentMeta}>{doc.tipo} • {doc.tamanho}</Text>
+                        <Text style={[styles.documentName, getTextStyle('medium', colors.text, '700')]}>
+                          {doc.nome}
+                        </Text>
+                        <Text style={[styles.documentMeta, getTextStyle('small', colors.textSecondary)]}>
+                          {doc.tipo} • {doc.tamanho}
+                        </Text>
                       </View>
                     </View>
                   );
@@ -335,38 +428,50 @@ const PerfilPaciente = ({ navigation }) => {
             </View>
 
             {/* Smartwatch / Health Connect */}
-            <View style={styles.section}>
+            <View style={[styles.section, { paddingHorizontal: getSpacing('medium') }]}>
               <View style={styles.sectionHeader}>
-                <Icon name="watch" size={20} color="#B367D4" />
-                <Text style={styles.sectionTitle}>Smartwatch</Text>
+                <Icon name="watch" {...getIconProps('watch', 'medium', colors.primary)} />
+                <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700')]}>Smartwatch</Text>
               </View>
-              <View style={styles.smartwatchEmbed}>
+              <View style={[
+                styles.smartwatchEmbed,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                }
+              ]}>
                 <SmartwatchPaciente paciente={paciente} standalone={false} />
               </View>
             </View>
 
             {/* Sobre minha conta */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Sobre minha conta</Text>
-              <View style={styles.infoCard}>
-                <View style={styles.infoRow}>
-                  <Icon name="user" size={16} color="#B367D4" />
-                  <Text style={styles.infoLabel}>Nome</Text>
-                  <Text style={styles.infoValue}>{paciente?.name || '-'}</Text>
+            <View style={[styles.section, { paddingHorizontal: getSpacing('medium') }]}>
+              <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700')]}>Sobre minha conta</Text>
+              <View style={[
+                styles.infoCard,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  padding: baixaVisao ? 20 : 16,
+                }
+              ]}>
+                <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+                  <Icon name="user" {...getIconProps('user', 'small', colors.primary)} />
+                  <Text style={[styles.infoLabel, getTextStyle('medium', colors.textSecondary)]}>Nome</Text>
+                  <Text style={[styles.infoValue, getTextStyle('medium', colors.text, '600')]}>{paciente?.name || '-'}</Text>
+                </View>
+                <View style={[styles.infoRow, { borderBottomColor: colors.border }]}>
+                  <Icon name="mail" {...getIconProps('mail', 'small', colors.primary)} />
+                  <Text style={[styles.infoLabel, getTextStyle('medium', colors.textSecondary)]}>Email</Text>
+                  <Text style={[styles.infoValue, getTextStyle('medium', colors.text, '600')]}>{paciente?.email || '-'}</Text>
                 </View>
                 <View style={styles.infoRow}>
-                  <Icon name="mail" size={16} color="#B367D4" />
-                  <Text style={styles.infoLabel}>Email</Text>
-                  <Text style={styles.infoValue}>{paciente?.email || '-'}</Text>
-                </View>
-                {/* Exibir status das configurações */}
-                <View style={styles.infoRow}>
-                  <Icon name="settings" size={16} color="#B367D4" />
-                  <Text style={styles.infoLabel}>Acessibilidade</Text>
-                  <Text style={styles.infoValue}>
-                    {baixaVisao && daltonismo ? 'Ambos ativos' : 
-                     baixaVisao ? 'Baixa Visão' : 
-                     daltonismo ? 'Daltonismo' : 
+                  <Icon name="settings" {...getIconProps('settings', 'small', colors.primary)} />
+                  <Text style={[styles.infoLabel, getTextStyle('medium', colors.textSecondary)]}>Acessibilidade</Text>
+                  <Text style={[styles.infoValue, getTextStyle('medium', colors.text, '600')]}>
+                    {baixaVisaoLocal && daltonismoLocal ? 'Ambos ativos' : 
+                     baixaVisaoLocal ? 'Baixa Visão' : 
+                     daltonismoLocal ? 'Daltonismo' : 
                      'Padrão'}
                   </Text>
                 </View>
@@ -374,31 +479,44 @@ const PerfilPaciente = ({ navigation }) => {
             </View>
 
             {/* Botão Logout */}
-            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-              <Icon name="log-out" size={18} color="#FFFFFF" />
-              <Text style={styles.logoutButtonText}>Sair da conta</Text>
+            <TouchableOpacity style={[
+              styles.logoutButton,
+              {
+                backgroundColor: adaptarCor('#EF4444'),
+                marginHorizontal: getSpacing('medium'),
+                paddingVertical: baixaVisao ? 18 : 14,
+              }
+            ]} onPress={handleLogout}>
+              <Icon name="log-out" {...getIconProps('log-out', 'medium', '#FFFFFF')} />
+              <Text style={[styles.logoutButtonText, getTextStyle('large', '#FFFFFF', '700')]}>Sair da conta</Text>
             </TouchableOpacity>
           </>
         )}
       </ScrollView>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
+      <View style={[
+        styles.bottomNavigation,
+        {
+          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.90)',
+          borderTopColor: colors.border,
+        }
+      ]}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('HomePaciente')}>
-          <Icon name="home" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Home</Text>
+          <Icon name="home" {...getIconProps('home', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '700')]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DiarioPaciente')}>
-          <Icon name="book-open" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Diário</Text>
+          <Icon name="book-open" {...getIconProps('book-open', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '700')]}>Diário</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MetasPaciente')}>
-          <Icon name="target" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Metas</Text>
+          <Icon name="target" {...getIconProps('target', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '700')]}>Metas</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Icon name="user" size={20} color="#B367D4" />
-          <Text style={[styles.navText, styles.navTextActive]}>Perfil</Text>
+          <Icon name="user" {...getIconProps('user', 'medium', colors.primary)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.primary, '700')]}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -406,30 +524,40 @@ const PerfilPaciente = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F6F6F8' },
+  container: { flex: 1 },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 80 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: 24, paddingBottom: 8 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+  },
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 28 },
+  headerTitle: {
+    flex: 1,
+    textAlign: 'center',
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    lineHeight: 28,
+  },
   
   // Cards de Estatísticas
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    paddingHorizontal: 12,
     marginTop: 16,
     gap: 12,
   },
   statCard: {
     flex: 1,
     minWidth: '30%',
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -445,17 +573,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   statValue: {
-    fontSize: 20,
     fontFamily: 'Manrope',
     fontWeight: '800',
-    color: '#0F172A',
     lineHeight: 28,
   },
   statLabel: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#64748B',
     lineHeight: 14,
     textAlign: 'center',
     marginTop: 4,
@@ -467,7 +591,6 @@ const styles = StyleSheet.create({
     marginTop: 6,
   },
   scoreBadgeText: {
-    fontSize: 9,
     fontFamily: 'Manrope',
     fontWeight: '700',
     lineHeight: 14,
@@ -475,11 +598,8 @@ const styles = StyleSheet.create({
 
   // Seção de Acessibilidade
   acessibilidadeCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
     borderWidth: 1,
-    borderColor: '#E2E8F0',
   },
   acessibilidadeRow: {
     flexDirection: 'row',
@@ -494,9 +614,6 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   acessibilidadeIconWrapper: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -505,22 +622,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   acessibilidadeTitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 20,
   },
   acessibilidadeDescription: {
-    fontSize: 11,
     fontFamily: 'Manrope',
-    color: '#64748B',
     lineHeight: 16,
     marginTop: 2,
   },
   divider: {
     height: 1,
-    backgroundColor: '#F1F5F9',
     marginVertical: 8,
   },
   salvandoIndicator: {
@@ -531,33 +643,40 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   salvandoText: {
-    fontSize: 12,
     fontFamily: 'Manrope',
-    color: '#64748B',
   },
   
-  section: { paddingHorizontal: 16, marginTop: 16 },
+  section: { marginTop: 16 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
-  sectionTitle: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#191B23', lineHeight: 22.5 },
-  emptyDocs: { alignItems: 'center', paddingVertical: 32 },
-  emptyDocsText: { fontSize: 14, color: '#9CA3AF', marginTop: 12 },
-  documentCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  sectionTitle: { fontFamily: 'Manrope', fontWeight: '700', lineHeight: 22.5 },
+  emptyDocs: { alignItems: 'center', justifyContent: 'center' },
+  emptyDocsText: { fontFamily: 'Manrope', marginTop: 12 },
+  documentCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, marginBottom: 8, borderWidth: 1 },
   documentIcon: { width: 40, height: 40, borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
   documentInfo: { flex: 1 },
-  documentName: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 20 },
-  documentMeta: { fontSize: 10, fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', color: '#64748B', lineHeight: 15, letterSpacing: 0.5 },
-  smartwatchEmbed: { backgroundColor: '#FFFFFF', borderRadius: 12, borderWidth: 1, borderColor: '#E2E8F0', overflow: 'hidden' },
-  infoCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0' },
-  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#F3F4F6', gap: 8 },
-  infoLabel: { fontSize: 14, color: '#64748B', flex: 1 },
-  infoValue: { fontSize: 14, fontFamily: 'Manrope', fontWeight: '600', color: '#0F172A' },
-  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', backgroundColor: '#EF4444', borderRadius: 12, marginHorizontal: 16, marginTop: 16, marginBottom: 32, paddingVertical: 14, gap: 8 },
-  logoutButtonText: { fontSize: 16, fontFamily: 'Manrope', fontWeight: '700', color: '#FFFFFF' },
-  bottomNavigation: { flexDirection: 'row', backgroundColor: 'rgba(255, 255, 255, 0.90)', borderTopWidth: 1, borderTopColor: '#E2E8F0', paddingVertical: 12, paddingHorizontal: 24, justifyContent: 'space-between', position: 'absolute', bottom: 0, left: 0, right: 0 },
+  documentName: { fontFamily: 'Manrope', fontWeight: '700', lineHeight: 20 },
+  documentMeta: { fontFamily: 'Manrope', fontWeight: '700', textTransform: 'uppercase', lineHeight: 15, letterSpacing: 0.5 },
+  smartwatchEmbed: { borderRadius: 12, borderWidth: 1, overflow: 'hidden' },
+  infoCard: { borderRadius: 12, borderWidth: 1 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, gap: 8 },
+  infoLabel: { fontFamily: 'Manrope', flex: 1 },
+  infoValue: { fontFamily: 'Manrope', fontWeight: '600' },
+  logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, marginTop: 16, marginBottom: 32, gap: 8 },
+  logoutButtonText: { fontFamily: 'Manrope', fontWeight: '700' },
+  bottomNavigation: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    justifyContent: 'space-between',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
   navItem: { alignItems: 'center', gap: 4 },
   navItemActive: {},
-  navText: { fontSize: 10, fontFamily: 'Manrope', fontWeight: '700', color: '#94A3B8', lineHeight: 15 },
-  navTextActive: { color: '#B367D4' },
+  navText: { fontFamily: 'Manrope', fontWeight: '700', lineHeight: 15, textTransform: 'uppercase' },
 });
 
 export default PerfilPaciente;

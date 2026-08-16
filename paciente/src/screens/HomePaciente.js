@@ -8,6 +8,7 @@ import {
 import Icon from 'react-native-vector-icons/Feather';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
+import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const HomePaciente = ({ navigation }) => {
   const screenWidth = Dimensions.get('window').width;
@@ -16,6 +17,21 @@ const HomePaciente = ({ navigation }) => {
   const [loadingMood, setLoadingMood] = useState(false);
   const [paciente, setPaciente] = useState(null);
   const [moodHistory, setMoodHistory] = useState([]);
+
+  // Hooks de acessibilidade
+  const {
+    baixaVisao,
+    daltonismo,
+    getColors,
+    getTextStyle,
+    getButtonStyle,
+    getCardStyle,
+    getIconProps,
+    getSpacing,
+    adaptarCor,
+  } = useAccessibilityStyles();
+
+  const colors = getColors();
 
   const moods = [
     { id: 'feliz', label: 'Feliz', color: '#E3F2FD', iconColor: '#2563EB', icon: 'smile', valence: 8, arousal: 7 },
@@ -90,7 +106,6 @@ const HomePaciente = ({ navigation }) => {
     }
   };
 
-  // Gráfico corrigido - com largura adequada para não cortar
   const chartWidth = screenWidth - 60;
   
   const moodHistorySlice = moodHistory.length >= 2 ? moodHistory.slice(0, 7).reverse() : [];
@@ -116,50 +131,78 @@ const HomePaciente = ({ navigation }) => {
 
   const renderNotificacaoItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.notificacaoItem, !item.lida && styles.notificacaoItemNaoLida]}
+      style={[
+        styles.notificacaoItem, 
+        !item.lida && styles.notificacaoItemNaoLida,
+        { 
+          backgroundColor: colors.cardBackground,
+          borderColor: colors.border,
+          borderLeftColor: !item.lida ? colors.primary : colors.border,
+        }
+      ]}
       onPress={() => setNotificacoes(notificacoes.map(n => n.id === item.id ? { ...n, lida: true } : n))}
     >
-      <View style={styles.notificacaoIcon}>
-        <Icon name={item.icon} size={20} color={!item.lida ? '#B367D4' : '#94A3B8'} />
+      <View style={[styles.notificacaoIcon, { backgroundColor: colors.border }]}>
+        <Icon name={item.icon} {...getIconProps(item.icon, 'medium', !item.lida ? colors.primary : colors.textMuted)} />
       </View>
       <View style={styles.notificacaoContent}>
-        <Text style={[styles.notificacaoTitulo, !item.lida && styles.notificacaoTituloNaoLida]}>{item.titulo}</Text>
-        <Text style={styles.notificacaoMensagem}>{item.mensagem}</Text>
-        <Text style={styles.notificacaoData}>{item.data}</Text>
+        <Text style={[
+          styles.notificacaoTitulo, 
+          !item.lida && styles.notificacaoTituloNaoLida,
+          getTextStyle('medium', !item.lida ? colors.text : colors.textSecondary, !item.lida ? '600' : '400')
+        ]}>{item.titulo}</Text>
+        <Text style={[styles.notificacaoMensagem, getTextStyle('small', colors.textMuted)]}>{item.mensagem}</Text>
+        <Text style={[styles.notificacaoData, getTextStyle('small', colors.textMuted)]}>{item.data}</Text>
       </View>
-      {!item.lida && <View style={styles.notificacaoDot} />}
+      {!item.lida && <View style={[styles.notificacaoDot, { backgroundColor: colors.primary }]} />}
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={baixaVisao ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
+        {/* Header */}
+        <View style={[styles.header, { backgroundColor: colors.background }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarBorder}>
-              <View style={styles.avatar}>
-                <Icon name="user" size={20} color="#B367D4" />
+            <View style={[styles.avatarBorder, { borderColor: baixaVisao ? colors.border : 'rgba(43, 108, 238, 0.20)' }]}>
+              <View style={[styles.avatar, { backgroundColor: baixaVisao ? colors.cardBackground : '#E2E8F0' }]}>
+                <Icon name="user" {...getIconProps('user', 'medium', colors.primary)} />
               </View>
             </View>
           </View>
           <View style={styles.headerText}>
-            <Text style={styles.greeting}>Olá, espero que esteja bem,</Text>
-            <Text style={styles.userName}>{primeiroNome}</Text>
+            <Text style={[styles.greeting, getTextStyle('small', colors.textSecondary)]}>Olá, espero que esteja bem,</Text>
+            <Text style={[styles.userName, getTextStyle('large', colors.text, '700')]}>{primeiroNome}</Text>
           </View>
-          <TouchableOpacity style={styles.notificationButton} onPress={() => setNotificationsVisible(true)}>
-            <Icon name="bell" size={20} color="#475569" />
+          <TouchableOpacity style={[
+            styles.notificationButton, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: baixaVisao ? colors.border : '#F2EEF6',
+            }
+          ]} onPress={() => setNotificationsVisible(true)}>
+            <Icon name="bell" {...getIconProps('bell', 'medium', colors.text)} />
             {notificacoesNaoLidas > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>{notificacoesNaoLidas}</Text>
+              <View style={[styles.notificationBadge, { backgroundColor: colors.danger }]}>
+                <Text style={[styles.notificationBadgeText, getTextStyle('small', '#FFFFFF', '700')]}>{notificacoesNaoLidas}</Text>
               </View>
             )}
           </TouchableOpacity>
         </View>
 
-        <View style={styles.moodSection}>
-          <Text style={styles.sectionTitle}>Como está se sentindo hoje?</Text>
-          <View style={styles.moodContainer}>
+        {/* Seção de Humor */}
+        <View style={[styles.moodSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700'), { textAlign: 'center' }]}>
+            Como está se sentindo hoje?
+          </Text>
+          <View style={[
+            styles.moodContainer, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+            }
+          ]}>
             {moods.map((mood) => (
               <TouchableOpacity
                 key={mood.id}
@@ -167,56 +210,124 @@ const HomePaciente = ({ navigation }) => {
                 onPress={() => handleMoodPress(mood)}
                 disabled={loadingMood}
               >
-                <View style={[styles.moodIconWrapper, { backgroundColor: mood.color }]}>
-                  <Icon name={mood.icon} size={24} color={mood.iconColor} />
+                <View style={[
+                  styles.moodIconWrapper, 
+                  { 
+                    backgroundColor: baixaVisao ? colors.cardBackground : mood.color,
+                    borderWidth: baixaVisao ? 2 : 0,
+                    borderColor: baixaVisao ? colors.border : 'transparent',
+                    width: baixaVisao ? 72 : 56,
+                    height: baixaVisao ? 72 : 56,
+                    borderRadius: baixaVisao ? 20 : 16,
+                  }
+                ]}>
+                  <Icon 
+                    name={mood.icon} 
+                    size={baixaVisao ? 32 : 24} 
+                    color={baixaVisao ? colors.text : adaptarCor(mood.iconColor)} 
+                  />
                 </View>
-                <Text style={styles.moodLabel}>{mood.label}</Text>
+                <Text style={[
+                  styles.moodLabel, 
+                  getTextStyle('small', baixaVisao ? colors.text : '#475569', '500')
+                ]}>{mood.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        <TouchableOpacity style={styles.emergencyButton} onPress={() => Alert.alert('Emergência', 'Em caso de emergência ligue 192 (SAMU) ou 188 (CVV)')}>
-          <Text style={styles.emergencyButtonText}>Ligar para emergência</Text>
+        {/* Botão Emergência */}
+        <TouchableOpacity 
+          style={[
+            styles.emergencyButton, 
+            { 
+              backgroundColor: adaptarCor('#EF4444'),
+              borderColor: adaptarCor('#DC2626'),
+              marginHorizontal: getSpacing('medium'),
+              paddingVertical: baixaVisao ? 16 : 12,
+            }
+          ]} 
+          onPress={() => Alert.alert('Emergência', 'Em caso de emergência ligue 192 (SAMU) ou 188 (CVV)')}
+        >
+          <Text style={[
+            styles.emergencyButtonText, 
+            getTextStyle('large', '#E2E8F0', '700'),
+            { textAlign: 'center' }
+          ]}>
+            Ligar para emergência
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.notesCard} onPress={() => navigation.navigate('DiarioPaciente')}>
-          <View style={styles.notesIconWrapper}>
-            <Icon name="edit-2" size={18} color="#B367D4" />
+        {/* Card Anotações */}
+        <TouchableOpacity 
+          style={[
+            styles.notesCard, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              marginHorizontal: getSpacing('medium'),
+              padding: baixaVisao ? 24 : 20,
+            }
+          ]} 
+          onPress={() => navigation.navigate('DiarioPaciente')}
+        >
+          <View style={[styles.notesIconWrapper, { backgroundColor: baixaVisao ? 'rgba(179,103,212,0.15)' : 'rgba(43, 108, 238, 0.10)' }]}>
+            <Icon name="edit-2" {...getIconProps('edit-2', 'medium', colors.primary)} />
           </View>
           <View style={styles.notesTextContainer}>
-            <Text style={styles.notesTitle}>Anotações diárias</Text>
-            <Text style={styles.notesSubtitle}>Escreva suas anotações diárias</Text>
+            <Text style={[styles.notesTitle, getTextStyle('medium', colors.text, '700')]}>Anotações diárias</Text>
+            <Text style={[styles.notesSubtitle, getTextStyle('small', colors.textSecondary)]}>Escreva suas anotações diárias</Text>
           </View>
-          <Icon name="chevron-right" size={16} color="#CBD5E1" />
+          <Icon name="chevron-right" {...getIconProps('chevron-right', 'small', colors.textMuted)} />
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.goalsCard} onPress={() => navigation.navigate('MetasPaciente')}>
+        {/* Card Metas */}
+        <TouchableOpacity 
+          style={[
+            styles.goalsCard, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              marginHorizontal: getSpacing('medium'),
+              padding: baixaVisao ? 24 : 20,
+            }
+          ]} 
+          onPress={() => navigation.navigate('MetasPaciente')}
+        >
           <View style={styles.goalsHeader}>
-            <Text style={styles.goalsTitle}>Minhas metas</Text>
-            <Icon name="target" size={20} color="#B367D4" />
+            <Text style={[styles.goalsTitle, getTextStyle('medium', colors.text, '700')]}>Minhas metas</Text>
+            <Icon name="target" {...getIconProps('target', 'medium', colors.primary)} />
           </View>
-          <Text style={styles.goalsSubtitle}>Veja as metas definidas pelo seu psicólogo</Text>
+          <Text style={[styles.goalsSubtitle, getTextStyle('small', colors.textSecondary)]}>Veja as metas definidas pelo seu psicólogo</Text>
         </TouchableOpacity>
 
-        {/* GRÁFICO CORRIGIDO */}
-        <View style={styles.chartSection}>
-          <Text style={styles.sectionTitle}>Histórico emocional</Text>
-          <View style={styles.chartContainer}>
+        {/* Gráfico */}
+        <View style={[styles.chartSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700'), { textAlign: 'center' }]}>
+            Histórico emocional
+          </Text>
+          <View style={[
+            styles.chartContainer, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              padding: baixaVisao ? 24 : 20,
+            }
+          ]}>
             <LineChart
               data={chartData}
               width={chartWidth}
-              height={200}
+              height={baixaVisao ? 240 : 200}
               chartConfig={{
-                backgroundColor: '#FFFFFF',
-                backgroundGradientFrom: '#FFFFFF',
-                backgroundGradientTo: '#FFFFFF',
+                backgroundColor: colors.cardBackground,
+                backgroundGradientFrom: colors.cardBackground,
+                backgroundGradientTo: colors.cardBackground,
                 decimalPlaces: 0,
                 color: (opacity = 1) => `rgba(179, 103, 212, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(100, 116, 139, ${opacity})`,
+                labelColor: (opacity = 1) => baixaVisao ? `rgba(255, 255, 255, ${opacity})` : `rgba(100, 116, 139, ${opacity})`,
                 style: { borderRadius: 16 },
-                propsForDots: { r: '5', strokeWidth: '2', stroke: '#B367D4' },
-                propsForBackgroundLines: { strokeDasharray: '', stroke: '#E2E8F0' },
+                propsForDots: { r: baixaVisao ? '7' : '5', strokeWidth: baixaVisao ? '3' : '2', stroke: colors.primary },
+                propsForBackgroundLines: { strokeDasharray: '', stroke: colors.border },
               }}
               bezier
               style={styles.chart}
@@ -224,20 +335,28 @@ const HomePaciente = ({ navigation }) => {
               fromZero
             />
             <View style={styles.chartLegend}>
-              <View style={styles.chartLegendDot} />
-              <Text style={styles.chartLegendText}>Nível de bem-estar emocional</Text>
+              <View style={[styles.chartLegendDot, { backgroundColor: colors.primary }]} />
+              <Text style={[styles.chartLegendText, getTextStyle('small', colors.textSecondary)]}>Nível de bem-estar emocional</Text>
             </View>
           </View>
         </View>
       </ScrollView>
 
+      {/* Modal Notificações */}
       <Modal animationType="slide" transparent={true} visible={notificationsVisible} onRequestClose={() => setNotificationsVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Notificações</Text>
+          <View style={[
+            styles.modalContainer, 
+            { 
+              backgroundColor: colors.cardBackground,
+              borderTopLeftRadius: baixaVisao ? 28 : 24,
+              borderTopRightRadius: baixaVisao ? 28 : 24,
+            }
+          ]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, getTextStyle('large', colors.text, '600')]}>Notificações</Text>
               <TouchableOpacity onPress={() => setNotificationsVisible(false)}>
-                <Icon name="x" size={24} color="#6B7280" />
+                <Icon name="x" {...getIconProps('x', 'medium', colors.textMuted)} />
               </TouchableOpacity>
             </View>
             <FlatList
@@ -250,22 +369,29 @@ const HomePaciente = ({ navigation }) => {
         </View>
       </Modal>
 
-      <View style={styles.bottomNavigation}>
+      {/* Bottom Navigation */}
+      <View style={[
+        styles.bottomNavigation, 
+        { 
+          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          borderTopColor: colors.border,
+        }
+      ]}>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Icon name="home" size={20} color="#B367D4" />
-          <Text style={[styles.navText, styles.navTextActive]}>Home</Text>
+          <Icon name="home" {...getIconProps('home', 'medium', colors.primary)} />
+          <Text style={[styles.navText, styles.navTextActive, getTextStyle('small', colors.primary, '700')]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DiarioPaciente')}>
-          <Icon name="book-open" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Diário</Text>
+          <Icon name="book-open" {...getIconProps('book-open', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Diário</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MetasPaciente')}>
-          <Icon name="target" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Metas</Text>
+          <Icon name="target" {...getIconProps('target', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Metas</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('PerfilPaciente')}>
-          <Icon name="user" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Perfil</Text>
+          <Icon name="user" {...getIconProps('user', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -275,7 +401,6 @@ const HomePaciente = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F6F8',
   },
   scrollView: {
     flex: 1,
@@ -287,7 +412,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    backgroundColor: '#F6F6F8',
   },
   avatarContainer: {
     marginRight: 12,
@@ -297,7 +421,6 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'rgba(43, 108, 238, 0.20)',
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden',
@@ -306,37 +429,27 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#E2E8F0',
     overflow: 'hidden',
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  avatarImage: {
-    width: '100%',
-    height: '100%',
   },
   headerText: {
     flex: 1,
     paddingHorizontal: 12,
   },
   greeting: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     lineHeight: 16,
   },
   userName: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 22.5,
   },
   notificationButton: {
     width: 40,
     height: 40,
-    backgroundColor: '#FFFFFF',
     borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
@@ -346,14 +459,12 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
     position: 'relative',
   },
   notificationBadge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#EF4444',
     borderRadius: 10,
     minWidth: 18,
     height: 18,
@@ -362,30 +473,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   notificationBadgeText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   moodSection: {
-    paddingHorizontal: 16,
     marginTop: 24,
     marginBottom: 16,
   },
   sectionTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 28,
     marginBottom: 16,
-    textAlign: 'center',
   },
   moodContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
     padding: 16,
     shadowColor: '#000',
@@ -394,7 +498,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
   },
   moodItem: {
     alignItems: 'center',
@@ -405,89 +508,30 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   moodIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
   },
   moodLabel: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#475569',
     lineHeight: 16,
   },
   emergencyButton: {
-    backgroundColor: '#EF4444',
     borderRadius: 16,
-    paddingVertical: 12,
-    marginHorizontal: 16,
     marginBottom: 24,
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#DC2626',
   },
   emergencyButtonText: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#E2E8F0',
     lineHeight: 24,
-    textAlign: 'center',
-  },
-  // NOVOS ESTILOS PARA O CARD DE SONHOS
-  dreamsCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#1E1B4B',
-    borderRadius: 24,
-    padding: 20,
-    marginHorizontal: 16,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
-  },
-  dreamsIconWrapper: {
-    width: 52,
-    height: 52,
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  dreamsTextContainer: {
-    flex: 1,
-  },
-  dreamsTitle: {
-    fontSize: 18,
-    fontFamily: 'Manrope',
-    fontWeight: '700',
-    color: '#FFFFFF',
-    lineHeight: 24,
-  },
-  dreamsSubtitle: {
-    fontSize: 12,
-    fontFamily: 'Manrope',
-    fontWeight: '400',
-    color: 'rgba(255, 255, 255, 0.7)',
-    lineHeight: 16,
-    marginTop: 4,
   },
   notesCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 20,
-    marginHorizontal: 16,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -495,12 +539,10 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
   },
   notesIconWrapper: {
     width: 48,
     height: 48,
-    backgroundColor: 'rgba(43, 108, 238, 0.10)',
     borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
@@ -510,25 +552,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notesTitle: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 24,
   },
   notesSubtitle: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     lineHeight: 16,
     marginTop: 4,
   },
   goalsCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 20,
-    marginHorizontal: 16,
     marginBottom: 24,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -536,7 +571,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
   },
   goalsHeader: {
     flexDirection: 'row',
@@ -545,34 +579,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   goalsTitle: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 24,
   },
   goalsSubtitle: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     lineHeight: 16,
   },
   chartSection: {
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
   chartContainer: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
     alignItems: 'center',
   },
   chart: {
@@ -589,20 +615,15 @@ const styles = StyleSheet.create({
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: '#B367D4',
     marginRight: 8,
   },
   chartLegendText: {
-    fontSize: 11,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#64748B',
   },
   bottomNavigation: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.80)',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     paddingVertical: 12,
     paddingHorizontal: 24,
     justifyContent: 'space-between',
@@ -617,14 +638,12 @@ const styles = StyleSheet.create({
   },
   navItemActive: {},
   navText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#94A3B8',
     lineHeight: 15,
+    textTransform: 'uppercase',
   },
   navTextActive: {
-    color: '#B367D4',
     fontWeight: '700',
   },
   modalOverlay: {
@@ -633,9 +652,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     maxHeight: '80%',
   },
   modalHeader: {
@@ -644,24 +660,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   modalTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
-  },
-  modalHeaderActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  clearAllText: {
-    fontSize: 12,
-    fontFamily: 'Manrope',
-    fontWeight: '500',
-    color: '#EF4444',
   },
   notificacoesList: {
     padding: 16,
@@ -669,23 +671,19 @@ const styles = StyleSheet.create({
   notificacaoItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: '#F3F4F6',
+    borderLeftWidth: 3,
   },
   notificacaoItemNaoLida: {
-    backgroundColor: '#FAFAFF',
     borderLeftWidth: 3,
-    borderLeftColor: '#B367D4',
   },
   notificacaoIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#F3F4F6',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -694,55 +692,28 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   notificacaoTitulo: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#6B7280',
     marginBottom: 4,
   },
   notificacaoTituloNaoLida: {
-    color: '#1F2937',
+    fontWeight: '600',
   },
   notificacaoMensagem: {
-    fontSize: 13,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#9CA3AF',
     marginBottom: 4,
   },
   notificacaoData: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#D1D5DB',
   },
   notificacaoDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: '#B367D4',
     marginLeft: 8,
     marginTop: 4,
-  },
-  emptyNotifications: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-  },
-  emptyNotificationsTitle: {
-    fontSize: 16,
-    fontFamily: 'Manrope',
-    fontWeight: '600',
-    color: '#1F2937',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyNotificationsText: {
-    fontSize: 12,
-    fontFamily: 'Manrope',
-    fontWeight: '400',
-    color: '#9CA3AF',
-    textAlign: 'center',
   },
 });
 

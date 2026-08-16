@@ -6,11 +6,27 @@ import {
   StatusBar, ScrollView, Alert, ActivityIndicator,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const MetasPaciente = ({ navigation }) => {
   const [metasList, setMetasList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+
+  // Hooks de acessibilidade
+  const {
+    baixaVisao,
+    daltonismo,
+    getColors,
+    getTextStyle,
+    getButtonStyle,
+    getCardStyle,
+    getIconProps,
+    getSpacing,
+    adaptarCor,
+  } = useAccessibilityStyles();
+
+  const colors = getColors();
 
   useEffect(() => {
     carregarMetas();
@@ -108,22 +124,50 @@ const MetasPaciente = ({ navigation }) => {
     const statusColor = getStatusColor(meta.status, isOverdue);
     const statusLabel = getStatusLabel(meta.status, isOverdue);
     const isUpdating = updatingId === meta.id;
+    const adaptStatusColor = adaptarCor(statusColor);
     
     return (
-      <View key={meta.id} style={[styles.metaCard, isOverdue && styles.metaOverdue, meta.status === 'concluido' && styles.metaCompleted]}>
+      <View key={meta.id} style={[
+        styles.metaCard,
+        { 
+          backgroundColor: colors.cardBackground,
+          borderColor: colors.border,
+          padding: baixaVisao ? 20 : 16,
+        },
+        isOverdue && { backgroundColor: '#FEF2F2', borderColor: '#FECACA' },
+        meta.status === 'concluido' && { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' },
+      ]}>
         <View style={styles.metaHeader}>
           <View style={styles.metaInfo}>
-            <View style={[styles.metaCategoryBadge, { backgroundColor: statusColor + '20' }]}>
-              <Text style={[styles.metaCategoryText, { color: statusColor }]}>
+            <View style={[styles.metaCategoryBadge, { backgroundColor: adaptStatusColor + '20' }]}>
+              <Text style={[
+                styles.metaCategoryText,
+                getTextStyle('small', adaptStatusColor, '700'),
+                { textTransform: 'uppercase' }
+              ]}>
                 {statusLabel}
               </Text>
             </View>
-            <Text style={[styles.metaTitle, meta.status === 'concluido' && styles.metaTitleCompleted]}>{meta.titulo}</Text>
-            <Text style={styles.metaDescription}>{meta.progresso || 'Meta cadastrada'}</Text>
+            <Text style={[
+              styles.metaTitle,
+              getTextStyle('medium', colors.text, '700'),
+              meta.status === 'concluido' && styles.metaTitleCompleted
+            ]}>{meta.titulo}</Text>
+            <Text style={[
+              styles.metaDescription,
+              getTextStyle('small', colors.textSecondary)
+            ]}>{meta.progresso || 'Meta cadastrada'}</Text>
             {meta.prazo && meta.prazo !== 'Sem prazo definido' && (
-              <View style={[styles.prazoRow, isOverdue && styles.prazoRowOverdue]}>
-                <Icon name="calendar" size={12} color={isOverdue ? '#EF4444' : '#94A3B8'} />
-                <Text style={[styles.prazoText, isOverdue && styles.prazoTextOverdue]}>
+              <View style={[
+                styles.prazoRow,
+                isOverdue && styles.prazoRowOverdue
+              ]}>
+                <Icon name="calendar" {...getIconProps('calendar', 'small', isOverdue ? '#EF4444' : colors.textMuted)} />
+                <Text style={[
+                  styles.prazoText,
+                  getTextStyle('small', isOverdue ? '#DC2626' : colors.textMuted, '500'),
+                  isOverdue && styles.prazoTextOverdue
+                ]}>
                   Prazo: {meta.prazo} {isOverdue && '(Atrasada)'}
                 </Text>
               </View>
@@ -132,15 +176,19 @@ const MetasPaciente = ({ navigation }) => {
         </View>
         
         {showActions && meta.status !== 'concluido' && (
-          <View style={styles.metaActions}>
+          <View style={[styles.metaActions, { borderTopColor: colors.border }]}>
             {meta.status !== 'andamento' && (
               <TouchableOpacity 
-                style={[styles.actionButton, isOverdue ? styles.overdueButton : styles.startButton]} 
+                style={[
+                  styles.actionButton,
+                  isOverdue ? { backgroundColor: adaptarCor('#EF4444') } : { backgroundColor: colors.primary },
+                  { paddingVertical: baixaVisao ? 14 : 10 }
+                ]} 
                 onPress={() => atualizarStatusMeta(meta.id, 'andamento')}
                 disabled={isUpdating}
               >
                 {isUpdating ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
-                  <Text style={styles.actionButtonText}>
+                  <Text style={[styles.actionButtonText, getTextStyle('small', '#FFFFFF', '600')]}>
                     {isOverdue ? 'Iniciar mesmo assim' : 'Iniciar'}
                   </Text>
                 )}
@@ -148,11 +196,17 @@ const MetasPaciente = ({ navigation }) => {
             )}
             {meta.status === 'andamento' && (
               <TouchableOpacity 
-                style={[styles.actionButton, styles.completeButton]} 
+                style={[
+                  styles.actionButton,
+                  { backgroundColor: adaptarCor('#22C55E') },
+                  { paddingVertical: baixaVisao ? 14 : 10 }
+                ]} 
                 onPress={() => atualizarStatusMeta(meta.id, 'concluido')}
                 disabled={isUpdating}
               >
-                {isUpdating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.actionButtonText}>Concluir</Text>}
+                {isUpdating ? <ActivityIndicator size="small" color="#FFFFFF" /> : (
+                  <Text style={[styles.actionButtonText, getTextStyle('small', '#FFFFFF', '600')]}>Concluir</Text>
+                )}
               </TouchableOpacity>
             )}
           </View>
@@ -160,7 +214,7 @@ const MetasPaciente = ({ navigation }) => {
         
         {meta.status === 'concluido' && (
           <View style={styles.completedIconContainer}>
-            <Icon name="check-circle" size={24} color="#22C55E" />
+            <Icon name="check-circle" {...getIconProps('check-circle', 'large', '#22C55E')} />
           </View>
         )}
       </View>
@@ -168,78 +222,105 @@ const MetasPaciente = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={baixaVisao ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
+        <View style={[
+          styles.header,
+          { 
+            backgroundColor: baixaVisao ? colors.background : 'rgba(246, 246, 248, 0.80)',
+            borderBottomColor: colors.border,
+          }
+        ]}>
           <TouchableOpacity style={styles.headerBackButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={20} color="#0F172A" />
+            <Icon name="arrow-left" {...getIconProps('arrow-left', 'medium', colors.text)} />
           </TouchableOpacity>
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Minhas metas</Text>
+            <Text style={[styles.headerTitle, getTextStyle('large', colors.text, '700')]}>Minhas metas</Text>
           </View>
           <View style={{ width: 40 }} />
         </View>
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
+        <View style={[styles.statsContainer, { paddingHorizontal: getSpacing('large'), gap: getSpacing('small') }]}>
+          <View style={[
+            styles.statCard,
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              padding: baixaVisao ? 18 : 14,
+            }
+          ]}>
             <View style={styles.statHeader}>
-              <View style={[styles.statDot, { backgroundColor: '#22C55E' }]} />
-              <Text style={styles.statTitle}>Concluídas</Text>
+              <View style={[styles.statDot, { backgroundColor: adaptarCor('#22C55E') }]} />
+              <Text style={[styles.statTitle, getTextStyle('small', colors.textSecondary, '600')]}>Concluídas</Text>
             </View>
-            <Text style={styles.statNumber}>{metasConcluidas.length}</Text>
+            <Text style={[styles.statNumber, getTextStyle('xlarge', colors.text, '800')]}>{metasConcluidas.length}</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[
+            styles.statCard,
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              padding: baixaVisao ? 18 : 14,
+            }
+          ]}>
             <View style={styles.statHeader}>
-              <View style={[styles.statDot, { backgroundColor: '#F59E0B' }]} />
-              <Text style={styles.statTitle}>Em progresso</Text>
+              <View style={[styles.statDot, { backgroundColor: adaptarCor('#F59E0B') }]} />
+              <Text style={[styles.statTitle, getTextStyle('small', colors.textSecondary, '600')]}>Em progresso</Text>
             </View>
-            <Text style={styles.statNumber}>{metasEmProgresso.length}</Text>
+            <Text style={[styles.statNumber, getTextStyle('xlarge', colors.text, '800')]}>{metasEmProgresso.length}</Text>
           </View>
-          <View style={styles.statCard}>
+          <View style={[
+            styles.statCard,
+            { 
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              padding: baixaVisao ? 18 : 14,
+            }
+          ]}>
             <View style={styles.statHeader}>
-              <View style={[styles.statDot, { backgroundColor: '#EF4444' }]} />
-              <Text style={styles.statTitle}>Em atraso</Text>
+              <View style={[styles.statDot, { backgroundColor: adaptarCor('#EF4444') }]} />
+              <Text style={[styles.statTitle, getTextStyle('small', colors.textSecondary, '600')]}>Em atraso</Text>
             </View>
-            <Text style={styles.statNumber}>{metasEmAtraso.length}</Text>
+            <Text style={[styles.statNumber, getTextStyle('xlarge', colors.text, '800')]}>{metasEmAtraso.length}</Text>
           </View>
         </View>
 
-        <View style={styles.metasContainer}>
+        <View style={[styles.metasContainer, { paddingHorizontal: getSpacing('medium'), gap: getSpacing('medium') }]}>
           {loading ? (
-            <ActivityIndicator size="large" color="#B367D4" style={{ marginTop: 40 }} />
+            <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
           ) : metasList.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Icon name="target" size={48} color="#D1D5DB" />
-              <Text style={styles.emptyTitle}>Nenhuma meta ainda</Text>
-              <Text style={styles.emptyText}>Seu psicólogo ainda não cadastrou metas para você.</Text>
+            <View style={[styles.emptyState, { paddingVertical: baixaVisao ? 80 : 60 }]}>
+              <Icon name="target" {...getIconProps('target', 'xlarge', colors.textMuted)} />
+              <Text style={[styles.emptyTitle, getTextStyle('large', colors.text, '600')]}>Nenhuma meta ainda</Text>
+              <Text style={[styles.emptyText, getTextStyle('medium', colors.textSecondary)]}>Seu psicólogo ainda não cadastrou metas para você.</Text>
             </View>
           ) : (
             <>
               {metasEmAtraso.length > 0 && (
                 <>
-                  <Text style={styles.sectionTitle}>⚠️ Em atraso</Text>
+                  <Text style={[styles.sectionTitle, getTextStyle('medium', colors.textSecondary, '700')]}>⚠️ Em atraso</Text>
                   {metasEmAtraso.map(meta => renderMetaCard(meta, true))}
                 </>
               )}
               
               {metasAtivas.length > 0 && (
                 <>
-                  <Text style={styles.sectionTitle}>📌 Ativas</Text>
+                  <Text style={[styles.sectionTitle, getTextStyle('medium', colors.textSecondary, '700')]}>📌 Ativas</Text>
                   {metasAtivas.map(meta => renderMetaCard(meta, true))}
                 </>
               )}
               
               {metasEmProgresso.length > 0 && (
                 <>
-                  <Text style={styles.sectionTitle}>⚡ Em progresso</Text>
+                  <Text style={[styles.sectionTitle, getTextStyle('medium', colors.textSecondary, '700')]}>⚡ Em progresso</Text>
                   {metasEmProgresso.map(meta => renderMetaCard(meta, true))}
                 </>
               )}
               
               {metasConcluidas.length > 0 && (
                 <>
-                  <Text style={styles.sectionTitle}>✅ Concluídas</Text>
+                  <Text style={[styles.sectionTitle, getTextStyle('medium', colors.textSecondary, '700')]}>✅ Concluídas</Text>
                   {metasConcluidas.map(meta => renderMetaCard(meta, false))}
                 </>
               )}
@@ -248,22 +329,28 @@ const MetasPaciente = ({ navigation }) => {
         </View>
       </ScrollView>
 
-      <View style={styles.bottomNavigation}>
+      <View style={[
+        styles.bottomNavigation,
+        {
+          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          borderTopColor: colors.border,
+        }
+      ]}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('HomePaciente')}>
-          <Icon name="home" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Home</Text>
+          <Icon name="home" {...getIconProps('home', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('DiarioPaciente')}>
-          <Icon name="book-open" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Diário</Text>
+          <Icon name="book-open" {...getIconProps('book-open', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Diário</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Icon name="target" size={20} color="#B367D4" />
-          <Text style={[styles.navText, styles.navTextActive]}>Metas</Text>
+          <Icon name="target" {...getIconProps('target', 'medium', colors.primary)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.primary, '700')]}>Metas</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('PerfilPaciente')}>
-          <Icon name="user" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Perfil</Text>
+          <Icon name="user" {...getIconProps('user', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -273,7 +360,6 @@ const MetasPaciente = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F6F8',
   },
   scrollView: {
     flex: 1,
@@ -287,7 +373,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: 'rgba(246, 246, 248, 0.80)',
+    borderBottomWidth: 1,
   },
   headerBackButton: {
     width: 40,
@@ -301,25 +387,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 22.5,
   },
   statsContainer: {
     flexDirection: 'row',
-    paddingHorizontal: 24,
-    gap: 12,
     marginBottom: 24,
   },
   statCard: {
     flex: 1,
-    padding: 14,
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
@@ -338,51 +417,33 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   statTitle: {
-    fontSize: 11,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#64748B',
     lineHeight: 15,
   },
   statNumber: {
-    fontSize: 28,
     fontFamily: 'Manrope',
     fontWeight: '800',
-    color: '#0F172A',
     lineHeight: 36,
   },
   metasContainer: {
-    paddingHorizontal: 20,
     gap: 16,
   },
   sectionTitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#64748B',
     lineHeight: 20,
     marginBottom: 4,
   },
   metaCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    padding: 16,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
     position: 'relative',
-  },
-  metaOverdue: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
-  metaCompleted: {
-    backgroundColor: '#F0FDF4',
-    borderColor: '#BBF7D0',
   },
   metaHeader: {
     flexDirection: 'row',
@@ -400,17 +461,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   metaCategoryText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    textTransform: 'uppercase',
     lineHeight: 14,
   },
   metaTitle: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 22,
   },
   metaTitleCompleted: {
@@ -418,10 +475,8 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   metaDescription: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     lineHeight: 16,
   },
   prazoRow: {
@@ -438,10 +493,8 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   prazoText: {
-    fontSize: 11,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#94A3B8',
   },
   prazoTextOverdue: {
     color: '#DC2626',
@@ -452,28 +505,15 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
   },
   actionButton: {
     flex: 1,
-    paddingVertical: 10,
     borderRadius: 12,
     alignItems: 'center',
   },
-  startButton: {
-    backgroundColor: '#B367D4',
-  },
-  completeButton: {
-    backgroundColor: '#22C55E',
-  },
-  overdueButton: {
-    backgroundColor: '#EF4444',
-  },
   actionButtonText: {
-    fontSize: 13,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   completedIconContainer: {
     position: 'absolute',
@@ -483,29 +523,22 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
   },
   emptyTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     marginTop: 16,
     marginBottom: 8,
   },
   emptyText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     textAlign: 'center',
     paddingHorizontal: 40,
   },
   bottomNavigation: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.80)',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     paddingVertical: 12,
     paddingHorizontal: 24,
     justifyContent: 'space-between',
@@ -520,15 +553,10 @@ const styles = StyleSheet.create({
   },
   navItemActive: {},
   navText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#94A3B8',
     lineHeight: 15,
-  },
-  navTextActive: {
-    color: '#B367D4',
-    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });
 

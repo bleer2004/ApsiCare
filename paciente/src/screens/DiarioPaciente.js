@@ -7,6 +7,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import * as Audio from 'expo-av/build/Audio';
+import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const DiarioPaciente = ({ navigation }) => {
   const [selectedMood, setSelectedMood] = useState(null);
@@ -27,6 +28,21 @@ const DiarioPaciente = ({ navigation }) => {
   const [gravando, setGravando] = useState(false);
   const [transcrevendo, setTranscrevendo] = useState(false);
   const recordingRef = useRef(null);
+
+  // Hooks de acessibilidade
+  const {
+    baixaVisao,
+    daltonismo,
+    getColors,
+    getTextStyle,
+    getButtonStyle,
+    getCardStyle,
+    getIconProps,
+    getSpacing,
+    adaptarCor,
+  } = useAccessibilityStyles();
+
+  const colors = getColors();
 
   const contextos = [
     { id: 'estudando', label: '📚 Estudando', icon: 'book' },
@@ -158,7 +174,6 @@ const DiarioPaciente = ({ navigation }) => {
         body: formData,
       });
       const data = await res.json();
-      console.log('[transcrever] groq status:', res.status, JSON.stringify(data).slice(0, 200));
       if (res.ok && data.text) {
         setAnotacao(prev => prev ? `${prev} ${data.text}` : data.text);
       } else {
@@ -173,7 +188,6 @@ const DiarioPaciente = ({ navigation }) => {
   };
 
   const handleSalvar = async () => {
-    console.log('[salvar] chamado, mood:', selectedMood, 'loading:', loading, 'transcrevendo:', transcrevendo);
     if (!selectedMood) {
       Alert.alert('Atenção', 'Selecione como você está se sentindo');
       return;
@@ -214,11 +228,9 @@ const DiarioPaciente = ({ navigation }) => {
         await carregarHistorico();
       } else {
         const errData = await response.json().catch(() => ({}));
-        console.error('[salvar] erro API:', response.status, JSON.stringify(errData));
         Alert.alert('Erro', errData.message || `Status ${response.status}`);
       }
     } catch (err) {
-      console.error('[salvar] catch:', err);
       Alert.alert('Erro', 'Não foi possível salvar a anotação');
     } finally {
       setLoading(false);
@@ -330,10 +342,10 @@ const DiarioPaciente = ({ navigation }) => {
       onRequestClose={() => {}}
     >
       <View style={styles.breathingOverlay}>
-        <View style={styles.consentContainer}>
-          <Icon name="shield" size={40} color="#B367D4" />
-          <Text style={styles.consentTitle}>Sua privacidade importa</Text>
-          <Text style={styles.consentText}>
+        <View style={[styles.consentContainer, { backgroundColor: baixaVisao ? '#1A1A1A' : '#1E1B2E' }]}>
+          <Icon name="shield" {...getIconProps('shield', 'xlarge', '#B367D4')} />
+          <Text style={[styles.consentTitle, getTextStyle('xlarge', '#FFFFFF', '700')]}>Sua privacidade importa</Text>
+          <Text style={[styles.consentText, getTextStyle('medium', '#CBD5E1', '400')]}>
             O texto que você escreve ou grava aqui é enviado para serviços de
             inteligência artificial de terceiros (para transcrição de voz e
             análise de sentimento/estresse), com o objetivo de gerar insights
@@ -342,10 +354,10 @@ const DiarioPaciente = ({ navigation }) => {
             sejam sobre como você está se sentindo.
           </Text>
           <TouchableOpacity
-            style={styles.consentButton}
+            style={[styles.consentButton, { backgroundColor: colors.primary }]}
             onPress={aceitarConsentimento}
           >
-            <Text style={styles.consentButtonText}>Entendi e aceito</Text>
+            <Text style={[styles.consentButtonText, getTextStyle('medium', '#FFFFFF', '700')]}>Entendi e aceito</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -361,18 +373,18 @@ const DiarioPaciente = ({ navigation }) => {
     >
       <View style={styles.breathingOverlay}>
         <View style={styles.breathingContainer}>
-          <View style={styles.breathingCircle}>
-            <Text style={styles.breathingNumber}>{breathingStep}</Text>
+          <View style={[styles.breathingCircle, { borderColor: colors.primary }]}>
+            <Text style={[styles.breathingNumber, { color: colors.primary, fontSize: baixaVisao ? 64 : 48 }]}>{breathingStep}</Text>
           </View>
-          <Text style={styles.breathingTitle}>Respire fundo...</Text>
-          <Text style={styles.breathingSubtitle}>
+          <Text style={[styles.breathingTitle, getTextStyle('xxlarge', '#FFFFFF', '700')]}>Respire fundo...</Text>
+          <Text style={[styles.breathingSubtitle, getTextStyle('large', '#94A3B8', '400')]}>
             Inspire e expire lentamente enquanto escreve o que vem à sua mente
           </Text>
           <TouchableOpacity 
             style={styles.breathingSkipButton} 
             onPress={() => setBreathingModalVisible(false)}
           >
-            <Text style={styles.breathingSkipText}>Pular</Text>
+            <Text style={[styles.breathingSkipText, getTextStyle('medium', '#FFFFFF', '500')]}>Pular</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -380,24 +392,32 @@ const DiarioPaciente = ({ navigation }) => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F6F6F8" />
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={baixaVisao ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
       
       {renderConsentModal()}
       {renderBreathingModal()}
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
+        <View style={[styles.header, { backgroundColor: baixaVisao ? colors.background : 'rgba(246, 246, 248, 0.80)', borderBottomColor: colors.border }]}>
           <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Icon name="arrow-left" size={20} color="#B367D4" />
+            <Icon name="arrow-left" {...getIconProps('arrow-left', 'medium', colors.primary)} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Diário emocional</Text>
+          <Text style={[styles.headerTitle, getTextStyle('large', colors.text, '700')]}>Diário emocional</Text>
           <View style={styles.headerPlaceholder} />
         </View>
 
-        <View style={styles.moodSection}>
-          <Text style={styles.moodTitle}>Como você está se sentindo hoje?</Text>
-          <View style={styles.moodContainer}>
+        {/* Seção de Humor */}
+        <View style={[styles.moodSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.moodTitle, getTextStyle('large', colors.text, '600')]}>Como você está se sentindo hoje?</Text>
+          <View style={[
+            styles.moodContainer,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              padding: baixaVisao ? 20 : 16,
+            }
+          ]}>
             {moods.map((mood) => {
               const selecionado = selectedMood === mood.id;
               return (
@@ -408,111 +428,151 @@ const DiarioPaciente = ({ navigation }) => {
                 >
                   <View style={[
                     styles.moodIconWrapper,
-                    { backgroundColor: mood.color },
+                    { 
+                      backgroundColor: baixaVisao ? colors.cardBackground : mood.color,
+                      width: baixaVisao ? 72 : 56,
+                      height: baixaVisao ? 72 : 56,
+                      borderRadius: baixaVisao ? 20 : 16,
+                      borderColor: selecionado ? colors.primary : 'transparent',
+                      borderWidth: selecionado ? 3 : 2,
+                    },
                     selecionado && styles.moodIconWrapperSelected,
                   ]}>
-                    <Text style={styles.moodEmoji}>{mood.emoji}</Text>
+                    <Text style={[styles.moodEmoji, { fontSize: baixaVisao ? 32 : 24 }]}>{mood.emoji}</Text>
                   </View>
-                  <Text style={[styles.moodLabel, selecionado && styles.moodLabelSelected]}>{mood.label}</Text>
+                  <Text style={[
+                    styles.moodLabel,
+                    getTextStyle('small', selecionado ? colors.primary : '#475569', selecionado ? '700' : '500')
+                  ]}>{mood.label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
         </View>
 
-        <View style={styles.ratingSection}>
-          <Text style={styles.ratingTitle}>Qual foi seu nível de humor hoje?</Text>
-          <Text style={styles.ratingSubtitle}>1 = Muito mal | 10 = Muito bem</Text>
+        {/* Avaliação de Humor */}
+        <View style={[styles.ratingSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.ratingTitle, getTextStyle('medium', colors.text, '600')]}>Qual foi seu nível de humor hoje?</Text>
+          <Text style={[styles.ratingSubtitle, getTextStyle('small', colors.textSecondary)]}>1 = Muito mal | 10 = Muito bem</Text>
           <View style={styles.ratingContainer}>
-            <Text style={styles.ratingMin}>1</Text>
+            <Text style={[styles.ratingMin, getTextStyle('small', colors.textSecondary)]}>1</Text>
             <View style={styles.ratingSlider}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <TouchableOpacity
                   key={num}
                   style={[
                     styles.ratingDot,
-                    humorNota >= num && styles.ratingDotActive,
+                    humorNota >= num && { backgroundColor: colors.primary },
+                    { paddingVertical: baixaVisao ? 10 : 6 },
                   ]}
                   onPress={() => setHumorNota(num)}
                 >
                   <Text style={[
                     styles.ratingDotText,
-                    humorNota >= num && styles.ratingDotTextActive
+                    getTextStyle('small', humorNota >= num ? '#FFFFFF' : colors.textSecondary, '600'),
                   ]}>{num}</Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.ratingMax}>10</Text>
+            <Text style={[styles.ratingMax, getTextStyle('small', colors.textSecondary)]}>10</Text>
           </View>
         </View>
 
-          <View style={styles.ratingSection}>
-            <Text style={styles.ratingTitle}>O quanto isso impactou no seu dia?</Text>
-          <Text style={styles.ratingSubtitle}>1 = Pouco impacto | 5 = Muito impacto</Text>
+        {/* Impacto */}
+        <View style={[styles.ratingSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.ratingTitle, getTextStyle('medium', colors.text, '600')]}>O quanto isso impactou no seu dia?</Text>
+          <Text style={[styles.ratingSubtitle, getTextStyle('small', colors.textSecondary)]}>1 = Pouco impacto | 5 = Muito impacto</Text>
           <View style={styles.impactContainer}>
             {[1, 2, 3, 4, 5].map((num) => (
               <TouchableOpacity
                 key={num}
                 style={[
                   styles.impactButton,
-                  impactoNota === num && styles.impactButtonActive,
+                  impactoNota === num && { backgroundColor: adaptarCor('#10B981') },
+                  { paddingVertical: baixaVisao ? 16 : 12 },
                 ]}
                 onPress={() => setImpactoNota(num)}
               >
                 <Text style={[
                   styles.impactButtonText,
-                  impactoNota === num && styles.impactButtonTextActive
+                  getTextStyle('large', impactoNota === num ? '#FFFFFF' : colors.textSecondary, '700'),
                 ]}>{num}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
 
-        <View style={styles.contextSection}>
-          <Text style={styles.contextTitle}>Em que contexto você estava?</Text>
+        {/* Contexto */}
+        <View style={[styles.contextSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.contextTitle, getTextStyle('medium', colors.text, '600')]}>Em que contexto você estava?</Text>
           <View style={styles.contextContainer}>
             {contextos.map((ctx) => (
               <TouchableOpacity
                 key={ctx.id}
                 style={[
                   styles.contextButton,
-                  contexto === ctx.id && styles.contextButtonActive,
+                  contexto === ctx.id && { backgroundColor: colors.primary, borderColor: colors.primary },
+                  { 
+                    paddingHorizontal: baixaVisao ? 18 : 14,
+                    paddingVertical: baixaVisao ? 12 : 8,
+                  }
                 ]}
                 onPress={() => setContexto(ctx.id)}
               >
-                <Icon name={ctx.icon} size={18} color={contexto === ctx.id ? '#FFFFFF' : '#64748B'} />
+                <Icon name={ctx.icon} {...getIconProps(ctx.icon, 'medium', contexto === ctx.id ? '#FFFFFF' : colors.textSecondary)} />
                 <Text style={[
                   styles.contextButtonText,
-                  contexto === ctx.id && styles.contextButtonTextActive
+                  getTextStyle('small', contexto === ctx.id ? '#FFFFFF' : colors.textSecondary, '500'),
                 ]}>{ctx.label}</Text>
               </TouchableOpacity>
             ))}
           </View>
         </View>
-        <View style={styles.anotacaoSection}>
+
+        {/* Anotações */}
+        <View style={[styles.anotacaoSection, { paddingHorizontal: getSpacing('medium') }]}>
           <View style={styles.sectionLabelContainer}>
-            <Icon name="edit-2" size={16} color="#B367D4" />
-            <Text style={styles.sectionLabel}>Anotações do dia</Text>
+            <Icon name="edit-2" {...getIconProps('edit-2', 'medium', colors.primary)} />
+            <Text style={[styles.sectionLabel, getTextStyle('medium', colors.text, '600')]}>Anotações do dia</Text>
             <TouchableOpacity
-              style={[styles.voiceButton, gravando && styles.voiceButtonGravando]}
+              style={[
+                styles.voiceButton,
+                gravando && { backgroundColor: adaptarCor('#EF4444') },
+                { backgroundColor: colors.primary }
+              ]}
               onPress={gravando ? pararGravacaoETranscrever : iniciarGravacao}
               disabled={transcrevendo}
             >
               {transcrevendo ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Icon name={gravando ? 'square' : 'mic'} size={16} color="#FFFFFF" />
+                <Icon name={gravando ? 'square' : 'mic'} {...getIconProps(gravando ? 'square' : 'mic', 'small', '#FFFFFF')} />
               )}
-              <Text style={styles.voiceButtonText}>
+              <Text style={[styles.voiceButtonText, getTextStyle('small', '#FFFFFF', '600')]}>
                 {transcrevendo ? 'Transcrevendo...' : gravando ? 'Parar' : 'Gravar voz'}
               </Text>
             </TouchableOpacity>
           </View>
-          <View style={styles.anotacaoContainer}>
+          <View style={[
+            styles.anotacaoContainer,
+            {
+              backgroundColor: colors.cardBackground,
+              borderColor: colors.border,
+              minHeight: baixaVisao ? 200 : 180,
+              padding: baixaVisao ? 20 : 16,
+            }
+          ]}>
             <TextInput
-              style={styles.anotacaoInput}
+              style={[
+                styles.anotacaoInput,
+                {
+                  color: colors.text,
+                  fontSize: getTextStyle('medium').fontSize,
+                  minHeight: baixaVisao ? 170 : 150,
+                }
+              ]}
               placeholder="Escreva ou grave sua voz para preencher automaticamente..."
-              placeholderTextColor="#94A3B8"
+              placeholderTextColor={colors.textMuted}
               multiline
               value={anotacao}
               onChangeText={setAnotacao}
@@ -521,144 +581,174 @@ const DiarioPaciente = ({ navigation }) => {
           </View>
         </View>
 
-        
-
         {/* Botões de ação */}
-        <View style={styles.buttonsRow}>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSalvar} disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>Salvar</Text>}
+        <View style={[styles.buttonsRow, { paddingHorizontal: getSpacing('medium') }]}>
+          <TouchableOpacity 
+            style={[
+              styles.saveButton, 
+              { 
+                backgroundColor: colors.primary,
+                paddingVertical: baixaVisao ? 20 : 16,
+              }
+            ]} 
+            onPress={handleSalvar} 
+            disabled={loading}
+          >
+            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={[styles.saveButtonText, getTextStyle('large', '#FFFFFF', '700')]}>Salvar</Text>}
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.shareButton} onPress={handleEnviarAnotacaoAtual} disabled={loading}>
-            <Icon name="send" size={18} color="#FFFFFF" />
-            <Text style={styles.shareButtonText}>Enviar ao psicólogo</Text>
+          <TouchableOpacity 
+            style={[
+              styles.shareButton, 
+              { 
+                backgroundColor: adaptarCor('#10B981'),
+                paddingVertical: baixaVisao ? 20 : 16,
+              }
+            ]} 
+            onPress={handleEnviarAnotacaoAtual} 
+            disabled={loading}
+          >
+            <Icon name="send" {...getIconProps('send', 'medium', '#FFFFFF')} />
+            <Text style={[styles.shareButtonText, getTextStyle('medium', '#FFFFFF', '700')]}>Enviar ao psicólogo</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Histórico de Anotações */}
-        <View style={styles.recentSection}>
-          <Text style={styles.recentTitle}>Anotações recentes</Text>
+        {/* Histórico */}
+        <View style={[styles.recentSection, { paddingHorizontal: getSpacing('medium') }]}>
+          <Text style={[styles.recentTitle, getTextStyle('large', colors.text, '600')]}>Anotações recentes</Text>
           {anotacoes.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Icon name="book-open" size={40} color="#D1D5DB" />
-              <Text style={styles.emptyText}>Nenhuma anotação ainda</Text>
+            <View style={[styles.emptyState, { paddingVertical: baixaVisao ? 80 : 60 }]}>
+              <Icon name="book-open" {...getIconProps('book-open', 'xlarge', colors.textMuted)} />
+              <Text style={[styles.emptyText, getTextStyle('medium', colors.textSecondary, '500')]}>Nenhuma anotação ainda</Text>
             </View>
           ) : (
             anotacoes.map((item) => (
               <TouchableOpacity 
                 key={item.id} 
-                style={styles.anotacaoCard} 
+                style={[
+                  styles.anotacaoCard,
+                  {
+                    backgroundColor: colors.cardBackground,
+                    borderColor: colors.border,
+                    padding: baixaVisao ? 20 : 16,
+                  }
+                ]} 
                 onPress={() => { setSelectedAnotacao(item); setModalVisible(true); }}
               >
                 <View style={styles.cardHeader}>
                   <View style={styles.cardHeaderLeft}>
-                    <Text style={styles.cardEmoji}>{getMoodEmoji(item.humor)}</Text>
+                    <Text style={[styles.cardEmoji, { fontSize: baixaVisao ? 26 : 20 }]}>{getMoodEmoji(item.humor)}</Text>
                     <View>
-                      <Text style={styles.cardTitle}>{item.titulo}</Text>
-                      <Text style={styles.cardDate}>{item.data}</Text>
+                      <Text style={[styles.cardTitle, getTextStyle('medium', colors.text, '700')]}>{item.titulo}</Text>
+                      <Text style={[styles.cardDate, getTextStyle('small', colors.textMuted)]}>{item.data}</Text>
                     </View>
                   </View>
                   {!item.shared && item.texto && (
                     <TouchableOpacity 
-                      style={styles.shareIconButton} 
+                      style={[styles.shareIconButton, { backgroundColor: baixaVisao ? 'rgba(179,103,212,0.15)' : 'rgba(179,103,212,0.10)' }]} 
                       onPress={() => handleEnviarParaPsicologo(item)}
                       disabled={sharingId === item.id}
                     >
                       {sharingId === item.id ? (
-                        <ActivityIndicator size="small" color="#B367D4" />
+                        <ActivityIndicator size="small" color={colors.primary} />
                       ) : (
-                        <Icon name="send" size={16} color="#B367D4" />
+                        <Icon name="send" {...getIconProps('send', 'small', colors.primary)} />
                       )}
                     </TouchableOpacity>
                   )}
                   {item.shared && (
-                    <View style={styles.sharedBadge}>
-                      <Icon name="check-circle" size={12} color="#10B981" />
-                      <Text style={styles.sharedText}>Compartilhado</Text>
+                    <View style={[styles.sharedBadge, { backgroundColor: '#D1FAE5' }]}>
+                      <Icon name="check-circle" {...getIconProps('check-circle', 'small', '#10B981')} />
+                      <Text style={[styles.sharedText, getTextStyle('small', '#10B981', '500')]}>Compartilhado</Text>
                     </View>
                   )}
                 </View>
                 
                 <View style={styles.cardBadges}>
-                  <View style={styles.cardBadge}>
-                    <Icon name="star" size={10} color="#F59E0B" />
-                    <Text style={styles.cardBadgeText}>Humor: {item.humorNota || 5}/10</Text>
+                  <View style={[styles.cardBadge, { backgroundColor: baixaVisao ? colors.cardBackground : '#F8FAFC' }]}>
+                    <Icon name="star" {...getIconProps('star', 'small', '#F59E0B')} />
+                    <Text style={[styles.cardBadgeText, getTextStyle('small', colors.textSecondary)]}>Humor: {item.humorNota || 5}/10</Text>
                   </View>
-                  <View style={styles.cardBadge}>
-                    <Icon name="activity" size={10} color="#10B981" />
-                    <Text style={styles.cardBadgeText}>Impacto: {item.impactoNota || 3}/5</Text>
+                  <View style={[styles.cardBadge, { backgroundColor: baixaVisao ? colors.cardBackground : '#F8FAFC' }]}>
+                    <Icon name="activity" {...getIconProps('activity', 'small', '#10B981')} />
+                    <Text style={[styles.cardBadgeText, getTextStyle('small', colors.textSecondary)]}>Impacto: {item.impactoNota || 3}/5</Text>
                   </View>
                   {item.contexto && (
-                    <View style={styles.cardBadge}>
-                      <Icon name="map-pin" size={10} color="#3B82F6" />
-                      <Text style={styles.cardBadgeText}>{getContextoLabel(item.contexto)}</Text>
+                    <View style={[styles.cardBadge, { backgroundColor: baixaVisao ? colors.cardBackground : '#F8FAFC' }]}>
+                      <Icon name="map-pin" {...getIconProps('map-pin', 'small', '#3B82F6')} />
+                      <Text style={[styles.cardBadgeText, getTextStyle('small', colors.textSecondary)]}>{getContextoLabel(item.contexto)}</Text>
                     </View>
                   )}
                 </View>
                 
                 {item.texto && (
-                  <Text style={styles.cardText} numberOfLines={2}>{item.texto}</Text>
+                  <Text style={[styles.cardText, getTextStyle('medium', colors.textSecondary), { numberOfLines: 2 }]}>{item.texto}</Text>
                 )}
-                
-                
               </TouchableOpacity>
             ))
           )}
         </View>
       </ScrollView>
 
+      {/* Modal de Detalhes */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Detalhes da anotação</Text>
+          <View style={[
+            styles.modalContainer,
+            {
+              backgroundColor: colors.cardBackground,
+              borderTopLeftRadius: baixaVisao ? 28 : 24,
+              borderTopRightRadius: baixaVisao ? 28 : 24,
+            }
+          ]}>
+            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+              <Text style={[styles.modalTitle, getTextStyle('large', colors.text, '600')]}>Detalhes da anotação</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Icon name="x" size={24} color="#6B7280" />
+                <Icon name="x" {...getIconProps('x', 'medium', colors.textMuted)} />
               </TouchableOpacity>
             </View>
             {selectedAnotacao && (
               <ScrollView style={styles.modalContent}>
                 <View style={styles.modalMood}>
-                  <Text style={styles.modalEmoji}>{getMoodEmoji(selectedAnotacao.humor)}</Text>
-                  <Text style={styles.modalMoodText}>{selectedAnotacao.titulo}</Text>
+                  <Text style={[styles.modalEmoji, { fontSize: baixaVisao ? 36 : 28 }]}>{getMoodEmoji(selectedAnotacao.humor)}</Text>
+                  <Text style={[styles.modalMoodText, getTextStyle('large', colors.text, '600')]}>{selectedAnotacao.titulo}</Text>
                 </View>
-                <Text style={styles.modalDate}>{selectedAnotacao.data}</Text>
+                <Text style={[styles.modalDate, getTextStyle('small', colors.textMuted)]}>{selectedAnotacao.data}</Text>
                 
-                {/* Notas no modal */}
-                <View style={styles.modalBadges}>
+                <View style={[styles.modalBadges, { borderBottomColor: colors.border }]}>
                   <View style={styles.modalBadge}>
-                    <Text style={styles.modalBadgeLabel}>😊 Humor</Text>
-                    <Text style={styles.modalBadgeValue}>{selectedAnotacao.humorNota || 5}/10</Text>
+                    <Text style={[styles.modalBadgeLabel, getTextStyle('small', colors.textMuted)]}>😊 Humor</Text>
+                    <Text style={[styles.modalBadgeValue, getTextStyle('large', colors.text, '700')]}>{selectedAnotacao.humorNota || 5}/10</Text>
                   </View>
                   <View style={styles.modalBadge}>
-                    <Text style={styles.modalBadgeLabel}>⚡ Impacto</Text>
-                    <Text style={styles.modalBadgeValue}>{selectedAnotacao.impactoNota || 3}/5</Text>
+                    <Text style={[styles.modalBadgeLabel, getTextStyle('small', colors.textMuted)]}>⚡ Impacto</Text>
+                    <Text style={[styles.modalBadgeValue, getTextStyle('large', colors.text, '700')]}>{selectedAnotacao.impactoNota || 3}/5</Text>
                   </View>
                   {selectedAnotacao.contexto && (
                     <View style={styles.modalBadge}>
-                      <Text style={styles.modalBadgeLabel}>📍 Contexto</Text>
-                      <Text style={styles.modalBadgeValue}>{getContextoLabel(selectedAnotacao.contexto)}</Text>
+                      <Text style={[styles.modalBadgeLabel, getTextStyle('small', colors.textMuted)]}>📍 Contexto</Text>
+                      <Text style={[styles.modalBadgeValue, getTextStyle('large', colors.text, '700')]}>{getContextoLabel(selectedAnotacao.contexto)}</Text>
                     </View>
                   )}
                 </View>
                 
                 {selectedAnotacao.texto && (
                   <>
-                    <Text style={styles.modalSubtitle}>📝 Anotações</Text>
-                    <Text style={styles.modalText}>{selectedAnotacao.texto}</Text>
+                    <Text style={[styles.modalSubtitle, getTextStyle('medium', colors.text, '600')]}>📝 Anotações</Text>
+                    <Text style={[styles.modalText, getTextStyle('medium', colors.textSecondary)]}>{selectedAnotacao.texto}</Text>
                   </>
                 )}
                 
                 {!selectedAnotacao.shared && selectedAnotacao.texto && (
                   <TouchableOpacity 
-                    style={styles.modalPsychButton} 
+                    style={[styles.modalPsychButton, { backgroundColor: baixaVisao ? colors.cardBackground : '#F3F4F6', borderColor: colors.border, borderWidth: 1 }]} 
                     onPress={() => {
                       handleEnviarParaPsicologo(selectedAnotacao);
                       setModalVisible(false);
                     }}
                   >
-                    <Icon name="send" size={18} color="#B367D4" />
-                    <Text style={styles.modalPsychText}>Compartilhar com psicólogo</Text>
+                    <Icon name="send" {...getIconProps('send', 'medium', colors.primary)} />
+                    <Text style={[styles.modalPsychText, getTextStyle('medium', colors.primary, '600')]}>Compartilhar com psicólogo</Text>
                   </TouchableOpacity>
                 )}
               </ScrollView>
@@ -668,32 +758,38 @@ const DiarioPaciente = ({ navigation }) => {
       </Modal>
 
       {/* Bottom Navigation */}
-      <View style={styles.bottomNavigation}>
+      <View style={[
+        styles.bottomNavigation,
+        {
+          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          borderTopColor: colors.border,
+        }
+      ]}>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('HomePaciente')}>
-          <Icon name="home" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Home</Text>
+          <Icon name="home" {...getIconProps('home', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={[styles.navItem, styles.navItemActive]}>
-          <Icon name="book-open" size={20} color="#B367D4" />
-          <Text style={[styles.navText, styles.navTextActive]}>Diário</Text>
+          <Icon name="book-open" {...getIconProps('book-open', 'medium', colors.primary)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.primary, '700')]}>Diário</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('MetasPaciente')}>
-          <Icon name="target" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Metas</Text>
+          <Icon name="target" {...getIconProps('target', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Metas</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('PerfilPaciente')}>
-          <Icon name="user" size={20} color="#94A3B8" />
-          <Text style={styles.navText}>Perfil</Text>
+          <Icon name="user" {...getIconProps('user', 'medium', colors.textMuted)} />
+          <Text style={[styles.navText, getTextStyle('small', colors.textMuted, '500')]}>Perfil</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
 
+// Mantenha os styles originais, apenas remova as cores fixas que foram substituídas
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F6F6F8',
   },
   scrollView: {
     flex: 1,
@@ -707,9 +803,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    backgroundColor: 'rgba(246, 246, 248, 0.80)',
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(43, 108, 238, 0.10)',
   },
   backButton: {
     width: 40,
@@ -718,41 +812,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 20,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 28,
   },
   headerPlaceholder: {
     width: 40,
   },
   moodSection: {
-    paddingHorizontal: 16,
     paddingTop: 24,
     paddingBottom: 16,
   },
   moodTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 28,
     marginBottom: 16,
   },
   moodContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    backgroundColor: '#FFFFFF',
     borderRadius: 24,
-    padding: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
   },
   moodItem: {
     alignItems: 'center',
@@ -760,9 +846,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
   },
   moodIconWrapper: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 8,
@@ -770,41 +853,26 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   moodIconWrapperSelected: {
-    borderColor: '#B367D4',
     transform: [{ scale: 1.1 }],
   },
-  moodEmoji: {
-    fontSize: 24,
-  },
+  moodEmoji: {},
   moodLabel: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#475569',
     lineHeight: 16,
   },
-  moodLabelSelected: {
-    color: '#B367D4',
-    fontWeight: '700',
-  },
-  // NOVOS ESTILOS
   ratingSection: {
-    paddingHorizontal: 16,
     marginBottom: 20,
   },
   ratingTitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 20,
     marginBottom: 4,
   },
   ratingSubtitle: {
-    fontSize: 11,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#64748B',
     lineHeight: 16,
     marginBottom: 12,
   },
@@ -814,17 +882,13 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   ratingMin: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#64748B',
     width: 20,
   },
   ratingMax: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#64748B',
     width: 20,
     textAlign: 'right',
   },
@@ -838,21 +902,11 @@ const styles = StyleSheet.create({
   ratingDot: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#F1F5F9',
-  },
-  ratingDotActive: {
-    backgroundColor: '#B367D4',
   },
   ratingDotText: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#64748B',
-  },
-  ratingDotTextActive: {
-    color: '#FFFFFF',
   },
   impactContainer: {
     flexDirection: 'row',
@@ -861,31 +915,18 @@ const styles = StyleSheet.create({
   impactButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
     borderRadius: 12,
-    backgroundColor: '#F1F5F9',
-  },
-  impactButtonActive: {
-    backgroundColor: '#10B981',
   },
   impactButtonText: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#64748B',
-  },
-  impactButtonTextActive: {
-    color: '#FFFFFF',
   },
   contextSection: {
-    paddingHorizontal: 16,
     marginBottom: 20,
   },
   contextTitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 20,
     marginBottom: 12,
   },
@@ -898,71 +939,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#F1F5F9',
     borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  contextButtonActive: {
-    backgroundColor: '#B367D4',
-    borderColor: '#B367D4',
   },
   contextButtonText: {
-    fontSize: 13,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#64748B',
-  },
-  contextButtonTextActive: {
-    color: '#FFFFFF',
-  },
-  cardBadges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
-  },
-  cardBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F8FAFC',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  cardBadgeText: {
-    fontSize: 10,
-    fontFamily: 'Manrope',
-    fontWeight: '500',
-    color: '#64748B',
-  },
-  modalBadges: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-    marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-  },
-  modalBadge: {
-    alignItems: 'center',
-    gap: 4,
-  },
-  modalBadgeLabel: {
-    fontSize: 10,
-    fontFamily: 'Manrope',
-    fontWeight: '500',
-    color: '#94A3B8',
-  },
-  modalBadgeValue: {
-    fontSize: 16,
-    fontFamily: 'Manrope',
-    fontWeight: '700',
-    color: '#0F172A',
   },
   sectionLabelContainer: {
     flexDirection: 'row',
@@ -975,61 +957,41 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: '#B367D4',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
     marginLeft: 'auto',
   },
-  voiceButtonGravando: {
-    backgroundColor: '#EF4444',
-  },
   voiceButtonText: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#FFFFFF',
   },
   sectionLabel: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 20,
   },
   anotacaoSection: {
-    paddingHorizontal: 16,
     marginBottom: 16,
   },
   anotacaoContainer: {
-    minHeight: 180,
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(43, 108, 238, 0.10)',
-    padding: 16,
   },
   anotacaoInput: {
-    flex: 1,
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#1F2937',
     lineHeight: 24,
     textAlignVertical: 'top',
-    minHeight: 150,
   },
   buttonsRow: {
     flexDirection: 'row',
     gap: 12,
-    paddingHorizontal: 16,
     marginBottom: 24,
   },
   saveButton: {
     flex: 1,
-    backgroundColor: '#B367D4',
     borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
     shadowColor: '#2B6CEE',
     shadowOffset: { width: 0, height: 4 },
@@ -1038,10 +1000,8 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   saveButtonText: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
     lineHeight: 24,
   },
   shareButton: {
@@ -1050,9 +1010,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#10B981',
     borderRadius: 12,
-    paddingVertical: 16,
     shadowColor: '#10B981',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -1060,28 +1018,21 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   shareButtonText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
     lineHeight: 24,
   },
   recentSection: {
-    paddingHorizontal: 16,
     marginBottom: 16,
   },
   recentTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     lineHeight: 28,
     marginBottom: 16,
   },
   anotacaoCard: {
-    backgroundColor: '#FFFFFF',
     borderRadius: 12,
-    padding: 16,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -1089,7 +1040,6 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 1,
     borderWidth: 1,
-    borderColor: '#F2EEF6',
   },
   cardHeader: {
     flexDirection: 'row',
@@ -1102,22 +1052,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
   },
-  cardEmoji: {
-    fontSize: 20,
-  },
+  cardEmoji: {},
   cardTitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#0F172A',
     lineHeight: 20,
   },
   cardDate: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '400',
     textTransform: 'uppercase',
-    color: '#94A3B8',
     lineHeight: 15,
     letterSpacing: 0.5,
   },
@@ -1125,42 +1069,51 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(179, 103, 212, 0.10)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   sharedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#D1FAE5',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
     gap: 4,
   },
   sharedText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#10B981',
+  },
+  cardBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 10,
+  },
+  cardBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  cardBadgeText: {
+    fontFamily: 'Manrope',
+    fontWeight: '500',
   },
   cardText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#475569',
     lineHeight: 20,
   },
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#94A3B8',
     marginTop: 12,
   },
   breathingOverlay: {
@@ -1176,69 +1129,53 @@ const styles = StyleSheet.create({
   consentContainer: {
     alignItems: 'center',
     padding: 32,
-    backgroundColor: '#1E1B2E',
     borderRadius: 24,
     marginHorizontal: 24,
   },
   consentTitle: {
-    fontSize: 20,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
     marginTop: 16,
     marginBottom: 12,
     textAlign: 'center',
   },
   consentText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#CBD5E1',
     textAlign: 'center',
     lineHeight: 20,
     marginBottom: 24,
   },
   consentButton: {
-    backgroundColor: '#B367D4',
     borderRadius: 12,
     paddingVertical: 14,
     paddingHorizontal: 32,
   },
   consentButtonText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
   },
   breathingCircle: {
     width: 120,
     height: 120,
     borderRadius: 60,
-    backgroundColor: 'rgba(179, 103, 212, 0.20)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
     borderWidth: 2,
-    borderColor: '#B367D4',
   },
   breathingNumber: {
-    fontSize: 48,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#B367D4',
   },
   breathingTitle: {
-    fontSize: 24,
     fontFamily: 'Manrope',
     fontWeight: '700',
-    color: '#FFFFFF',
     marginBottom: 16,
   },
   breathingSubtitle: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#94A3B8',
     textAlign: 'center',
     lineHeight: 24,
     marginBottom: 32,
@@ -1250,10 +1187,8 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.10)',
   },
   breathingSkipText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#FFFFFF',
   },
   modalOverlay: {
     flex: 1,
@@ -1261,9 +1196,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   modalContainer: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
     maxHeight: '80%',
   },
   modalHeader: {
@@ -1272,13 +1204,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
   },
   modalTitle: {
-    fontSize: 18,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
   },
   modalContent: {
     padding: 20,
@@ -1289,35 +1218,45 @@ const styles = StyleSheet.create({
     gap: 12,
     marginBottom: 12,
   },
-  modalEmoji: {
-    fontSize: 28,
-  },
+  modalEmoji: {},
   modalMoodText: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#1F2937',
   },
   modalDate: {
-    fontSize: 12,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#94A3B8',
     marginBottom: 16,
   },
+  modalBadges: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 20,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  modalBadge: {
+    alignItems: 'center',
+    gap: 4,
+  },
+  modalBadgeLabel: {
+    fontFamily: 'Manrope',
+    fontWeight: '500',
+  },
+  modalBadgeValue: {
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+  },
   modalSubtitle: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#0F172A',
     marginBottom: 8,
     marginTop: 16,
   },
   modalText: {
-    fontSize: 16,
     fontFamily: 'Manrope',
     fontWeight: '400',
-    color: '#4B5563',
     lineHeight: 24,
     marginBottom: 16,
   },
@@ -1326,22 +1265,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: '#F3F4F6',
     borderRadius: 12,
     paddingVertical: 12,
     marginTop: 16,
   },
   modalPsychText: {
-    fontSize: 14,
     fontFamily: 'Manrope',
     fontWeight: '600',
-    color: '#B367D4',
   },
   bottomNavigation: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.80)',
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
     paddingVertical: 12,
     paddingHorizontal: 24,
     justifyContent: 'space-between',
@@ -1356,15 +1290,10 @@ const styles = StyleSheet.create({
   },
   navItemActive: {},
   navText: {
-    fontSize: 10,
     fontFamily: 'Manrope',
     fontWeight: '500',
-    color: '#94A3B8',
     lineHeight: 15,
-  },
-  navTextActive: {
-    color: '#B367D4',
-    fontWeight: '700',
+    textTransform: 'uppercase',
   },
 });
 
