@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../../src/services/api';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, ActivityIndicator,
+  StatusBar, ScrollView, Alert, ActivityIndicator, Switch,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import SmartwatchPaciente from '../../../src/screens/smartwatch/SmartWatchPaciente';
@@ -12,6 +12,11 @@ const PerfilPaciente = ({ navigation }) => {
   const [paciente, setPaciente] = useState(null);
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+
+  // Estados para configurações de acessibilidade
+  const [baixaVisao, setBaixaVisao] = useState(false);
+  const [daltonismo, setDaltonismo] = useState(false);
 
   // Novos estados para dados do paciente
   const [stats, setStats] = useState({
@@ -30,6 +35,12 @@ const PerfilPaciente = ({ navigation }) => {
       const user = JSON.parse(userStr);
       setPaciente(user);
 
+      // Carregar configurações de acessibilidade do paciente
+      if (user.configuracoesApp?.acessibilidade) {
+        setBaixaVisao(user.configuracoesApp.acessibilidade.baixaVisao || false);
+        setDaltonismo(user.configuracoesApp.acessibilidade.daltonismo || false);
+      }
+
       // Carregar documentos
       const response = await fetch(`${API_URL}/patients/${user.id}/documents`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -37,7 +48,7 @@ const PerfilPaciente = ({ navigation }) => {
       const data = await response.json();
       if (response.ok) setDocumentos(data.documents || []);
       
-      // Carregar estatísticas do paciente (passos, humor, score)
+      // Carregar estatísticas do paciente
       await carregarEstatisticas(user.id, token);
       
     } catch (err) {
@@ -49,18 +60,15 @@ const PerfilPaciente = ({ navigation }) => {
   
   const carregarEstatisticas = async (patientId, token) => {
     try {
-      // Buscar dados de humor dos últimos 30 dias
       const response = await fetch(`${API_URL}/patients/${patientId}/moods?limit=30`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
       
       if (response.ok && data.moods && data.moods.length > 0) {
-        // Calcular score de humor médio
         const scores = data.moods.map(m => m.emotionalScore || 50);
         const mediaScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
         
-        // Calcular humor que mais aparece
         const contextTags = data.moods.flatMap(m => m.contextTags || []);
         const humorCount = {};
         contextTags.forEach(tag => {
@@ -92,6 +100,65 @@ const PerfilPaciente = ({ navigation }) => {
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err);
     }
+  };
+
+  // Função para salvar configurações de acessibilidade
+  const salvarConfiguracoesAcessibilidade = async () => {
+    setSalvando(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const userStr = await AsyncStorage.getItem('user');
+      const user = JSON.parse(userStr);
+
+      const response = await fetch(`${API_URL}/patients/${user.id}/configuracoes`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify({
+          configuracoesApp: {
+            ...user.configuracoesApp,
+            acessibilidade: {
+              baixaVisao,
+              daltonismo
+            }
+          }
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        Alert.alert('Erro', data.error || 'Erro ao salvar configurações');
+        return;
+      }
+
+      // Atualizar o user no AsyncStorage
+      const updatedUser = { ...user, configuracoesApp: data.configuracoesApp || user.configuracoesApp };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+      setPaciente(updatedUser);
+
+      Alert.alert('Sucesso', 'Configurações de acessibilidade atualizadas!');
+    } catch (err) {
+      console.error(err);
+      Alert.alert('Erro', 'Não foi possível salvar as configurações.');
+    } finally {
+      setSalvando(false);
+    }
+  };
+
+  // Função para alternar baixa visão
+  const toggleBaixaVisao = (value) => {
+    setBaixaVisao(value);
+    // Salvar automaticamente
+    setTimeout(() => salvarConfiguracoesAcessibilidade(), 100);
+  };
+
+  // Função para alternar daltonismo
+  const toggleDaltonismo = (value) => {
+    setDaltonismo(value);
+    // Salvar automaticamente
+    setTimeout(() => salvarConfiguracoesAcessibilidade(), 100);
   };
 
   const handleLogout = async () => {
@@ -148,7 +215,7 @@ const PerfilPaciente = ({ navigation }) => {
           <ActivityIndicator size="large" color="#B367D4" style={{ marginTop: 60 }} />
         ) : (
           <>
-            {/* NOVA SEÇÃO: Cards de Estatísticas */}
+            {/* Cards de Estatísticas */}
             <View style={styles.statsGrid}>
               <View style={styles.statCard}>
                 <View style={[styles.statIconWrapper, { backgroundColor: '#FEF3C7' }]}>
@@ -171,6 +238,69 @@ const PerfilPaciente = ({ navigation }) => {
                     {getScoreLabel(stats.scoreHumor)}
                   </Text>
                 </View>
+              </View>
+            </View>
+
+            {/* NOVA SEÇÃO: Configurações de Acessibilidade */}
+            <View style={styles.section}>
+              <View style={styles.sectionHeader}>
+                <Icon name="eye" size={20} color="#B367D4" />
+                <Text style={styles.sectionTitle}>Acessibilidade</Text>
+              </View>
+              
+              <View style={styles.acessibilidadeCard}>
+                {/* Baixa Visão */}
+                <View style={styles.acessibilidadeRow}>
+                  <View style={styles.acessibilidadeInfo}>
+                    <View style={[styles.acessibilidadeIconWrapper, { backgroundColor: baixaVisao ? '#FEF3C7' : '#F1F5F9' }]}>
+                      <Icon name="eye" size={20} color={baixaVisao ? '#F59E0B' : '#94A3B8'} />
+                    </View>
+                    <View style={styles.acessibilidadeText}>
+                      <Text style={styles.acessibilidadeTitle}>Modo Baixa Visão</Text>
+                      <Text style={styles.acessibilidadeDescription}>
+                        Aumenta o tamanho das fontes, ícones e melhora o contraste
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch 
+                    value={baixaVisao} 
+                    onValueChange={toggleBaixaVisao} 
+                    trackColor={{ false: '#CBD5E1', true: '#F59E0B' }} 
+                    thumbColor="#FFFFFF"
+                    disabled={salvando}
+                  />
+                </View>
+
+                <View style={styles.divider} />
+
+                {/* Daltonismo */}
+                <View style={styles.acessibilidadeRow}>
+                  <View style={styles.acessibilidadeInfo}>
+                    <View style={[styles.acessibilidadeIconWrapper, { backgroundColor: daltonismo ? '#DCFCE7' : '#F1F5F9' }]}>
+                      <Icon name="eye-off" size={20} color={daltonismo ? '#22C55E' : '#94A3B8'} />
+                    </View>
+                    <View style={styles.acessibilidadeText}>
+                      <Text style={styles.acessibilidadeTitle}>Modo Daltonismo</Text>
+                      <Text style={styles.acessibilidadeDescription}>
+                        Substitui cores por padrões amigáveis para daltônicos
+                      </Text>
+                    </View>
+                  </View>
+                  <Switch 
+                    value={daltonismo} 
+                    onValueChange={toggleDaltonismo} 
+                    trackColor={{ false: '#CBD5E1', true: '#22C55E' }} 
+                    thumbColor="#FFFFFF"
+                    disabled={salvando}
+                  />
+                </View>
+
+                {salvando && (
+                  <View style={styles.salvandoIndicator}>
+                    <ActivityIndicator size="small" color="#B367D4" />
+                    <Text style={styles.salvandoText}>Salvando alterações...</Text>
+                  </View>
+                )}
               </View>
             </View>
 
@@ -229,6 +359,17 @@ const PerfilPaciente = ({ navigation }) => {
                   <Text style={styles.infoLabel}>Email</Text>
                   <Text style={styles.infoValue}>{paciente?.email || '-'}</Text>
                 </View>
+                {/* Exibir status das configurações */}
+                <View style={styles.infoRow}>
+                  <Icon name="settings" size={16} color="#B367D4" />
+                  <Text style={styles.infoLabel}>Acessibilidade</Text>
+                  <Text style={styles.infoValue}>
+                    {baixaVisao && daltonismo ? 'Ambos ativos' : 
+                     baixaVisao ? 'Baixa Visão' : 
+                     daltonismo ? 'Daltonismo' : 
+                     'Padrão'}
+                  </Text>
+                </View>
               </View>
             </View>
 
@@ -272,7 +413,7 @@ const styles = StyleSheet.create({
   backButton: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   headerTitle: { flex: 1, textAlign: 'center', fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A', lineHeight: 28 },
   
-  // NOVOS ESTILOS PARA OS CARDS DE ESTATÍSTICAS
+  // Cards de Estatísticas
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -330,6 +471,69 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '700',
     lineHeight: 14,
+  },
+
+  // Seção de Acessibilidade
+  acessibilidadeCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  acessibilidadeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  acessibilidadeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  acessibilidadeIconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  acessibilidadeText: {
+    flex: 1,
+  },
+  acessibilidadeTitle: {
+    fontSize: 14,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+    color: '#0F172A',
+    lineHeight: 20,
+  },
+  acessibilidadeDescription: {
+    fontSize: 11,
+    fontFamily: 'Manrope',
+    color: '#64748B',
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#F1F5F9',
+    marginVertical: 8,
+  },
+  salvandoIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 12,
+    gap: 8,
+  },
+  salvandoText: {
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    color: '#64748B',
   },
   
   section: { paddingHorizontal: 16, marginTop: 16 },
