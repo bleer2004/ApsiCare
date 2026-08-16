@@ -40,6 +40,10 @@ const CadastroPaciente = ({ navigation }) => {
   // Configurações do App
   const [modoMinimalista, setModoMinimalista] = useState(false);
   const [removerEstimulos, setRemoverEstimulos] = useState(true);
+  
+  // NOVAS CONFIGURAÇÕES DE ACESSIBILIDADE
+  const [baixaVisao, setBaixaVisao] = useState(false);
+  const [daltonismo, setDaltonismo] = useState(false);
 
   // Notificações
   const [frequenciaNotificacoes, setFrequenciaNotificacoes] = useState('diaria');
@@ -106,9 +110,20 @@ const CadastroPaciente = ({ navigation }) => {
           diagnostico,
           observacoes,
           configuracoesIA: { interacaoMotivacional, analisePadroes, sugestoesReflexao, intensidadeInteracao },
-          configuracoesApp: {
-            modoMinimalista, removerEstimulos,
-            notificacoes: { frequencia: frequenciaNotificacoes, horarioInicio, horarioFim, intervalo: intervaloNotificacoes },
+          configuracoesApp: { 
+            modoMinimalista, 
+            removerEstimulos,
+            // NOVAS CONFIGURAÇÕES DE ACESSIBILIDADE
+            acessibilidade: {
+              baixaVisao,
+              daltonismo
+            },
+            notificacoes: { 
+              frequencia: frequenciaNotificacoes, 
+              horarioInicio, 
+              horarioFim, 
+              intervalo: intervaloNotificacoes 
+            },
           },
         }),
       });
@@ -336,22 +351,61 @@ const CadastroPaciente = ({ navigation }) => {
             </View>
           </View>
 
-          {/* Configurações do App */}
+          {/* Configurações do App - ATUALIZADO COM ACESSIBILIDADE */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Icon name="settings" size={18} color="#B367D4" />
               <Text style={styles.sectionTitle}>Configurações do App</Text>
             </View>
-            {[
-              { label: 'Modo Minimalista', value: modoMinimalista, onChange: setModoMinimalista },
-              { label: 'Remover estímulos visuais', value: removerEstimulos, onChange: setRemoverEstimulos },
-            ].map((s, i) => (
-              <View key={i} style={styles.switchRowBorder}>
-                <Text style={styles.switchLabel}>{s.label}</Text>
-                <Switch value={s.value} onValueChange={s.onChange} trackColor={{ false: '#CBD5E1', true: '#B367D4' }} thumbColor="#FFFFFF" />
-              </View>
-            ))}
+            
+            {/* Modo Minimalista */}
+            <View style={styles.switchRowBorder}>
+              <Text style={styles.switchLabel}>Modo Minimalista</Text>
+              <Switch value={modoMinimalista} onValueChange={setModoMinimalista} trackColor={{ false: '#CBD5E1', true: '#B367D4' }} thumbColor="#FFFFFF" />
+            </View>
+            
+            {/* Remover estímulos visuais */}
+            <View style={styles.switchRowBorder}>
+              <Text style={styles.switchLabel}>Remover estímulos visuais</Text>
+              <Switch value={removerEstimulos} onValueChange={setRemoverEstimulos} trackColor={{ false: '#CBD5E1', true: '#B367D4' }} thumbColor="#FFFFFF" />
+            </View>
 
+            {/* SEPARADOR VISUAL - ACESSIBILIDADE */}
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>Acessibilidade</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            {/* Baixa Visão */}
+            <View style={styles.switchRowBorder}>
+              <View style={styles.switchLabelContainer}>
+                <Icon name="eye" size={18} color={baixaVisao ? '#B367D4' : '#94A3B8'} style={styles.switchIcon} />
+                <Text style={styles.switchLabel}>Paciente com Baixa Visão</Text>
+              </View>
+              <Switch 
+                value={baixaVisao} 
+                onValueChange={setBaixaVisao} 
+                trackColor={{ false: '#CBD5E1', true: '#B367D4' }} 
+                thumbColor="#FFFFFF" 
+              />
+            </View>
+
+            {/* Daltonismo */}
+            <View style={styles.switchRowBorder}>
+              <View style={styles.switchLabelContainer}>
+                <Icon name="eye-off" size={18} color={daltonismo ? '#B367D4' : '#94A3B8'} style={styles.switchIcon} />
+                <Text style={styles.switchLabel}>Paciente com Daltonismo</Text>
+              </View>
+              <Switch 
+                value={daltonismo} 
+                onValueChange={setDaltonismo} 
+                trackColor={{ false: '#CBD5E1', true: '#B367D4' }} 
+                thumbColor="#FFFFFF" 
+              />
+            </View>
+
+            {/* Notificações */}
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Frequência de Notificações</Text>
               <TouchableOpacity style={styles.inputWrapper} onPress={() => setShowFrequenciaPicker(true)}>
@@ -680,6 +734,35 @@ const styles = StyleSheet.create({
   sliderLabelText: {
     color: '#94A3B8', fontSize: 11,
     fontFamily: 'Manrope', fontWeight: '500',
+  },
+
+  // NOVOS ESTILOS PARA ACESSIBILIDADE
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 12,
+    gap: 12,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#E2E8F0',
+  },
+  dividerText: {
+    color: '#94A3B8',
+    fontSize: 12,
+    fontFamily: 'Manrope',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  switchLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  switchIcon: {
+    marginRight: 10,
   },
 
   emergenciaSection: {
