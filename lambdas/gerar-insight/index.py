@@ -10,22 +10,78 @@ from boto3.dynamodb.conditions import Key
 OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_MODEL   = "meta-llama/llama-3.1-8b-instruct"
 
-SYSTEM_PROMPT = """Você é um analisador de bem-estar emocional clínico.
-Analise o texto do diário de um paciente em acompanhamento psicológico.
-Não faça diagnóstico, não invente sintomas, considere apenas o texto informado.
-Se o relato descrever um dia bom, tranquilo ou positivo, sem sinais de estresse, o stress_score deve ficar baixo (perto de 0.0).
-Retorne APENAS um JSON válido, sem texto adicional, sem markdown, sem explicação."""
+SYSTEM_PROMPT = """
+Você é um assistente utilizado em um projeto acadêmico de apoio à saúde mental.
+
+IMPORTANTE
+ 
+- Não faça diagnóstico.
+- Não invente sintomas.
+- Considere apenas o texto informado.
+- Não interprete informações implícitas.
+- Caso o texto seja muito curto ou não contenha informações suficientes, utilize apenas as evidências disponíveis e evite superestimar o nível de estresse.
+
+Avalie tanto sinais de estresse quanto sinais de bem-estar:
+
+1. intensidade do estresse percebido
+2. intensidade emocional (positiva ou negativa)
+3. eventos negativos descritos
+4. fatores de recuperação, alívio ou coisas boas descritas
+5. contexto
+
+Se o relato descrever um dia bom, tranquilo ou positivo, sem sinais de estresse, o stress_score deve ficar baixo (perto de 0.0) e o sentimento deve ser "positivo". Não assuma estresse quando o texto não descreve nenhum.
+
+Retorne APENAS JSON, sempre incluindo os três campos: stress_score, sentimento, palavras_chave.
+
+"""
 
 def _montar_prompt_texto(diary_text):
-    return f"""Analise o texto do diário abaixo e retorne um JSON com exatamente estes campos:
-- stress_score: número de 0.0 a 1.0 (0.0 = sem stress, 1.0 = stress máximo)
-- sentimento: uma das opções "positivo", "neutro" ou "negativo"
-- palavras_chave: lista com até 3 palavras que resumem o estado emocional
+    return f"""
+Analise o autorrelato abaixo.
 
-Texto do diário: "{diary_text}"
+Avalie EXCLUSIVAMENTE as informações presentes no texto.
 
-Responda APENAS com o JSON, substituindo os valores pelos que você calculou para ESTE texto (não copie os exemplos):
-{{"stress_score": <número entre 0.0 e 1.0 calculado agora>, "sentimento": "<positivo, neutro ou negativo>", "palavras_chave": ["<palavra 1>", "<palavra 2>", "<palavra 3>"]}}"""
+Critérios para avaliação:
+
+1. stress_score
+- Valor entre   0.0 e 1.0
+- 0.0 = ausência de estresse.
+- 0.5 = presença moderada de estresse.
+- 1.0 = estresse intenso claramente descrito pelo autorrelato.
+
+Considere:
+- intensidade emocional;
+- sensação de sobrecarga;
+- preocupação ou ansiedade;
+- eventos negativos descritos;
+- sinais físicos relacionados ao estresse (quando mencionados);
+- fatores de recuperação ou melhora.
+
+2. sentimento
+Escolha apenas um:
+- positivo
+- neutro
+- negativo
+
+3. palavras_chave
+Retorne até 3 palavras que melhor resumam o estado emocional descrito.
+
+Autorrelato:
+"{diary_text}"
+
+Responda APENAS com um JSON válido no formato abaixo, substituindo os valores pelos que você calculou para ESTE autorrelato específico (não copie os exemplos):
+
+{{
+    "stress_score": <número entre 0.0 e 1.0 calculado agora>,
+    "sentimento": "<positivo, neutro ou negativo>",
+    "palavras_chave": [
+        "<palavra 1>",
+        "<palavra 2>",
+        "<palavra 3>"
+    ]
+}}
+
+"""
 
 def _requisitar_openrouter(api_key, diary_text, exigir_zdr):
     payload = {
@@ -34,8 +90,8 @@ def _requisitar_openrouter(api_key, diary_text, exigir_zdr):
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user",   "content": _montar_prompt_texto(diary_text)},
         ],
-        "max_tokens": 120,
-        "temperature": 0.1,
+        "max_tokens": 200,
+        "temperature": 0.2,
     }
     if exigir_zdr:
         payload["provider"] = {"zdr": True}
