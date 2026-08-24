@@ -228,7 +228,7 @@ const DiarioPaciente = ({ navigation }) => {
         await carregarHistorico();
       } else {
         const errData = await response.json().catch(() => ({}));
-        Alert.alert('Erro', errData.message || `Status ${response.status}`);
+        Alert.alert('Erro', errData.error || `Status ${response.status}`);
       }
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível salvar a anotação');

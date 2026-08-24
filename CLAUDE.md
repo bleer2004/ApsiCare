@@ -65,6 +65,16 @@ Fluxo de voz no app: paciente grava → `transcrever-voz` (Whisper) → texto ap
 - `health-ingest`: `POST {userId, samples: [...]}` → 1 write (`HEALTH_BATCH#`). Preferir este para qualquer sync em lote.
 - `registrar-physio`: 1 write por amostra (`PHYSIO#`) — mais caro, evitar para sync frequente.
 
+### Edição de paciente (achado em auditoria de contrato frontend×backend, 2026-08-23 — não existiam lambdas pra essas rotas)
+
+- `lambdas/get-paciente/index.js` — `GET /clinicians/patients/{id}`, lê `PATIENT#<id>`/`PATIENT#<id>`. Usado pelo modal "Editar Paciente" em `src/screens/userPorfile/perfilUsuario.js`.
+- `lambdas/atualizar-paciente/index.js` — `PUT /clinicians/patients/{id}` `{name, email, phone, birthDate, diagnostico, observacoes}`. **Atualiza dois itens**: o perfil canônico (`PATIENT#<id>`/`PATIENT#<id>`) e o item "link" duplicado sob o clínico (`CLINICIAN#<clinicianId>`/`PATIENT#<id>`, escrito originalmente por `cadastro-patient`) — é esse segundo item que `listar-patients` lê pra montar a lista de pacientes, então sem essa sincronia a edição não apareceria lá.
+
+### Configurações de acessibilidade do paciente (mesma auditoria, mesma causa)
+
+- `lambdas/get-configuracoes-paciente/index.js` — `GET /patients/{patientId}/configuracoes`, retorna `{ configuracoesApp }` (objeto genérico, hoje só usado pra `acessibilidade: {baixaVisao, daltonismo}`).
+- `lambdas/atualizar-configuracoes-paciente/index.js` — `PUT /patients/{patientId}/configuracoes` `{configuracoesApp}`, sobrescreve o campo inteiro no perfil do paciente. Usado por `paciente/src/contexts/AccessibilityContext.js` e `paciente/src/screens/perfilPaciente.js` — antes dessa lambda existir, a sincronização falhava silenciosamente (fallback pro `AsyncStorage` local já existia, então não travava o app, só nunca persistia no servidor).
+
 ### Notificações push (parte 1: 2026-08-09, parte 2: 2026-08-15)
 
 Push notifications via Expo Push Service (`exp.host`), só **Android** — iOS exigiria Apple Developer Program pago (US$99/ano), fora do escopo (mesma decisão já tomada pra Health Connect/gravação de voz: recurso Android-only, iOS mostra indisponível). Só o **clínico** recebe push hoje; não existe notificação para o paciente ainda.
