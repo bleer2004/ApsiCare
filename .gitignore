@@ -4,6 +4,9 @@ dataset/
 .env.local
 lambdas/**/node_modules/
 node_modules/
+__pycache__/
+*.pyc
+~$*
 *.json
 !google-services.json
 node_modules/.package-lock.json
