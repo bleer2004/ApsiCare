@@ -35,12 +35,14 @@ import MetasPaciente from './paciente/src/screens/MetasPaciente';
 import DiarioPaciente from './paciente/src/screens/DiarioPaciente';
 import PerfilPaciente from './paciente/src/screens/perfilPaciente';
 import RecuperarSenhaPaciente from './paciente/src/screens/RecuperarSenhaPaciente';
+import { AccessibilityProvider } from './paciente/src/contexts/AccessibilityContext';
 
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
+    <AccessibilityProvider>
     <NavigationContainer>
       <Stack.Navigator initialRouteName="AmbienteTeste">
 
@@ -69,5 +71,6 @@ export default function App() {
 
       </Stack.Navigator>
     </NavigationContainer>
+    </AccessibilityProvider>
   );
 }

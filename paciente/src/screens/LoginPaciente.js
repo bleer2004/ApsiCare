@@ -65,7 +65,7 @@ const LoginPaciente = ({ navigation }) => {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboardView}>
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           {!baixaVisao && <View style={styles.decorativeBlur} />}
-          
+
           <View style={styles.header}>
             <View style={styles.logoContainer}>
               <View style={[styles.logoIconWrapper, baixaVisao && { backgroundColor: 'rgba(255,255,255,0.10)' }]}>
