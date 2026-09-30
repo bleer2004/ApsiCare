@@ -159,3 +159,17 @@ Gerada via `cd android && ./gradlew assembleRelease` — usa a keystore debug pr
 - `gerar_insight_handler` lê só os últimos 10 `HEALTH_BATCH#` — se o paciente sincronizar mais de 10x num único dia, sincronizações mais antigas daquele dia somem do cálculo. Não é problema no uso normal (poucas sincronizações por dia).
 - Teste explícito de "negar permissão → volta pra desconectado sem travar" não foi feito na prática, mas o código já trata esse caminho.
 </content>
+
+## Aceite de Termos de Uso / Política de Privacidade (2026-09-28, código pronto, falta deploy)
+
+Docs em `docs/termos-de-uso.md`, `docs/politica-de-privacidade.md`, conteúdo no app em `src/content/legalDocs.js`, tela `src/screens/Legal/DocumentoLegal.js` (rota `DocumentoLegal`, param `tipo: 'termos'|'privacidade'`).
+- **Psicólogo:** checkbox obrigatório no cadastro (`src/screens/signUpForm/cadastro.js`), manda `termsAccepted` no `POST` de cadastro; `lambdas/cadastro-clinician` grava `termsAcceptedAt` (ou `null`).
+- **Paciente:** antes era um modal na `HomePaciente` com flag `termosAceitos` no AsyncStorage — **removido** porque (1) o logout faz `AsyncStorage.clear()` e o modal voltava a cada login, (2) era por aparelho e não por paciente, sem registro no servidor, (3) os links abriam `DocumentoLegal` escondida atrás do `Modal`. Substituído por checkbox obrigatório na etapa 3 ("Criar sua senha") de `paciente/src/screens/RecuperarSenhaPaciente.js`, que manda `termsAccepted: true` no `POST /auth/patient/reset-password`; a lambda `reset-password-patient` grava `termsAcceptedAt` no perfil. O botão do login "Esqueci minha senha / Primeiro acesso" sempre passa `primeiroAcesso: true`, então o checkbox aparece também em redefinição de senha (aceitar de novo é inofensivo).
+- Backend não rejeita quem não manda `termsAccepted` (compatível com APKs antigos) — obrigatoriedade é só no app.
+- **Pendente:** subir no console AWS os zips novos `lambdas/zips/reset-password-patient.zip` e `lambdas/zips/cadastro-clinician.zip` + gerar APK novo.
+- Zips gerados com Python `zipfile` (caminhos com `/`). **Não usar `Compress-Archive` do PowerShell 5.1** — grava caminhos com `\` e a Lambda (Linux) não encontra `node_modules`.
+
+## Correções de UI/estado (2026-09-28)
+
+- **Texto invisível ao digitar (Android):** `TextInput` com `paddingVertical` dentro de wrapper de altura fixa (56) deixava menos espaço que uma linha; com foco o Android rola o texto pra fora. Padrão correto: wrapper define a altura, input com `height: '100%'`, `paddingVertical: 0`, `textAlignVertical: 'center'`. Corrigido em `loginSignedUp/index.js`, `LoginPaciente.js`, `RecuperarSenhaPaciente.js`. Ainda podem ter o mesmo problema: `recuperarSenha.js`, `cadastro.js`, `configuracoes.js`, `pacientes.js`.
+- **Acessibilidade "vazando" entre logins:** `AccessibilityProvider` (em volta do app inteiro) só lia as configs ao abrir o app. Agora o logout (`perfilPaciente.js`) chama `limparConfiguracoesLocais()` e o `LoginPaciente` chama `sincronizarComBackend()` após login (busca `GET /patients/{id}/configuracoes`).

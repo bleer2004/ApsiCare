@@ -27,6 +27,7 @@ import CadastroPaciente from './src/screens/userSignUp/cadastroPaciente';
 import Configuracoes from './src/screens/Configs/configuracoes';
 import Relatorios from './src/screens/Files/RelatoriosPsicologo';
 import NotificacoesPsicologo from './src/screens/notificacoes/NotificacoesPsicologo';
+import DocumentoLegal from './src/screens/Legal/DocumentoLegal';
 
 // Telas do Paciente
 import LoginPaciente from './paciente/src/screens/LoginPaciente';
@@ -60,6 +61,7 @@ export default function App() {
         <Stack.Screen name="Configuracoes" component={Configuracoes} options={{ headerShown: false }} />
         <Stack.Screen name="Relatorios" component={Relatorios} options={{ headerShown: false }} />
         <Stack.Screen name="NotificacoesPsicologo" component={NotificacoesPsicologo} options={{ headerShown: false }} />
+        <Stack.Screen name="DocumentoLegal" component={DocumentoLegal} options={{ headerShown: false }} />
 
         {/* Telas do Paciente */}
         <Stack.Screen name="LoginPaciente" component={LoginPaciente} options={{ headerShown: false }} />

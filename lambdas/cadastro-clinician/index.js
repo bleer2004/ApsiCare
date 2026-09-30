@@ -10,7 +10,7 @@ const TABLE_NAME = "ApsiCare";
 export const handler = async (event) => {
   try {
     const body = JSON.parse(event.body);
-    const { name, email, password, phone, cellphone, councilId, profession, birthDate } = body;
+    const { name, email, password, phone, cellphone, councilId, profession, birthDate, termsAccepted } = body;
 
     if (!name || !email || !password || !councilId) {
       return response(400, { error: "Campos obrigatórios: name, email, password, councilId" });
@@ -50,6 +50,7 @@ export const handler = async (event) => {
       passwordHash,
       isActive: true,
       isAdmin: false,
+      termsAcceptedAt: termsAccepted === true ? now : null,
       createdAt: now,
       updatedAt: now
     };

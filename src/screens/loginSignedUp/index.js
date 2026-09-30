@@ -247,7 +247,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '400',
     color: '#0F172A',
-    paddingVertical: 16,
+    height: '100%',
+    paddingVertical: 0,
+    textAlignVertical: 'center',
   },
   forgotPasswordWrapper: { alignSelf: 'flex-end' },
   forgotPasswordText: {

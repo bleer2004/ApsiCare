@@ -561,6 +561,36 @@ const Configuracoes = ({ navigation }) => {
           {renderInputField('Confirmar senha', confirmarSenha, setConfirmarSenha, 'lock', 'default', 'Confirme sua nova senha', true)}
         </View>
 
+        {/* Legal */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Icon name="file-text" size={18} color="#B367D4" />
+            <Text style={styles.sectionTitle}>Legal</Text>
+          </View>
+
+          <TouchableOpacity
+            style={styles.infoRow}
+            onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'termos' })}
+          >
+            <View style={styles.infoLabelContainer}>
+              <Icon name="file" size={20} color="#B367D4" />
+              <Text style={styles.infoLabel}>Termos de Uso</Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="#94A3B8" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.infoRow, { borderBottomWidth: 0 }]}
+            onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'privacidade' })}
+          >
+            <View style={styles.infoLabelContainer}>
+              <Icon name="shield" size={20} color="#B367D4" />
+              <Text style={styles.infoLabel}>Política de Privacidade</Text>
+            </View>
+            <Icon name="chevron-right" size={20} color="#94A3B8" />
+          </TouchableOpacity>
+        </View>
+
         {/* Ações da Conta */}
         <View style={styles.actionsSection}>
           <TouchableOpacity 

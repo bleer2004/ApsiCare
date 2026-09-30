@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
+import { useAccessibility } from '../contexts/AccessibilityContext';
 
 const LoginPaciente = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -24,6 +25,8 @@ const LoginPaciente = ({ navigation }) => {
     getIconProps,
     getSpacing,
   } = useAccessibilityStyles();
+
+  const { sincronizarComBackend } = useAccessibility();
 
   const colors = getColors();
 
@@ -46,6 +49,7 @@ const LoginPaciente = ({ navigation }) => {
       }
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
+      await sincronizarComBackend();
       registerForPushNotificationsAsync('patient');
       navigation.replace('HomePaciente');
     } catch (err) {
@@ -194,7 +198,7 @@ const styles = StyleSheet.create({
   inputLabel: { fontFamily: 'ABeeZee', fontWeight: '400', marginBottom: 8, paddingLeft: 4 },
   inputWrapper: { flexDirection: 'row', alignItems: 'center', borderWidth: 1 },
   inputIcon: { marginRight: 12 },
-  input: { flex: 1, fontFamily: 'Manrope', fontWeight: '400', paddingVertical: 16 },
+  input: { flex: 1, height: '100%', fontFamily: 'Manrope', fontWeight: '400', paddingVertical: 0, textAlignVertical: 'center' },
   forgotPasswordContainer: { alignSelf: 'flex-end', marginBottom: 24 },
   forgotPasswordText: { fontFamily: 'ABeeZee', fontWeight: '400' },
   loginButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, shadowColor: '#2B6CEE', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.2, shadowRadius: 15, elevation: 5 },

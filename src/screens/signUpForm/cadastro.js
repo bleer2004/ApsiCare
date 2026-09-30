@@ -35,6 +35,7 @@ const Cadastro = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [tempDate, setTempDate] = useState(new Date());
+  const [aceitouTermos, setAceitouTermos] = useState(false);
 
   const profissoes = [
     { id: '1', label: 'Psicólogo', value: 'psicologo', registroLabel: 'CRP' },
@@ -73,6 +74,11 @@ const Cadastro = ({ navigation }) => {
       return;
     }
 
+    if (!aceitouTermos) {
+      Alert.alert('Erro', 'Você precisa aceitar os Termos de Uso e a Política de Privacidade para criar sua conta.');
+      return;
+    }
+
     setLoading(true);
 
     const formatDate = (date) => {
@@ -92,6 +98,7 @@ const Cadastro = ({ navigation }) => {
           councilId: registroProfissional,
           profession: profissao,
           birthDate: formatDate(dataNascimento),
+          termsAccepted: aceitouTermos,
         }),
       });
 
@@ -347,6 +354,34 @@ const Cadastro = ({ navigation }) => {
               </View>
             </View>
 
+            <TouchableOpacity
+              style={styles.termsRow}
+              onPress={() => setAceitouTermos(!aceitouTermos)}
+              activeOpacity={0.7}
+            >
+              <Icon
+                name={aceitouTermos ? 'check-square' : 'square'}
+                size={20}
+                color={aceitouTermos ? 'rgba(179, 103, 212, 0.84)' : '#94A3B8'}
+              />
+              <Text style={styles.termsText}>
+                Li e aceito os{' '}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'termos' })}
+                >
+                  Termos de Uso
+                </Text>
+                {' '}e a{' '}
+                <Text
+                  style={styles.termsLink}
+                  onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'privacidade' })}
+                >
+                  Política de Privacidade
+                </Text>
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.cadastroButton} onPress={handleCadastro} disabled={loading}>
               {loading
                 ? <ActivityIndicator color="#fff" />
@@ -532,6 +567,25 @@ const styles = StyleSheet.create({
   },
   placeholderText: {
     color: '#94A3B8',
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginTop: 4,
+    marginBottom: 20,
+  },
+  termsText: {
+    flex: 1,
+    fontSize: 13,
+    fontFamily: 'Manrope',
+    fontWeight: '400',
+    color: '#64748B',
+    lineHeight: 19,
+  },
+  termsLink: {
+    color: 'rgba(179, 103, 212, 0.84)',
+    fontWeight: '600',
   },
   cadastroButton: {
     backgroundColor: 'rgba(179, 103, 212, 0.84)',

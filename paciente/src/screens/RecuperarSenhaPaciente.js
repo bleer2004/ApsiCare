@@ -30,6 +30,7 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [aceitouTermos, setAceitouTermos] = useState(false);
 
   // Hooks de acessibilidade
   const {
@@ -122,12 +123,16 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
       Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres');
       return;
     }
+    if (!aceitouTermos) {
+      Alert.alert('Erro', 'Você precisa aceitar os Termos de Uso e a Política de Privacidade para continuar.');
+      return;
+    }
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/auth/patient/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, code: codigo, newPassword: novaSenha }),
+        body: JSON.stringify({ email, code: codigo, newPassword: novaSenha, termsAccepted: true }),
       });
       const data = await response.json();
       if (!response.ok) {
@@ -265,7 +270,9 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
               {
                 color: colors.text,
                 fontSize: getTextStyle('medium').fontSize,
-                paddingVertical: baixaVisao ? 18 : 14,
+                paddingVertical: 0,
+                height: '100%',
+                textAlignVertical: 'center',
               }
             ]}
             placeholder="seu@email.com"
@@ -337,7 +344,9 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
               {
                 color: colors.text,
                 fontSize: getTextStyle('medium').fontSize,
-                paddingVertical: baixaVisao ? 18 : 14,
+                paddingVertical: 0,
+                height: '100%',
+                textAlignVertical: 'center',
               }
             ]}
             placeholder="000000"
@@ -409,7 +418,9 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
               {
                 color: colors.text,
                 fontSize: getTextStyle('medium').fontSize,
-                paddingVertical: baixaVisao ? 18 : 14,
+                paddingVertical: 0,
+                height: '100%',
+                textAlignVertical: 'center',
               }
             ]}
             placeholder="Digite sua nova senha"
@@ -445,7 +456,9 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
               {
                 color: colors.text,
                 fontSize: getTextStyle('medium').fontSize,
-                paddingVertical: baixaVisao ? 18 : 14,
+                paddingVertical: 0,
+                height: '100%',
+                textAlignVertical: 'center',
               }
             ]}
             placeholder="Confirme sua senha"
@@ -457,6 +470,33 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
           />
         </View>
       </View>
+      <TouchableOpacity
+        style={styles.termsRow}
+        onPress={() => setAceitouTermos(!aceitouTermos)}
+        activeOpacity={0.7}
+      >
+        <Icon
+          name={aceitouTermos ? 'check-square' : 'square'}
+          {...getIconProps(aceitouTermos ? 'check-square' : 'square', 'medium', aceitouTermos ? colors.primary : colors.textMuted)}
+        />
+        <Text style={[styles.termsText, getTextStyle('small', colors.textSecondary)]}>
+          Li e aceito os{' '}
+          <Text
+            style={[styles.termsLink, { color: colors.primary }]}
+            onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'termos' })}
+          >
+            Termos de Uso
+          </Text>
+          {' '}e a{' '}
+          <Text
+            style={[styles.termsLink, { color: colors.primary }]}
+            onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'privacidade' })}
+          >
+            Política de Privacidade
+          </Text>
+          , incluindo o uso de serviços de IA de terceiros para analisar meu diário.
+        </Text>
+      </TouchableOpacity>
       <TouchableOpacity
         style={[
           styles.button,
@@ -738,6 +778,22 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '400',
     paddingHorizontal: 0,
+  },
+  termsRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 20,
+  },
+  termsText: {
+    flex: 1,
+    fontFamily: 'Manrope',
+    lineHeight: 19,
+  },
+  termsLink: {
+    fontFamily: 'Manrope',
+    fontWeight: '700',
+    textDecorationLine: 'underline',
   },
   button: {
     borderRadius: 12,

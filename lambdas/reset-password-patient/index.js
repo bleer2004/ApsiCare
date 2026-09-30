@@ -15,7 +15,7 @@ export const handler = async (event) => {
     return resp(400, { error: "Body inválido" });
   }
 
-  const { email, code, newPassword } = body;
+  const { email, code, newPassword, termsAccepted } = body;
   if (!email || !code || !newPassword) {
     return resp(400, { error: "email, code e newPassword são obrigatórios" });
   }
@@ -48,6 +48,8 @@ export const handler = async (event) => {
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 12);
+    const now = new Date().toISOString();
+    const setTermos = termsAccepted === true ? ", termsAcceptedAt = :now" : "";
 
     await dynamo.send(new UpdateCommand({
       TableName: TABLE,
@@ -55,13 +57,13 @@ export const handler = async (event) => {
       UpdateExpression: `
         SET passwordHash = :hash,
             mustChangePassword = :false,
-            updatedAt = :now
+            updatedAt = :now${setTermos}
         REMOVE resetCode, resetCodeExpires, tempPassword
       `,
       ExpressionAttributeValues: {
         ":hash": passwordHash,
         ":false": false,
-        ":now": new Date().toISOString()
+        ":now": now
       }
     }));
 

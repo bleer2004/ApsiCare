@@ -17,7 +17,7 @@ const PerfilPaciente = ({ navigation }) => {
   const [salvando, setSalvando] = useState(false);
 
   // Contexto de acessibilidade
-  const { configuracoes, atualizarConfiguracoes, recarregar } = useAccessibility();
+  const { configuracoes, atualizarConfiguracoes, recarregar, limparConfiguracoesLocais } = useAccessibility();
   const [baixaVisaoLocal, setBaixaVisaoLocal] = useState(configuracoes.baixaVisao);
   const [daltonismoLocal, setDaltonismoLocal] = useState(configuracoes.daltonismo);
 
@@ -188,6 +188,7 @@ const PerfilPaciente = ({ navigation }) => {
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: async () => {
         await AsyncStorage.clear();
+        limparConfiguracoesLocais();
         navigation.replace('LoginPaciente');
       }}
     ]);
@@ -475,6 +476,36 @@ const PerfilPaciente = ({ navigation }) => {
                      'Padrão'}
                   </Text>
                 </View>
+              </View>
+            </View>
+
+            {/* Legal */}
+            <View style={[styles.section, { paddingHorizontal: getSpacing('medium') }]}>
+              <Text style={[styles.sectionTitle, getTextStyle('large', colors.text, '700')]}>Legal</Text>
+              <View style={[
+                styles.infoCard,
+                {
+                  backgroundColor: colors.cardBackground,
+                  borderColor: colors.border,
+                  padding: baixaVisao ? 20 : 16,
+                }
+              ]}>
+                <TouchableOpacity
+                  style={[styles.infoRow, { borderBottomColor: colors.border }]}
+                  onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'termos' })}
+                >
+                  <Icon name="file" {...getIconProps('file', 'small', colors.primary)} />
+                  <Text style={[styles.infoLabel, getTextStyle('medium', colors.text, '600')]}>Termos de Uso</Text>
+                  <Icon name="chevron-right" {...getIconProps('chevron-right', 'small', colors.textSecondary)} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.infoRow}
+                  onPress={() => navigation.navigate('DocumentoLegal', { tipo: 'privacidade' })}
+                >
+                  <Icon name="shield" {...getIconProps('shield', 'small', colors.primary)} />
+                  <Text style={[styles.infoLabel, getTextStyle('medium', colors.text, '600')]}>Política de Privacidade</Text>
+                  <Icon name="chevron-right" {...getIconProps('chevron-right', 'small', colors.textSecondary)} />
+                </TouchableOpacity>
               </View>
             </View>
 

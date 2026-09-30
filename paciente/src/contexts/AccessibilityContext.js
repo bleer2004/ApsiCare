@@ -61,23 +61,16 @@ export const AccessibilityProvider = ({ children }) => {
           daltonismo: acessibilidade.daltonismo || false,
         };
 
-        // Atualizar localmente se houver diferença
-        if (
-          novasConfigs.baixaVisao !== configuracoes.baixaVisao ||
-          novasConfigs.daltonismo !== configuracoes.daltonismo
-        ) {
-          setConfiguracoes(novasConfigs);
-          
-          // Atualizar AsyncStorage
-          const updatedUser = {
-            ...user,
-            configuracoesApp: {
-              ...user.configuracoesApp,
-              acessibilidade: novasConfigs,
-            },
-          };
-          await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
-        }
+        setConfiguracoes(novasConfigs);
+
+        const updatedUser = {
+          ...user,
+          configuracoesApp: {
+            ...user.configuracoesApp,
+            acessibilidade: novasConfigs,
+          },
+        };
+        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
       }
     } catch (error) {
       console.error('Erro ao sincronizar com backend:', error);
@@ -134,6 +127,10 @@ export const AccessibilityProvider = ({ children }) => {
     }
   };
 
+  const limparConfiguracoesLocais = () => {
+    setConfiguracoes({ baixaVisao: false, daltonismo: false });
+  };
+
   const resetarConfiguracoes = async () => {
     try {
       const userStr = await AsyncStorage.getItem('user');
@@ -182,6 +179,7 @@ export const AccessibilityProvider = ({ children }) => {
         atualizarConfiguracoes,
         sincronizarComBackend,
         resetarConfiguracoes,
+        limparConfiguracoesLocais,
         recarregar: carregarConfiguracoes,
         // Atalhos para uso direto
         toggleBaixaVisao: async () => {
