@@ -26,20 +26,16 @@ export const handler = async (event) => {
       return response(404, { error: "Clinician não encontrado" });
     }
 
-    const item = result.Item;
-    
-    // Extraímos o 'data' (se existir), mas tratamos ele como secundário
-    const oldNestedData = item.data || {};
+    const perfil = { ...(result.Item.data || {}), ...result.Item };
 
-    const finalProfile = {
-      ...oldNestedData, // Dados antigos (se existirem)
-      ...item,          // Dados da raiz (SEMPRE ganham a preferência)
-      id: clinicianId   
-    };
-
-    // Faxina final: removemos campos que o Front-end não precisa ver
-    delete finalProfile.data;
-    delete finalProfile.passwordHash; // Nunca envie o hash da senha pro app!
+    const CAMPOS_PUBLICOS = [
+      "name", "email", "phone", "cellphone", "birthDate", "profession", "councilId",
+      "especialidade", "clinica", "enderecoClinica", "notificationsEnabled", "isActive", "createdAt",
+    ];
+    const finalProfile = { id: clinicianId };
+    for (const campo of CAMPOS_PUBLICOS) {
+      if (perfil[campo] !== undefined) finalProfile[campo] = perfil[campo];
+    }
 
     return response(200, finalProfile);
 
