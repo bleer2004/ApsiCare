@@ -56,32 +56,44 @@ export const readHeartRateSince = async (hours = 24) => {
   const endTime = new Date();
   const startTime = new Date(endTime.getTime() - hours * 60 * 60 * 1000);
 
-  const { records } = await readRecords('HeartRate', {
-    timeRangeFilter: {
-      operator: 'between',
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString(),
-    },
-  });
+  const records = [];
+  let pageToken;
+  do {
+    const page = await readRecords('HeartRate', {
+      timeRangeFilter: {
+        operator: 'between',
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString(),
+      },
+      ...(pageToken ? { pageToken } : {}),
+    });
+    records.push(...(page.records ?? []));
+    pageToken = page.pageToken;
+  } while (pageToken);
 
   return records;
 };
 
 export const mapToHealthIngestSamples = (heartRateRecords) => {
-  const samples = [];
+  const porMinuto = new Map();
 
   for (const record of heartRateRecords) {
     for (const sample of record.samples ?? []) {
       const hr = sample.beatsPerMinute;
-      if (!hr || hr <= 0) continue;
+      const time = new Date(sample.time);
+      if (!hr || hr <= 0 || isNaN(time)) continue;
 
-      samples.push({
-        hr,
-        ibi: 60000 / hr,
-        time_s: sample.time,
-      });
+      time.setSeconds(0, 0);
+      const minuto = time.toISOString();
+      const acc = porMinuto.get(minuto) ?? { soma: 0, n: 0 };
+      acc.soma += hr;
+      acc.n += 1;
+      porMinuto.set(minuto, acc);
     }
   }
 
-  return samples;
+  return [...porMinuto.entries()].map(([minuto, { soma, n }]) => {
+    const hr = soma / n;
+    return { hr, ibi: 60000 / hr, time_s: minuto };
+  });
 };

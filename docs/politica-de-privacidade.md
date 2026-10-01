@@ -1,6 +1,6 @@
 # Política de Privacidade do ApsiCare
 
-**Última atualização:** 10/09/2026
+**Última atualização:** 01/10/2026
 
 Esta Política de Privacidade descreve como o **ApsiCare** ("Aplicativo", "App") coleta, usa, armazena e compartilha dados pessoais de seus usuários — pacientes e psicólogos/clínicos —, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, "LGPD"). Ela é parte integrante dos [Termos de Uso](./termos-de-uso.md).
 
@@ -15,12 +15,27 @@ A equipe responsável pelo desenvolvimento do ApsiCare é a controladora dos dad
 ## 2. Quais Dados Coletamos
 
 ### 2.1. Dados de cadastro
-Nome, e-mail, telefone e data de nascimento (paciente e psicólogo), diagnóstico/observações clínicas (preenchidos pelo psicólogo sobre o paciente).
+Nome, e-mail, telefone e data de nascimento (paciente e psicólogo), registro profissional (psicólogo), diagnóstico/observações clínicas (preenchidos pelo psicólogo sobre o paciente).
+
+### 2.1.1. Dados de terceiros: contato de emergência
+O psicólogo pode cadastrar um contato de emergência do paciente (nome, telefone e relação). Esse dado é usado apenas para o psicólogo contatar alguém em situação de risco, não é exibido a outros usuários e é apagado junto com a conta do paciente.
+
+### 2.1.2. Documentos
+Arquivos que o psicólogo anexa ao perfil do paciente (ex.: PDFs, imagens) ficam armazenados no Amazon S3 e só podem ser abertos pelo psicólogo e pelo próprio paciente.
 
 ### 2.2. Dados de saúde e bem-estar (dados sensíveis)
 - Registros de humor e diário pessoal (texto e áudio);
-- Frequência cardíaca e intervalos entre batimentos, lidos do smartwatch via Android Health Connect;
+- Frequência cardíaca (batimentos por minuto), lida do smartwatch via Android Health Connect. O intervalo entre batimentos usado nos cálculos é **estimado a partir do BPM**, não lido diretamente do relógio;
 - *Insights* de estresse físico/emocional gerados a partir desses dados.
+
+### 2.2.1. Uso dos dados do Health Connect
+O ApsiCare solicita **somente a permissão de leitura de frequência cardíaca** do Health Connect. Esses dados:
+- são usados apenas para gerar os indicadores de estresse do próprio paciente e exibi-los a ele e ao psicólogo responsável;
+- **não são usados para publicidade**, não são vendidos e não são compartilhados com terceiros para outras finalidades;
+- **não são enviados aos provedores de inteligência artificial** (OpenRouter e Groq), que recebem apenas o texto e o áudio do Diário;
+- são armazenados de forma agregada (média por minuto) na AWS, região Brasil.
+
+O uso das informações recebidas do Health Connect segue a Política de Permissões do Health Connect, incluindo os requisitos de uso limitado.
 
 ### 2.3. Dados técnicos
 - Token de autenticação (sessão) e token de notificações push;
@@ -28,7 +43,7 @@ Nome, e-mail, telefone e data de nascimento (paciente e psicólogo), diagnóstic
 
 ## 3. Dados Sensíveis e Base Legal
 
-Os dados descritos na Seção 2.2 são **dados sensíveis** nos termos do art. 5º, II da LGPD (dados sobre saúde). Seu tratamento se baseia no **consentimento específico e destacado** do titular (art. 11, I), obtido no momento em que você usa as funcionalidades de Diário/Humor e Smartwatch pela primeira vez, através dos avisos exibidos no próprio Aplicativo.
+Os dados descritos na Seção 2.2 são **dados sensíveis** nos termos do art. 5º, II da LGPD (dados sobre saúde). Seu tratamento se baseia no **consentimento específico e destacado** do titular (art. 11, I), obtido: (a) no aceite destes termos ao criar a conta (psicólogo) ou ao criar a senha no primeiro acesso (paciente); (b) no aviso exibido ao abrir o Diário pela primeira vez; e (c) na tela de permissão do Health Connect, ao conectar o smartwatch.
 
 Você pode revogar esse consentimento a qualquer momento, deixando de usar essas funcionalidades ou solicitando a exclusão dos dados já registrados (Seção 9).
 
@@ -37,7 +52,8 @@ Você pode revogar esse consentimento a qualquer momento, deixando de usar essas
 - Gerar *insights* de estresse e bem-estar para você e para o psicólogo responsável pelo seu acompanhamento;
 - Permitir que o psicólogo acompanhe a evolução do paciente e seja alertado sobre sinais de risco;
 - Autenticar seu acesso e manter sua sessão no Aplicativo;
-- Enviar notificações push relevantes (hoje, apenas para o psicólogo).
+- Enviar notificações push relevantes: ao psicólogo (sinais de risco, anotações compartilhadas, pedidos de exclusão) e ao paciente (lembretes enviados pelo psicólogo);
+- Enviar e-mails de convite e de recuperação de senha.
 
 Não usamos seus dados para publicidade, venda a terceiros, ou qualquer finalidade fora do acompanhamento psicológico oferecido pelo Aplicativo.
 
@@ -46,19 +62,28 @@ Não usamos seus dados para publicidade, venda a terceiros, ou qualquer finalida
 | Serviço | Finalidade | Dados enviados | Localização |
 |---|---|---|---|
 | **AWS (DynamoDB, Lambda)** | Armazenamento e processamento de todos os dados do Aplicativo | Todos os dados de cadastro, saúde e uso | Brasil (região `sa-east-1`) |
+| **AWS S3** | Armazenamento de documentos anexados ao perfil do paciente | Arquivos enviados pelo psicólogo | Brasil (região `sa-east-1`) |
+| **AWS SES** | Envio de e-mails de convite e recuperação de senha | Nome, e-mail e código/senha provisória | Brasil (região `sa-east-1`) |
 | **OpenRouter** (modelo Llama 3.1) | Análise de sentimento/estresse do texto do Diário | Texto do diário | Internacional |
-| **HuggingFace (Whisper)** | Transcrição de áudio em texto | Áudio gravado no Diário | Internacional |
-| **Expo Push Service / Firebase (FCM)** | Entrega de notificações push (Android) | Token de notificação (não o conteúdo dos dados) | Internacional |
+| **Groq (Whisper)** | Transcrição de áudio em texto | Áudio gravado no Diário | Internacional |
+| **Expo Push Service / Firebase (FCM)** | Entrega de notificações push (Android) | Token de notificação, título e texto curto da notificação | Internacional |
 
 Não compartilhamos dados com anunciantes, corretores de dados ("data brokers") ou qualquer terceiro fora dessa lista.
 
 ## 6. Transferência Internacional de Dados
 
-O envio de texto e áudio do Diário para **OpenRouter** e **HuggingFace** (Seção 5) caracteriza transferência internacional de dados, nos termos do art. 33 da LGPD. Buscamos, quando disponível, contratar essas transferências sob configurações de **retenção zero de dados** ("Zero Data Retention") junto aos provedores, mas reconhecemos que não temos controle total sobre a infraestrutura desses terceiros. Essa limitação está documentada como ponto de atenção do projeto.
+O envio de texto e áudio do Diário para **OpenRouter** e **Groq** (Seção 5) caracteriza transferência internacional de dados, nos termos do art. 33 da LGPD. Buscamos, quando disponível, contratar essas transferências sob configurações de **retenção zero de dados** ("Zero Data Retention") junto aos provedores, mas reconhecemos que não temos controle total sobre a infraestrutura desses terceiros. Essa limitação está documentada como ponto de atenção do projeto.
 
 ## 7. Por Quanto Tempo Guardamos os Dados
 
-Mantemos seus dados enquanto sua conta estiver ativa, para permitir o acompanhamento contínuo do seu histórico junto ao psicólogo. Ao solicitar a exclusão da conta (Seção 9), seus dados pessoais e de saúde são removidos de nossa base em prazo razoável, exceto quando a manutenção for exigida por obrigação legal.
+Mantemos seus dados enquanto sua conta estiver ativa, para permitir o acompanhamento contínuo do seu histórico junto ao psicólogo.
+
+**Como excluir a conta:**
+- **Psicólogo:** em Configurações → Excluir conta, confirmando a senha. A exclusão só é liberada depois de excluir todos os pacientes vinculados. Perfil, login e notificações são apagados na hora.
+- **Paciente:** em Meus dados → Solicitar exclusão dos meus dados. O psicólogo responsável é avisado e faz a exclusão, que apaga **todos** os dados do paciente no ApsiCare (perfil, diário, humor, insights, dados do smartwatch, documentos, lembretes e contato de emergência).
+- Sem acesso ao app: pelo e-mail da Seção 13.
+
+Pedidos de exclusão são atendidos em **até 30 dias**. Registros que o psicólogo mantém fora do Aplicativo (prontuário profissional) seguem as normas do Conselho Federal de Psicologia e não fazem parte do ApsiCare.
 
 ## 8. Como Protegemos Seus Dados
 
@@ -77,15 +102,15 @@ Nos termos do art. 18 da LGPD, você pode solicitar, a qualquer momento e pelo c
 - Informação sobre com quem compartilhamos seus dados;
 - Revogação do consentimento, a qualquer momento.
 
-Responderemos às solicitações em prazo razoável, considerando a natureza acadêmica e a estrutura reduzida da equipe responsável pelo Aplicativo.
+Responderemos às solicitações em até 15 dias (exclusão de conta: até 30 dias, ver Seção 7).
 
 ## 10. Crianças e Adolescentes
 
-O Aplicativo pode ser usado por menores de 18 anos apenas com autorização e supervisão de responsável legal, e sempre vinculados a um psicólogo responsável cadastrado na plataforma, conforme previsto nos Termos de Uso.
+O ApsiCare é destinado **exclusivamente a maiores de 18 anos**. Não coletamos intencionalmente dados de menores de idade; se identificarmos uma conta de menor, ela será excluída.
 
 ## 11. Armazenamento Local no Dispositivo
 
-O Aplicativo guarda localmente no seu dispositivo (via `AsyncStorage`), entre outros: seu token de sessão, dados de perfil básicos, preferências de acessibilidade e o registro de que você já leu o aviso de consentimento do Diário. Esses dados ficam no seu aparelho e são removidos ao desinstalar o app ou limpar seus dados.
+O Aplicativo guarda localmente no seu dispositivo (via `AsyncStorage`), entre outros: seu token de sessão, dados de perfil básicos, preferências de acessibilidade e o registro de que você já leu o aviso de consentimento do Diário. Esses dados ficam no seu aparelho, não entram no backup automático do Android e são removidos ao sair da conta, desinstalar o app ou limpar seus dados.
 
 ## 12. Alterações nesta Política
 

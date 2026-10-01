@@ -3,7 +3,9 @@ import math
 import os
 import urllib.request
 import boto3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+BRASILIA = timezone(timedelta(hours=-3))
 from boto3.dynamodb.conditions import Key
 
 API_URL = os.environ.get("API_URL", "https://2ube699efh.execute-api.sa-east-1.amazonaws.com")
@@ -95,16 +97,21 @@ def calc_stress_subjetivo(pk):
     resp = table.query(
         KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("MOOD#"),
         ScanIndexForward=False,
-        Limit=1
+        Limit=10
     )
     moods = resp.get("Items", [])
     if not moods:
         return 0.30
 
-    data = moods[0].get("data", {})
+    # toque rápido na Home só traz a emoção; humor/impacto/texto vêm da última anotação completa do diário
+    mais_recente = moods[0].get("data", {})
+    data = next(
+        (m.get("data", {}) for m in moods if m.get("data", {}).get("diaryText") or m.get("data", {}).get("moodScore")),
+        mais_recente,
+    )
 
     # emocao: valence+arousal já ponderados (0-100 → invertido pra stress)
-    ss_emocao = 1 - float(data.get("emotionalScore", 50)) / 100
+    ss_emocao = 1 - float(mais_recente.get("emotionalScore", 50)) / 100
 
     # humor: moodScore 1-9, alto humor = baixo stress
     mood_score = float(data.get("moodScore") or 5)
@@ -120,6 +127,12 @@ def calc_stress_subjetivo(pk):
 
     ss = 0.30 * ss_emocao + 0.20 * ss_humor + 0.20 * ss_impacto + 0.30 * ss_texto
     return round(ss, 4)
+
+def _data_brasilia(created_at_utc):
+    try:
+        return datetime.fromisoformat(created_at_utc).replace(tzinfo=timezone.utc).astimezone(BRASILIA).strftime("%Y-%m-%d")
+    except ValueError:
+        return ""
 
 def hora_para_label(hora):
     if 7 <= hora <= 9:     return "baseline"
@@ -214,12 +227,13 @@ def gerar_relatorio_semanal(event):
         dias = resp.get("Items", [])
     else:
         # pacientes reais: agrega os insights diários gerados pelo Health Connect na última semana
-        resp = table.query(
-            KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("INSIGHT#"),
-            ScanIndexForward=True,
-            Limit=50
-        )
         uma_semana_atras = datetime.now() - timedelta(days=7)
+        resp = table.query(
+            KeyConditionExpression=Key("PK").eq(pk) & Key("SK").between(
+                f"INSIGHT#{uma_semana_atras.isoformat()}", "INSIGHT#~"
+            ),
+            ScanIndexForward=True
+        )
         dias = []
         for item in resp.get("Items", []):
             dados_item = item.get("data", {})
@@ -356,6 +370,7 @@ def gerar_relatorio_semanal(event):
             "HR":          float(d["HR"]),
             "IBI":         float(d["IBI"]),
             "RMSSD":       float(d["RMSSD"]),
+            "stress_physio": float(d.get("stress_physio", 0) or 0),
             "mood":        int(d.get("mood", 0)),
             "emoji":       d.get("emotion_emoji", ""),
             "contexto":    d.get("context", ""),
@@ -415,7 +430,7 @@ def gerar_relatorio_semanal(event):
     })
 
 def encontrar_insight_diario_de_hoje(pk):
-    hoje = datetime.now().strftime("%Y-%m-%d")
+    hoje = datetime.now(BRASILIA).strftime("%Y-%m-%d")
     resp = table.query(
         KeyConditionExpression=Key("PK").eq(pk) & Key("SK").begins_with("INSIGHT#"),
         ScanIndexForward=False,
@@ -425,7 +440,7 @@ def encontrar_insight_diario_de_hoje(pk):
         dados = item.get("data", {})
         if "dias" in dados:
             continue  # ignora relatórios semanais
-        if item.get("createdAt", "")[:10] == hoje:
+        if _data_brasilia(item.get("createdAt", "")) == hoje:
             return item
     return None
 
@@ -451,8 +466,22 @@ def gerar_insight_handler(event):
 
     hrs, ibis, temps = [], [], []
     label_counts = {}
+    vistos = set()
+    limite_24h = datetime.now(timezone.utc) - timedelta(hours=24)
     for batch in batches:
         for dp in batch.get("dataPoints", []):
+            if not wesad_id and dp.get("time_s"):
+                if dp["time_s"] in vistos:
+                    continue
+                vistos.add(dp["time_s"])
+                try:
+                    medido = datetime.fromisoformat(str(dp["time_s"]).replace("Z", "+00:00"))
+                    if medido.tzinfo is None:
+                        medido = medido.replace(tzinfo=timezone.utc)
+                    if medido < limite_24h:
+                        continue
+                except ValueError:
+                    pass
             hr   = float(dp.get("hr",   dp.get("HR",   0)) or 0)
             ibi  = float(dp.get("ibi",  dp.get("IBI",  0)) or 0)
             temp = float(dp.get("temp", dp.get("TEMP", 0)) or 0)
@@ -480,7 +509,7 @@ def gerar_insight_handler(event):
         else: perfil = "neutro"
 
     label_dominante = max(label_counts, key=label_counts.get) if label_counts else "baseline"
-    fase_dia        = hora_para_label(datetime.now().hour)
+    fase_dia        = hora_para_label(datetime.now(BRASILIA).hour)
     ss              = calc_stress_subjetivo(pk)
     sf_adj          = round(sf * 0.9, 4)
     divergence      = round(sf_adj - ss, 4)

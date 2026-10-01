@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../../src/services/api';
+import { API_URL, logout } from '../../../src/services/api';
 import {
   View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, ActivityIndicator, Switch,
+  StatusBar, ScrollView, Alert, ActivityIndicator, Switch, Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import SmartwatchPaciente from '../../../src/screens/smartwatch/SmartWatchPaciente';
@@ -183,13 +183,53 @@ const PerfilPaciente = ({ navigation }) => {
     salvarConfiguracoesAcessibilidade(baixaVisaoLocal, value);
   };
 
+  const abrirDocumento = async (doc) => {
+    if (!doc.downloadUrl) {
+      Alert.alert('Indisponível', 'Este documento não pode ser aberto no momento.');
+      return;
+    }
+    try {
+      await Linking.openURL(doc.downloadUrl);
+    } catch {
+      Alert.alert('Erro', 'Não foi possível abrir o documento.');
+    }
+  };
+
+  const handleSolicitarExclusao = () => {
+    Alert.alert(
+      'Solicitar exclusão',
+      'Seu psicólogo será avisado e fará a exclusão da sua conta e de todos os seus dados no ApsiCare. Deseja continuar?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Solicitar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await AsyncStorage.getItem('token');
+              const user = JSON.parse((await AsyncStorage.getItem('user')) || '{}');
+              const res = await fetch(`${API_URL}/patients/${user.id}/solicitar-exclusao`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+              });
+              if (!res.ok) throw new Error(`Status ${res.status}`);
+              Alert.alert('Pedido enviado', 'Seu psicólogo foi avisado do seu pedido de exclusão.');
+            } catch {
+              Alert.alert('Erro', 'Não foi possível enviar o pedido. Tente novamente.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const handleLogout = async () => {
     Alert.alert('Sair', 'Deseja sair da sua conta?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Sair', style: 'destructive', onPress: async () => {
-        await AsyncStorage.clear();
+        await logout('patient');
         limparConfiguracoesLocais();
-        navigation.replace('LoginPaciente');
+        navigation.reset({ index: 0, routes: [{ name: 'LoginPaciente' }] });
       }}
     ]);
   };
@@ -403,7 +443,7 @@ const PerfilPaciente = ({ navigation }) => {
                 documentos.map((doc) => {
                   const docStyle = getDocIcon(doc.tipo);
                   return (
-                    <View key={doc.id} style={[
+                    <TouchableOpacity key={doc.id} onPress={() => abrirDocumento(doc)} style={[
                       styles.documentCard,
                       {
                         backgroundColor: colors.cardBackground,
@@ -422,7 +462,8 @@ const PerfilPaciente = ({ navigation }) => {
                           {doc.tipo} • {doc.tamanho}
                         </Text>
                       </View>
-                    </View>
+                      <Icon name="download" {...getIconProps('download', 'medium', colors.textMuted)} />
+                    </TouchableOpacity>
                   );
                 })
               )}
@@ -520,6 +561,12 @@ const PerfilPaciente = ({ navigation }) => {
             ]} onPress={handleLogout}>
               <Icon name="log-out" {...getIconProps('log-out', 'medium', '#FFFFFF')} />
               <Text style={[styles.logoutButtonText, getTextStyle('large', '#FFFFFF', '700')]}>Sair da conta</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.solicitarExclusaoButton} onPress={handleSolicitarExclusao}>
+              <Text style={[styles.solicitarExclusaoText, getTextStyle('medium', colors.textSecondary, '600')]}>
+                Solicitar exclusão dos meus dados
+              </Text>
             </TouchableOpacity>
           </>
         )}
@@ -692,6 +739,8 @@ const styles = StyleSheet.create({
   infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: 1, gap: 8 },
   infoLabel: { fontFamily: 'Manrope', flex: 1 },
   infoValue: { fontFamily: 'Manrope', fontWeight: '600' },
+  solicitarExclusaoButton: { alignItems: 'center', paddingVertical: 12, marginBottom: 24 },
+  solicitarExclusaoText: { fontFamily: 'Manrope', textDecorationLine: 'underline' },
   logoutButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', borderRadius: 12, marginTop: 16, marginBottom: 32, gap: 8 },
   logoutButtonText: { fontFamily: 'Manrope', fontWeight: '700' },
   bottomNavigation: {

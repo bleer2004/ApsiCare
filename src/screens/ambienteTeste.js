@@ -9,9 +9,12 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 import Svg, { Path, Defs, LinearGradient, Stop } from 'react-native-svg';
+import * as Notifications from 'expo-notifications';
+import { lerSessao, rotaDaNotificacao } from '../services/sessao';
 
 const { width, height } = Dimensions.get('window');
 
@@ -138,6 +141,25 @@ const WelcomeScreen = ({ navigation }) => {
   const slideAnim = useRef(new Animated.Value(50)).current;
   const buttonScale = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
+
+  useEffect(() => {
+    (async () => {
+      const urlInicial = await Linking.getInitialURL().catch(() => null);
+      if (urlInicial?.includes('privacidade')) {
+        navigation.reset({ index: 0, routes: [{ name: 'DocumentoLegal', params: { tipo: 'privacidade' } }] });
+        return;
+      }
+      const sessao = await lerSessao();
+      if (!sessao) return;
+      const ultimaResposta = Notifications.getLastNotificationResponse();
+      const rotaPush = rotaDaNotificacao(ultimaResposta?.notification?.request?.content?.data, sessao);
+      if (ultimaResposta) Notifications.clearLastNotificationResponse();
+      const routes = [{ name: sessao.home }];
+      if (rotaPush && rotaPush.name !== sessao.home) routes.push(rotaPush);
+      else if (rotaPush) routes[0] = rotaPush;
+      navigation.reset({ index: routes.length - 1, routes });
+    })();
+  }, []);
 
   // Animação de entrada
   useEffect(() => {

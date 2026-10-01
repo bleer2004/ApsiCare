@@ -15,7 +15,8 @@ export const handler = async (event) => {
     return resp(400, { error: "Body inválido" });
   }
 
-  const { email, code, newPassword, termsAccepted } = body;
+  const { code, newPassword, termsAccepted } = body;
+  const email = body.email?.trim().toLowerCase();
   if (!email || !code || !newPassword) {
     return resp(400, { error: "email, code e newPassword são obrigatórios" });
   }
@@ -47,7 +48,7 @@ export const handler = async (event) => {
       return resp(400, { error: "Código expirado. Solicite um novo." });
     }
 
-    const passwordHash = await bcrypt.hash(newPassword, 12);
+    const passwordHash = await bcrypt.hash(newPassword, 8);
     const now = new Date().toISOString();
     const setTermos = termsAccepted === true ? ", termsAcceptedAt = :now" : "";
 

@@ -32,6 +32,7 @@ const tempoAtras = (isoDate) => {
 const ICONS = {
   risk_alert: { name: 'alert-triangle', bg: '#DC2626' },
   share_alert: { name: 'share-2', bg: '#B367D4' },
+  deletion_request: { name: 'user-x', bg: '#EF4444' },
 };
 
 const NotificacoesPsicologo = ({ navigation }) => {

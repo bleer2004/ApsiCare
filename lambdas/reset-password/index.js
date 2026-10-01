@@ -1,13 +1,19 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { createHash } from "crypto";
+import bcrypt from "bcryptjs";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
 
 export const handler = async (event) => {
   try {
-    const { code, newPassword } = JSON.parse(event.body);
+    const { code, newPassword } = JSON.parse(event.body || "{}");
+    if (!code || !newPassword) {
+      return response(400, { error: "code e newPassword são obrigatórios" });
+    }
+    if (newPassword.length < 6) {
+      return response(400, { error: "A senha deve ter no mínimo 6 caracteres" });
+    }
 
     // 1. Busca e valida o token de novo (por segurança)
     const tokenResult = await dynamo.send(new GetCommand({
@@ -20,8 +26,7 @@ export const handler = async (event) => {
       return response(400, { error: "Sessão de redefinição inválida" });
     }
 
-    // 2. Gera o Hash (SHA-256)
-    const newHash = createHash("sha256").update(newPassword).digest("hex");
+    const newHash = await bcrypt.hash(newPassword, 8);
 
     // 3. Atualiza o usuário e LIMPA o objeto 'data' antigo (Flat Pattern)
     await dynamo.send(new UpdateCommand({
@@ -42,6 +47,7 @@ export const handler = async (event) => {
 
     return response(200, { message: "Senha alterada com sucesso!" });
   } catch (err) {
+    console.error(err);
     return response(500, { error: "Erro ao redefinir senha" });
   }
 };

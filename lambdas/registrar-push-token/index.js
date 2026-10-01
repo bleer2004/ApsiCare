@@ -11,7 +11,7 @@ export const handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const { userId, userType, pushToken } = body;
 
-    if (!userId || !userType || !pushToken) {
+    if (!userId || !userType || pushToken === undefined) {
       return response(400, { error: "userId, userType e pushToken são obrigatórios" });
     }
     if (userType !== "patient" && userType !== "clinician") {
@@ -25,11 +25,12 @@ export const handler = async (event) => {
     await dynamo.send(new UpdateCommand({
       TableName: TABLE_NAME,
       Key: key,
-      UpdateExpression: "SET pushToken = :pushToken, pushTokenUpdatedAt = :updatedAt",
-      ExpressionAttributeValues: {
-        ":pushToken": pushToken,
-        ":updatedAt": new Date().toISOString(),
-      },
+      UpdateExpression: pushToken
+        ? "SET pushToken = :pushToken, pushTokenUpdatedAt = :updatedAt"
+        : "SET pushTokenUpdatedAt = :updatedAt REMOVE pushToken",
+      ExpressionAttributeValues: pushToken
+        ? { ":pushToken": pushToken, ":updatedAt": new Date().toISOString() }
+        : { ":updatedAt": new Date().toISOString() },
     }));
 
     return response(200, { message: "Token registrado com sucesso" });

@@ -36,7 +36,8 @@ export const handler = async (event) => {
       return response(404, { error: "Não encontrado" });
     }
 
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || "{}");
+    const naoVazio = (v) => (typeof v === "string" && v.trim() ? v : undefined);
 
     let setActions = ["#updatedAt = :updatedAt"];
     let removeActions = ["#oldData"]; 
@@ -50,7 +51,7 @@ export const handler = async (event) => {
     };
 
     const fields = {
-      name: body.name,
+      name: naoVazio(body.name),
       phone: body.phone,
       cellphone: body.cellphone,  
       councilId: body.councilId,      
@@ -59,7 +60,7 @@ export const handler = async (event) => {
       clinica: body.clinica,
       enderecoClinica: body.enderecoClinica,
       birthDate: body.birthDate,
-      email: body.email,
+      email: naoVazio(body.email),
       notificationsEnabled: body.notificationsEnabled
     };
 

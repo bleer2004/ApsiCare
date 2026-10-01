@@ -15,7 +15,10 @@ const __dirname = dirname(__filename);
 
 export const handler = async (event) => {
   try {
-    const { email } = JSON.parse(event.body);
+    const email = JSON.parse(event.body || "{}").email?.trim().toLowerCase();
+    if (!email) {
+      return response(400, { error: "E-mail é obrigatório" });
+    }
 
     const result = await dynamo.send(new QueryCommand({
       TableName: TABLE_NAME,
@@ -24,11 +27,11 @@ export const handler = async (event) => {
       ExpressionAttributeValues: { ":email": `EMAIL#${email}` }
     }));
 
-    if (!result.Items || result.Items.length === 0) {
+    const user = (result.Items || []).find(item => item.PK.startsWith("CLINICIAN#"));
+    if (!user) {
       return response(200, { message: "Se o e-mail existir, você receberá um código." });
     }
 
-    const user = result.Items[0];
     const code = Math.floor(100000 + Math.random() * 900000).toString();
     const ttl = Math.floor(Date.now() / 1000) + 3600;
 

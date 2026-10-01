@@ -49,8 +49,8 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
 
   useEffect(() => {
     if (primeiroAcesso && emailInicial) {
-      enviarCodigoParaEmail(emailInicial).then(() => {
-        Alert.alert('Código enviado!', `Enviamos um código para ${emailInicial}. Verifique sua caixa de entrada ou spam.`);
+      enviarCodigoParaEmail(emailInicial).then((ok) => {
+        if (ok) Alert.alert('Código enviado!', `Enviamos um código para ${emailInicial}. Verifique sua caixa de entrada ou spam.`);
       });
     }
   }, []);
@@ -66,9 +66,12 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
       const data = await response.json();
       if (!response.ok) {
         Alert.alert('Erro', data.error || 'Erro ao enviar código');
+        return false;
       }
+      return true;
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -79,7 +82,7 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
       Alert.alert('Erro', 'Por favor, digite seu e-mail');
       return;
     }
-    await enviarCodigoParaEmail(email);
+    if (!(await enviarCodigoParaEmail(email))) return;
     setStep(2);
     Alert.alert('Código enviado!', 'Verifique sua caixa de entrada ou spam.');
   };
@@ -379,8 +382,8 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
       </TouchableOpacity>
       <TouchableOpacity
         style={styles.reenviarContainer}
-        onPress={() => enviarCodigoParaEmail(email).then(() => {
-          Alert.alert('Código reenviado!', 'Verifique sua caixa de entrada ou spam.');
+        onPress={() => enviarCodigoParaEmail(email).then((ok) => {
+          if (ok) Alert.alert('Código reenviado!', 'Verifique sua caixa de entrada ou spam.');
         })}
       >
         <Text style={[styles.reenviarText, getTextStyle('medium', colors.textSecondary)]}>Não recebeu o código? </Text>

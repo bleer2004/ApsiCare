@@ -1,5 +1,6 @@
-import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import React, { useEffect } from 'react';
+import { Linking } from 'react-native';
+import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
 
@@ -12,6 +13,8 @@ Notifications.setNotificationHandler({
     shouldShowList: true,
   }),
 });
+
+import { lerSessao, rotaDaNotificacao } from './src/services/sessao';
 
 // Tela de seleção de ambiente
 import AmbienteTeste from './src/screens/ambienteTeste';
@@ -40,11 +43,28 @@ import { AccessibilityProvider } from './paciente/src/contexts/AccessibilityCont
 
 
 const Stack = createNativeStackNavigator();
+const navigationRef = createNavigationContainerRef();
 
 export default function App() {
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener(async (response) => {
+      const rota = rotaDaNotificacao(response.notification.request.content.data, await lerSessao());
+      if (rota && navigationRef.isReady()) navigationRef.navigate(rota.name, rota.params);
+    });
+    const subLink = Linking.addEventListener('url', ({ url }) => {
+      if (url?.includes('privacidade') && navigationRef.isReady()) {
+        navigationRef.navigate('DocumentoLegal', { tipo: 'privacidade' });
+      }
+    });
+    return () => {
+      sub.remove();
+      subLink.remove();
+    };
+  }, []);
+
   return (
     <AccessibilityProvider>
-    <NavigationContainer>
+    <NavigationContainer ref={navigationRef}>
       <Stack.Navigator initialRouteName="AmbienteTeste">
 
         {/* Tela de seleção */}

@@ -23,7 +23,7 @@ export const handler = async (event) => {
     return resp(400, { error: "Body inválido" });
   }
 
-  const { email } = body;
+  const email = body.email?.trim().toLowerCase();
   if (!email) return resp(400, { error: "email é obrigatório" });
 
   try {

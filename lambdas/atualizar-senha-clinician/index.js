@@ -1,6 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, GetCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { createHash, randomBytes, timingSafeEqual } from "crypto"; // Nativo do Node
+import bcrypt from "bcryptjs";
+import { createHash } from "crypto";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
@@ -8,7 +9,13 @@ const TABLE_NAME = "ApsiCare";
 
 export const handler = async (event) => {
   try {
-    const { clinicianId, currentPassword, newPassword } = JSON.parse(event.body);
+    const { clinicianId, currentPassword, newPassword } = JSON.parse(event.body || "{}");
+    if (!clinicianId || !currentPassword || !newPassword) {
+      return response(400, { error: "clinicianId, currentPassword e newPassword são obrigatórios" });
+    }
+    if (newPassword.length < 6) {
+      return response(400, { error: "A senha deve ter no mínimo 6 caracteres" });
+    }
 
     const userResult = await dynamo.send(new GetCommand({
       TableName: TABLE_NAME,
@@ -20,13 +27,11 @@ export const handler = async (event) => {
     // Pega o hash da raiz
     const hashNoBanco = userResult.Item.passwordHash;
 
-    const hashedInput = createHash("sha256").update(currentPassword).digest("hex");
-    
-    if (hashedInput !== hashNoBanco) {
+    if (!(await senhaConfere(currentPassword, hashNoBanco))) {
       return response(401, { error: "A senha atual está incorreta." });
     }
 
-    const newHash = createHash("sha256").update(newPassword).digest("hex");
+    const newHash = await bcrypt.hash(newPassword, 8);
 
     // ATUALIZAÇÃO PARA A RAIZ
     await dynamo.send(new UpdateCommand({
@@ -46,12 +51,19 @@ export const handler = async (event) => {
 
     return response(200, { message: "Senha alterada com sucesso!" });
 
-// ... (resto do código)
-
   } catch (err) {
     console.error(err);
     return response(500, { error: "Erro interno." });
   }
+};
+
+const isSha256Legado = (hash) => /^[a-f0-9]{64}$/.test(hash || "");
+
+const senhaConfere = async (senha, hash) => {
+  if (isSha256Legado(hash)) {
+    return createHash("sha256").update(senha).digest("hex") === hash;
+  }
+  return bcrypt.compare(senha, hash || "");
 };
 
 const response = (statusCode, body) => ({

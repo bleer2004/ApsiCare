@@ -5,14 +5,14 @@
 
 export const termosDeUso = {
   titulo: 'Termos de Uso',
-  atualizadoEm: '10/09/2026',
+  atualizadoEm: '01/10/2026',
   blocos: [
     { tipo: 'p', texto: 'Estes Termos de Uso regulam o acesso e uso do aplicativo ApsiCare, disponível para os perfis de Paciente e Psicólogo/Clínico. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a Política de Privacidade.' },
     { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o ApsiCare é um projeto acadêmico (TCC). Não é uma empresa constituída, não possui CNPJ, e é operado por sua equipe de desenvolvimento.' },
 
     { tipo: 'h2', texto: '1. Aceitação dos Termos' },
     { tipo: 'p', texto: '1.1. O uso do ApsiCare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.' },
-    { tipo: 'p', texto: '1.2. Menores de 18 anos só podem usar o Aplicativo com autorização e supervisão de responsável legal, e sempre vinculados a um psicólogo responsável cadastrado na plataforma.' },
+    { tipo: 'p', texto: '1.2. O Aplicativo é destinado exclusivamente a maiores de 18 anos.' },
     { tipo: 'p', texto: '1.3. O cadastro de pacientes é feito por convite de um psicólogo já cadastrado no sistema. Ao aceitar esse convite e criar sua conta, o paciente concorda com estes Termos.' },
 
     { tipo: 'h2', texto: '2. Descrição do Serviço' },
@@ -21,7 +21,7 @@ export const termosDeUso = {
     { tipo: 'bullet', texto: 'Leitura de dados fisiológicos (frequência cardíaca) via smartwatch conectado através do Android Health Connect' },
     { tipo: 'bullet', texto: 'Geração automática de insights sobre estresse físico e emocional' },
     { tipo: 'bullet', texto: 'Painel para o psicólogo acompanhar seus pacientes e receber alertas' },
-    { tipo: 'bullet', texto: 'Notificações push para o psicólogo em situações de maior risco' },
+    { tipo: 'bullet', texto: 'Notificações push para o psicólogo (sinais de risco, anotações compartilhadas) e lembretes do psicólogo para o paciente' },
     { tipo: 'p', texto: 'Passos, calorias e outras métricas não relacionadas a frequência cardíaca não são coletados.' },
 
     { tipo: 'h2', texto: '3. Cadastro e Conta' },
@@ -34,7 +34,7 @@ export const termosDeUso = {
     { tipo: 'h3', texto: '4.1 Diário e registro de humor' },
     { tipo: 'p', texto: 'Você pode registrar como está se sentindo por texto, emojis/slider de humor ou gravação de voz. Fica disponível para você e para o psicólogo responsável, quando você optar por compartilhar.' },
     { tipo: 'h3', texto: '4.2 Análise por Inteligência Artificial de terceiros' },
-    { tipo: 'p', texto: 'O texto que você escreve ou grava no Diário é enviado a serviços de IA de terceiros para gerar os insights de estresse/sentimento: OpenRouter (análise de sentimento/estresse) e HuggingFace/Whisper (transcrição de voz).' },
+    { tipo: 'p', texto: 'O texto que você escreve ou grava no Diário é enviado a serviços de IA de terceiros para gerar os insights de estresse/sentimento: OpenRouter (análise de sentimento/estresse) e Groq/Whisper (transcrição de voz).' },
     { tipo: 'aviso', icone: 'globe', texto: 'Esses provedores podem estar fora do Brasil — transferência internacional de dados (art. 33 da LGPD). Não inclua CPF, endereço ou dados de terceiros no Diário.' },
     { tipo: 'h3', texto: '4.3 Smartwatch e Health Connect (somente Android)' },
     { tipo: 'p', texto: 'O Aplicativo lê sua frequência cardíaca via Health Connect para estimar indicadores de estresse. Função indisponível em iOS.' },
@@ -74,7 +74,7 @@ export const termosDeUso = {
     { tipo: 'p', texto: 'O tratamento de dados pessoais e sensíveis é descrito em detalhe na Política de Privacidade, parte integrante destes Termos.' },
 
     { tipo: 'h2', texto: '12. Suspensão e Encerramento de Conta' },
-    { tipo: 'p', texto: '12.1. Você pode solicitar a exclusão da sua conta e dos seus dados a qualquer momento, pelo contato da seção 14.' },
+    { tipo: 'p', texto: '12.1. O psicólogo exclui a própria conta em Configurações → Excluir conta (depois de excluir seus pacientes). O paciente pede a exclusão em Meus dados → Solicitar exclusão dos meus dados, e o psicólogo apaga todos os dados. Também é possível pedir pelo contato da seção 14. Prazo: até 30 dias.' },
     { tipo: 'p', texto: '12.2. Podemos suspender ou encerrar contas que violem estes Termos.' },
 
     { tipo: 'h2', texto: '13. Alterações nestes Termos' },
@@ -88,7 +88,7 @@ export const termosDeUso = {
 
 export const politicaDePrivacidade = {
   titulo: 'Política de Privacidade',
-  atualizadoEm: '10/09/2026',
+  atualizadoEm: '01/10/2026',
   blocos: [
     { tipo: 'p', texto: 'Esta Política descreve como o ApsiCare coleta, usa, armazena e compartilha dados pessoais de pacientes e psicólogos/clínicos, em conformidade com a LGPD. Ela é parte integrante dos Termos de Uso.' },
     { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o ApsiCare é um projeto acadêmico (TCC), sem CNPJ, operado por sua equipe de desenvolvimento, que atua como controladora dos dados para fins da LGPD.' },
@@ -98,37 +98,45 @@ export const politicaDePrivacidade = {
 
     { tipo: 'h2', texto: '2. Quais Dados Coletamos' },
     { tipo: 'h3', texto: '2.1 Dados de cadastro' },
-    { tipo: 'p', texto: 'Nome, e-mail, telefone e data de nascimento (paciente e psicólogo), diagnóstico/observações clínicas.' },
+    { tipo: 'p', texto: 'Nome, e-mail, telefone e data de nascimento (paciente e psicólogo), registro profissional (psicólogo), diagnóstico/observações clínicas.' },
+    { tipo: 'p', texto: 'Contato de emergência do paciente (nome, telefone e relação), cadastrado pelo psicólogo e usado só em situação de risco. Documentos anexados pelo psicólogo ficam no Amazon S3, visíveis só para o psicólogo e o paciente.' },
     { tipo: 'h3', texto: '2.2 Dados de saúde e bem-estar (dados sensíveis)' },
     { tipo: 'bullet', texto: 'Registros de humor e diário pessoal (texto e áudio)' },
-    { tipo: 'bullet', texto: 'Frequência cardíaca e intervalos entre batimentos, via Health Connect' },
+    { tipo: 'bullet', texto: 'Frequência cardíaca (BPM), via Health Connect. O intervalo entre batimentos é estimado a partir do BPM, não lido do relógio' },
     { tipo: 'bullet', texto: 'Insights de estresse gerados a partir desses dados' },
+    { tipo: 'h3', texto: 'Uso dos dados do Health Connect' },
+    { tipo: 'p', texto: 'Pedimos somente a leitura de frequência cardíaca. Esses dados servem apenas para gerar seus indicadores de estresse (para você e seu psicólogo), não são usados para publicidade, não são vendidos e não são enviados aos provedores de IA (OpenRouter e Groq). O uso segue a Política de Permissões do Health Connect, incluindo os requisitos de uso limitado.' },
     { tipo: 'h3', texto: '2.3 Dados técnicos' },
     { tipo: 'bullet', texto: 'Token de autenticação e token de notificações push' },
     { tipo: 'bullet', texto: 'Registros de sincronização (data/hora dos envios)' },
 
     { tipo: 'h2', texto: '3. Dados Sensíveis e Base Legal' },
-    { tipo: 'p', texto: 'Os dados de saúde são sensíveis nos termos do art. 5º, II da LGPD. O tratamento se baseia no consentimento específico e destacado (art. 11, I), obtido no primeiro uso do Diário/Humor e Smartwatch. Você pode revogar esse consentimento a qualquer momento.' },
+    { tipo: 'p', texto: 'Os dados de saúde são sensíveis nos termos do art. 5º, II da LGPD. O tratamento se baseia no consentimento específico e destacado (art. 11, I), obtido no aceite dos termos (cadastro do psicólogo ou primeiro acesso do paciente), no aviso do Diário e na permissão do Health Connect. Você pode revogar esse consentimento a qualquer momento.' },
 
     { tipo: 'h2', texto: '4. Para que Usamos os Dados' },
     { tipo: 'bullet', texto: 'Gerar insights de estresse e bem-estar para você e seu psicólogo' },
     { tipo: 'bullet', texto: 'Permitir que o psicólogo acompanhe sua evolução e sinais de risco' },
     { tipo: 'bullet', texto: 'Autenticar seu acesso e manter sua sessão' },
-    { tipo: 'bullet', texto: 'Enviar notificações push relevantes' },
+    { tipo: 'bullet', texto: 'Enviar notificações push (alertas ao psicólogo, lembretes ao paciente) e e-mails de convite e recuperação de senha' },
     { tipo: 'p', texto: 'Não usamos seus dados para publicidade, venda a terceiros, ou qualquer finalidade fora do acompanhamento psicológico.' },
 
     { tipo: 'h2', texto: '5. Com Quem Compartilhamos Dados' },
     { tipo: 'compartilhamento', servico: 'AWS (DynamoDB, Lambda)', finalidade: 'Armazenamento e processamento de todos os dados do app', local: 'Brasil (sa-east-1)', nacional: true },
+    { tipo: 'compartilhamento', servico: 'AWS S3', finalidade: 'Armazenamento de documentos anexados ao paciente', local: 'Brasil (sa-east-1)', nacional: true },
+    { tipo: 'compartilhamento', servico: 'AWS SES', finalidade: 'E-mails de convite e recuperação de senha', local: 'Brasil (sa-east-1)', nacional: true },
     { tipo: 'compartilhamento', servico: 'OpenRouter (Llama 3.1)', finalidade: 'Análise de sentimento/estresse do texto do Diário', local: 'Internacional', nacional: false },
-    { tipo: 'compartilhamento', servico: 'HuggingFace (Whisper)', finalidade: 'Transcrição de áudio em texto', local: 'Internacional', nacional: false },
+    { tipo: 'compartilhamento', servico: 'Groq (Whisper)', finalidade: 'Transcrição de áudio em texto', local: 'Internacional', nacional: false },
     { tipo: 'compartilhamento', servico: 'Expo / Firebase (FCM)', finalidade: 'Entrega de notificações push (Android)', local: 'Internacional', nacional: false },
     { tipo: 'p', texto: 'Não compartilhamos dados com anunciantes, corretores de dados ou qualquer terceiro fora dessa lista.' },
 
     { tipo: 'h2', texto: '6. Transferência Internacional de Dados' },
-    { tipo: 'aviso', icone: 'globe', texto: 'O envio de texto/áudio do Diário para OpenRouter e HuggingFace caracteriza transferência internacional (art. 33 LGPD). Buscamos retenção zero de dados quando disponível, mas não temos controle total sobre a infraestrutura de terceiros.' },
+    { tipo: 'aviso', icone: 'globe', texto: 'O envio de texto/áudio do Diário para OpenRouter e Groq caracteriza transferência internacional (art. 33 LGPD). Buscamos retenção zero de dados quando disponível, mas não temos controle total sobre a infraestrutura de terceiros.' },
 
     { tipo: 'h2', texto: '7. Por Quanto Tempo Guardamos os Dados' },
-    { tipo: 'p', texto: 'Mantemos seus dados enquanto sua conta estiver ativa. Ao solicitar exclusão da conta, seus dados são removidos em prazo razoável, exceto quando exigido por obrigação legal.' },
+    { tipo: 'p', texto: 'Mantemos seus dados enquanto sua conta estiver ativa.' },
+    { tipo: 'bullet', texto: 'Psicólogo: Configurações → Excluir conta (com senha, depois de excluir os pacientes)' },
+    { tipo: 'bullet', texto: 'Paciente: Meus dados → Solicitar exclusão dos meus dados. O psicólogo apaga todos os seus dados no ApsiCare' },
+    { tipo: 'p', texto: 'Pedidos de exclusão são atendidos em até 30 dias. Registros que o psicólogo mantém fora do app (prontuário profissional) seguem as normas do Conselho Federal de Psicologia.' },
 
     { tipo: 'h2', texto: '8. Como Protegemos Seus Dados' },
     { tipo: 'p', texto: 'Adotamos medidas técnicas razoáveis, como autenticação por token (JWT) e HTTPS. Por ser um projeto acadêmico em desenvolvimento, algumas práticas ainda estão em evolução. Agimos rapidamente em caso de incidente de segurança.' },
@@ -142,13 +150,13 @@ export const politicaDePrivacidade = {
     { tipo: 'bullet', texto: 'Eliminação dos dados tratados com base no seu consentimento' },
     { tipo: 'bullet', texto: 'Informação sobre com quem compartilhamos seus dados' },
     { tipo: 'bullet', texto: 'Revogação do consentimento, a qualquer momento' },
-    { tipo: 'p', texto: 'Responderemos em prazo razoável, considerando a natureza acadêmica e a estrutura reduzida da equipe.' },
+    { tipo: 'p', texto: 'Responderemos em até 15 dias (exclusão de conta: até 30 dias).' },
 
     { tipo: 'h2', texto: '10. Crianças e Adolescentes' },
-    { tipo: 'p', texto: 'O uso por menores de 18 anos exige autorização de responsável legal e vínculo com um psicólogo cadastrado na plataforma.' },
+    { tipo: 'p', texto: 'O ApsiCare é destinado exclusivamente a maiores de 18 anos. Contas de menores identificadas serão excluídas.' },
 
     { tipo: 'h2', texto: '11. Armazenamento Local no Dispositivo' },
-    { tipo: 'p', texto: 'O Aplicativo guarda localmente (AsyncStorage) seu token de sessão, dados básicos de perfil, preferências de acessibilidade e o registro de consentimento do Diário. Removidos ao desinstalar o app.' },
+    { tipo: 'p', texto: 'O Aplicativo guarda localmente (AsyncStorage) seu token de sessão, dados básicos de perfil, preferências de acessibilidade e o registro de consentimento do Diário. Não entram no backup do Android e são removidos ao sair da conta ou desinstalar o app.' },
 
     { tipo: 'h2', texto: '12. Alterações nesta Política' },
     { tipo: 'p', texto: 'Podemos atualizar esta Política periodicamente. Alterações relevantes serão comunicadas dentro do Aplicativo.' },

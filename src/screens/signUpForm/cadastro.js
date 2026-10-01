@@ -74,6 +74,16 @@ const Cadastro = ({ navigation }) => {
       return;
     }
 
+    if (password.length < 6) {
+      Alert.alert('Erro', 'A senha deve ter no mínimo 6 caracteres');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem');
+      return;
+    }
+
     if (!aceitouTermos) {
       Alert.alert('Erro', 'Você precisa aceitar os Termos de Uso e a Política de Privacidade para criar sua conta.');
       return;
@@ -554,8 +564,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '400',
     color: '#0F172A',
-    paddingVertical: 14,
+    height: '100%',
+    paddingVertical: 0,
     paddingHorizontal: 0,
+    textAlignVertical: 'center',
   },
   dropdownText: {
     flex: 1,

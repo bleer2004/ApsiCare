@@ -27,7 +27,7 @@ export const handler = async (event) => {
       telefone: item.telefone,
       relacao: item.relacao,
       createdAt: item.createdAt,
-    }));
+    })).sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 
     return resp(200, { contacts });
   } catch (err) {

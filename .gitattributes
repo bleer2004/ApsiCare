@@ -1,0 +1,5 @@
+# expo prebuild usa regex que falham com CRLF (ex.: expo-splash-screen coloca import antes do package)
+*.kt text eol=lf
+*.java text eol=lf
+*.gradle text eol=lf
+*.sh text eol=lf

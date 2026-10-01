@@ -93,7 +93,7 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
       const allMoods = moodsData.moods || [];
       const moodCount = allMoods.length;
       const syncCount = (insightsData.insights || []).filter(i => !i.dias).length;
-      const diariosComTexto = allMoods.filter(m => m.diaryText).slice(0, 15);
+      const diariosComTexto = allMoods.filter(m => m.diaryText && m.sharedWithPsychologist).slice(0, 15);
 
       // resumo calculado localmente: emoção mais frequente + média de score
       const tagCount = {};
@@ -200,7 +200,11 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
     try {
       const texto = relatorio.tipo === 'smartwatch'
         ? `📊 RELATÓRIO SMARTWATCH - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n📝 ${relatorio.titulo}\n\n${relatorio.descricao}\n\n---\nApsiCare`
-        : `📝 RELATÓRIO ANOTAÇÕES - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n\n🤖 ${relatorio.analiseIA}\n\n---\nApsiCare`;
+        : `📝 RELATÓRIO ANOTAÇÕES - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n\n${
+            (contagensPorPaciente[relatorio.pacienteId]?.diarios || [])
+              .map(m => `• ${new Date(m.timestamp).toLocaleDateString('pt-BR')}: ${m.diaryText}`)
+              .join('\n') || 'Nenhuma anotação compartilhada pelo paciente.'
+          }\n\n---\nApsiCare`;
       await Share.share({ message: texto, title: `Relatorio_${relatorio.pacienteNome}.txt` });
     } catch { Alert.alert('Erro', 'Não foi possível compartilhar'); }
   };

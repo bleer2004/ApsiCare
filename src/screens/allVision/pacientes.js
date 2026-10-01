@@ -56,8 +56,9 @@ const Pacientes = ({ navigation }) => {
   ];
 
   useEffect(() => {
-    carregarPacientes();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', carregarPacientes);
+    return unsubscribe;
+  }, [navigation]);
 
   const carregarPacientes = async () => {
     if (USAR_MOCK) {
@@ -87,6 +88,11 @@ const Pacientes = ({ navigation }) => {
           status: p.isActive ? 'ativo' : 'inativo',
           idade: p.birthDate ? calcularIdade(p.birthDate) : null, // null em vez de 0
           diagnosticoPrincipal: p.diagnostico || 'Aguardando diagnóstico',
+          email: p.email || '',
+          phone: p.phone || '',
+          birthDate: p.birthDate || null,
+          diagnostico: p.diagnostico || '',
+          observacoes: p.observacoes || '',
           condicao: 'Em acompanhamento',
           statusEmocional: 'Estável',
           melhoraPercentual: 0,
@@ -200,7 +206,7 @@ const Pacientes = ({ navigation }) => {
           phone: telefone.replace(/\D/g, ''),
           birthDate: formatDate(dataNascimento),
           diagnostico,
-          resumoClinico,
+          observacoes: resumoClinico,
         }),
       });
 
@@ -218,6 +224,11 @@ const Pacientes = ({ navigation }) => {
         status: 'recente',
         idade: calcularIdade(formatDate(dataNascimento)),
         diagnosticoPrincipal: diagnostico || 'Aguardando diagnóstico',
+        email,
+        phone: telefone.replace(/\D/g, ''),
+        birthDate: formatDate(dataNascimento),
+        diagnostico,
+        observacoes: resumoClinico,
         condicao: 'Em avaliação',
         statusEmocional: 'Estável',
         melhoraPercentual: 0,

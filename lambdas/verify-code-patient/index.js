@@ -14,7 +14,8 @@ export const handler = async (event) => {
     return resp(400, { error: "Body inválido" });
   }
 
-  const { email, code } = body;
+  const { code } = body;
+  const email = body.email?.trim().toLowerCase();
   if (!email || !code) return resp(400, { error: "email e code são obrigatórios" });
 
   try {

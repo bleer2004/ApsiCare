@@ -11,7 +11,7 @@ export const handler = async (event) => {
   try {
     const clinicianId = event.pathParameters?.clinicianId;
     const body = JSON.parse(event.body);
-    const { name, email, phone, birthDate, diagnostico, observacoes } = body;
+    const { name, email, phone, birthDate, diagnostico, observacoes, configuracoesApp, configuracoesIA } = body;
 
     if (!clinicianId || !name || !email) {
       return response(400, { error: "Campos obrigatórios: name, email" });
@@ -64,6 +64,8 @@ export const handler = async (event) => {
       streakDays: 0,
       diagnostico: diagnostico || null,
       observacoes: observacoes || null,
+      configuracoesApp: configuracoesApp || null,
+      configuracoesIA: configuracoesIA || null,
       createdAt: now,
     };
 

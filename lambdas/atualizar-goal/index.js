@@ -9,11 +9,11 @@ export const handler = async (event) => {
   try {
     const patientId = event.pathParameters?.patientId;
     const goalId = event.pathParameters?.goalId;
-    const body = JSON.parse(event.body);
+    const body = JSON.parse(event.body || "{}");
     const { status, progresso } = body;
 
-    if (!patientId || !goalId) {
-      return response(400, { error: "patientId e goalId são obrigatórios" });
+    if (!patientId || !goalId || !status) {
+      return response(400, { error: "patientId, goalId e status são obrigatórios" });
     }
 
     await dynamo.send(new UpdateCommand({

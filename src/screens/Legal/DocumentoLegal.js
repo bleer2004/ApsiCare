@@ -86,7 +86,7 @@ const DocumentoLegal = ({ navigation, route }) => {
 
       <View style={styles.headerBlur}>
         <View style={styles.headerContent}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.reset({ index: 0, routes: [{ name: 'AmbienteTeste' }] }))} style={styles.backButton}>
             <Icon name="arrow-left" size={24} color="#475569" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{doc.titulo}</Text>

@@ -47,6 +47,11 @@ const LoginPaciente = ({ navigation }) => {
         Alert.alert('Erro', data.error || 'Email ou senha incorretos');
         return;
       }
+      if (data.user?.mustChangePassword) {
+        Alert.alert('Primeiro acesso', 'Antes de entrar, crie sua senha pessoal e aceite os termos de uso.');
+        navigation.replace('RecuperarSenhaPaciente', { email: email.trim(), primeiroAcesso: true });
+        return;
+      }
       await AsyncStorage.setItem('token', data.token);
       await AsyncStorage.setItem('user', JSON.stringify(data.user));
       await sincronizarComBackend();

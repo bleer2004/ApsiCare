@@ -35,6 +35,10 @@ export const handler = async (event) => {
 
     const patient = patientResult.Item;
 
+    if (!patient.mustChangePassword || !patient.tempPassword) {
+      return response(409, { error: "Este paciente já criou a própria senha. Peça para ele usar \"Esqueci minha senha\" no app." });
+    }
+
     // Busca nome do psicólogo
     const clinicianResult = await dynamo.send(new GetCommand({
       TableName: TABLE_NAME,

@@ -101,6 +101,7 @@ const DashboardPaciente = ({ navigation, route }) => {
     carregarContatoEmergencia();
     carregarDadosDiarios();
     carregarAnotacoes();
+    carregarLembretes();
   }, []);
 
   const carregarAnotacoes = async () => {
@@ -112,10 +113,10 @@ const DashboardPaciente = ({ navigation, route }) => {
       const data = await response.json();
       if (response.ok) {
         const lista = (data.moods || [])
-          .filter(m => m.diaryText)
+          .filter(m => m.diaryText && m.sharedWithPsychologist)
           .map(m => ({
             id: m.id,
-            titulo: `Se sentindo ${m.contextTags?.[0] || 'neutro'}`,
+            titulo: `Se sentindo ${m.contextTags?.[0] === 'neutral' ? 'neutro' : (m.contextTags?.[0] || 'neutro')}`,
             texto: m.diaryText,
             data: parseTimestampUTC(m.timestamp).toLocaleDateString('pt-BR'),
             analise: '',
@@ -137,6 +138,7 @@ const DashboardPaciente = ({ navigation, route }) => {
 
   // Carregar dados do paciente para edição
   const carregarDadosPacienteParaEdicao = async () => {
+    setEditLoading(true);
     try {
       const token = await AsyncStorage.getItem('token');
       const response = await fetch(`${API_URL}/clinicians/patients/${paciente.id}`, {
@@ -152,9 +154,16 @@ const DashboardPaciente = ({ navigation, route }) => {
         setEditDataNascimento(data.birthDate ? formatDate(data.birthDate) : '');
         setEditDiagnostico(data.diagnostico || '');
         setEditObservacoes(data.observacoes || '');
+      } else {
+        Alert.alert('Erro', 'Não foi possível carregar os dados do paciente.');
+        setModalEditarPacienteVisible(false);
       }
     } catch (err) {
       console.error('Erro ao carregar dados do paciente:', err);
+      Alert.alert('Erro', 'Não foi possível carregar os dados do paciente.');
+      setModalEditarPacienteVisible(false);
+    } finally {
+      setEditLoading(false);
     }
   };
 
@@ -183,8 +192,8 @@ const DashboardPaciente = ({ navigation, route }) => {
   };
 
   const handleSalvarEdicaoPaciente = async () => {
-    if (!editNome) {
-      Alert.alert('Erro', 'O nome é obrigatório');
+    if (!editNome.trim() || !editEmail.trim()) {
+      Alert.alert('Erro', 'Nome e e-mail são obrigatórios');
       return;
     }
     setEditLoading(true);
@@ -219,8 +228,9 @@ const DashboardPaciente = ({ navigation, route }) => {
         email: editEmail.trim(),
         phone: editTelefone.replace(/\D/g, ''),
         birthDate: editDataNascimento ? formatDateToAPI(editDataNascimento) : null,
-        diagnosticoPrincipal: editDiagnostico || paciente.diagnosticoPrincipal,
-        observacoes: editObservacoes || paciente.observacoes,
+        diagnostico: editDiagnostico,
+        diagnosticoPrincipal: editDiagnostico || 'Aguardando diagnóstico',
+        observacoes: editObservacoes,
       });
 
       Alert.alert('Sucesso', 'Dados do paciente atualizados!');
@@ -230,6 +240,43 @@ const DashboardPaciente = ({ navigation, route }) => {
     } finally {
       setEditLoading(false);
     }
+  };
+
+  const handleExcluirPaciente = () => {
+    Alert.alert(
+      'Excluir paciente',
+      `Isso apaga permanentemente o acesso de ${paciente.nome} e TODOS os dados dele (diário, insights, batimentos, documentos). Não é possível desfazer.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Excluir',
+          style: 'destructive',
+          onPress: async () => {
+            setEditLoading(true);
+            try {
+              const token = await AsyncStorage.getItem('token');
+              const user = JSON.parse((await AsyncStorage.getItem('user')) || '{}');
+              const res = await fetch(`${API_URL}/clinicians/${user.id}/patients/${paciente.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                Alert.alert('Erro', data.error || `Status ${res.status}`);
+                return;
+              }
+              setModalEditarPacienteVisible(false);
+              Alert.alert('Paciente excluído', 'O paciente e todos os dados foram excluídos.');
+              navigation.goBack();
+            } catch {
+              Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+            } finally {
+              setEditLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   // ── METAS ────────────────────────────────────────────────
@@ -501,7 +548,7 @@ const DashboardPaciente = ({ navigation, route }) => {
       const response = await fetch(`${API_URL}/patients/${paciente.id}/emergency-contact`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ nome: nomeContato, telefone: telefoneContato, relacao: relacaoContato }),
+        body: JSON.stringify({ contactId: contatoEmergencia?.contactId, nome: nomeContato, telefone: telefoneContato, relacao: relacaoContato }),
       });
       const data = await response.json();
       if (response.ok) {
@@ -530,28 +577,80 @@ const carregarDadosDiarios = async () => {
 };
 
   // ── LEMBRETES ────────────────────────────────────────────
-  const handleAdicionarLembrete = () => {
-    if (!novoLembrete.trim()) { Alert.alert('Erro', 'Digite um lembrete válido'); return; }
-    setLembretesList([{ id: String(Date.now()), texto: novoLembrete, dia: lembreteDia, enviado: false }, ...lembretesList]);
-    setNovoLembrete(''); setLembreteDia('segunda'); setModalLembreteVisible(false);
-    Alert.alert('Sucesso', 'Lembrete adicionado!');
+  const lembretesUrl = () => `${API_URL}/patients/${paciente.id}/lembretes`;
+
+  const carregarLembretes = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(lembretesUrl(), { headers: { Authorization: `Bearer ${token}` } });
+      const data = await res.json();
+      if (res.ok) setLembretesList(data.lembretes || []);
+    } catch (err) { console.error('Erro lembretes:', err); }
   };
+
+  const handleAdicionarLembrete = async () => {
+    if (!novoLembrete.trim()) { Alert.alert('Erro', 'Digite um lembrete válido'); return; }
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(lembretesUrl(), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ texto: novoLembrete.trim(), dia: lembreteDia }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Erro', data.error || 'Não foi possível salvar o lembrete'); return; }
+      setLembretesList([data.lembrete, ...lembretesList]);
+      setNovoLembrete(''); setLembreteDia('segunda'); setModalLembreteVisible(false);
+    } catch { Alert.alert('Erro', 'Não foi possível conectar ao servidor'); }
+  };
+
   const handleRemoverLembrete = (id) => {
     Alert.alert('Remover lembrete', 'Tem certeza?', [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: () => setLembretesList(lembretesList.filter(l => l.id !== id)) }
+      { text: 'Remover', style: 'destructive', onPress: async () => {
+        try {
+          const token = await AsyncStorage.getItem('token');
+          const res = await fetch(`${lembretesUrl()}/${id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+          if (!res.ok) throw new Error();
+          setLembretesList(lista => lista.filter(l => l.id !== id));
+        } catch { Alert.alert('Erro', 'Não foi possível remover o lembrete'); }
+      } }
     ]);
   };
+
+  const enviarLembretes = async (ids) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${lembretesUrl()}/enviar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ lembreteIds: ids }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { Alert.alert('Erro', data.error || 'Não foi possível enviar'); return; }
+      setLembretesList(lista => lista.map(l => ids.includes(l.id) ? { ...l, enviado: true } : l));
+      Alert.alert(
+        'Enviado!',
+        data.pushSent
+          ? 'O paciente recebeu uma notificação no celular.'
+          : 'Salvo no app do paciente. Ele não recebeu push (notificações desativadas ou ainda não fez login num celular).'
+      );
+    } catch { Alert.alert('Erro', 'Não foi possível conectar ao servidor'); }
+  };
+
   const handleEnviarLembrete = (lembrete) => {
     Alert.alert('Enviar lembrete', `Enviar "${lembrete.texto}" para o paciente?`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Enviar', onPress: () => { setLembretesList(lembretesList.map(l => l.id === lembrete.id ? { ...l, enviado: true } : l)); Alert.alert('Enviado!'); } }
+      { text: 'Enviar', onPress: () => enviarLembretes([lembrete.id]) }
     ]);
   };
+
   const handleEnviarLembretesSemanais = () => {
-    Alert.alert('Enviar todos?', '', [
+    const pendentes = lembretesList.filter(l => !l.enviado).map(l => l.id);
+    if (pendentes.length === 0) { Alert.alert('Nada a enviar', 'Todos os lembretes já foram enviados.'); return; }
+    Alert.alert('Enviar todos?', `${pendentes.length} lembrete(s) serão enviados numa única notificação.`, [
       { text: 'Cancelar', style: 'cancel' },
-      { text: 'Enviar', onPress: () => { setLembretesList(lembretesList.map(l => ({ ...l, enviado: true }))); Alert.alert('Enviado!'); } }
+      { text: 'Enviar', onPress: () => enviarLembretes(pendentes) }
     ]);
   };
 
@@ -1123,6 +1222,11 @@ const handleRemoverArquivo = (id, nome) => {
             <TouchableOpacity style={styles.modalButton} onPress={handleSalvarEdicaoPaciente} disabled={editLoading}>
               {editLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.modalButtonText}>Salvar Alterações</Text>}
             </TouchableOpacity>
+
+            <TouchableOpacity style={styles.excluirPacienteButton} onPress={handleExcluirPaciente} disabled={editLoading}>
+              <Icon name="trash-2" size={16} color="#EF4444" />
+              <Text style={styles.excluirPacienteText}>Excluir paciente e todos os dados</Text>
+            </TouchableOpacity>
           </ScrollView>
         </View></View>
       </Modal>
@@ -1132,6 +1236,8 @@ const handleRemoverArquivo = (id, nome) => {
 
 // Estilos
 const styles = StyleSheet.create({
+  excluirPacienteButton: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: 8 },
+  excluirPacienteText: { color: '#EF4444', fontSize: 14, fontWeight: '600' },
   container: { flex: 1, backgroundColor: '#F6F6F8' },
   scrollView: { flex: 1 },
   scrollContent: { paddingBottom: 40 },

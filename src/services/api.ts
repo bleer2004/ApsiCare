@@ -4,7 +4,24 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const API_URL = 'https://2ube699efh.execute-api.sa-east-1.amazonaws.com';
-export const GROQ_API_KEY = process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '';
+
+export async function logout(userType: 'patient' | 'clinician') {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const userStr = await AsyncStorage.getItem('user');
+    const user = userStr ? JSON.parse(userStr) : null;
+    if (user) {
+      await fetch(`${API_URL}/push-token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ userId: user.id, userType, pushToken: null }),
+      });
+    }
+  } catch (err) {
+    console.error('logout: falha ao remover push token:', err);
+  }
+  await AsyncStorage.clear();
+}
 
 export async function registerForPushNotificationsAsync(userType: 'patient' | 'clinician') {
   try {

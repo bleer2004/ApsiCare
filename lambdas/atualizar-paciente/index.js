@@ -26,7 +26,8 @@ export const handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const { name, email, phone, birthDate, diagnostico, observacoes } = body;
 
-    const fields = { name, email, phone, birthDate, diagnostico, observacoes };
+    const naoVazio = (v) => (typeof v === "string" && v.trim() ? v : undefined);
+    const fields = { name: naoVazio(name), email: naoVazio(email), phone, birthDate, diagnostico, observacoes };
 
     let setActions = ["#updatedAt = :updatedAt"];
     const exprNames = { "#updatedAt": "updatedAt" };

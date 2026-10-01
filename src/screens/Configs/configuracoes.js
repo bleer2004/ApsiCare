@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Platform } from 'react-native'; 
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../services/api';
+import { API_URL, logout } from '../../services/api';
+import Constants from 'expo-constants';
 import Icon from 'react-native-vector-icons/Feather';
 
 import {
@@ -74,6 +75,55 @@ const Configuracoes = ({ navigation }) => {
 
   const [clinicianId, setClinicianId] = useState(null);
 
+  const [modalExcluirVisible, setModalExcluirVisible] = useState(false);
+  const [senhaExclusao, setSenhaExclusao] = useState('');
+  const [excluindoConta, setExcluindoConta] = useState(false);
+
+  const handleExcluirConta = async () => {
+    if (!senhaExclusao) {
+      Alert.alert('Atenção', 'Digite sua senha para confirmar.');
+      return;
+    }
+    setExcluindoConta(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/clinicians/${clinicianId}/excluir-conta`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ password: senhaExclusao }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        Alert.alert('Não foi possível excluir', data.error || `Status ${res.status}`);
+        return;
+      }
+      setModalExcluirVisible(false);
+      await AsyncStorage.clear();
+      Alert.alert('Conta excluída', 'Sua conta foi excluída com sucesso.');
+      navigation.reset({ index: 0, routes: [{ name: 'LoginSignedUp' }] });
+    } catch {
+      Alert.alert('Erro', 'Não foi possível conectar ao servidor.');
+    } finally {
+      setExcluindoConta(false);
+    }
+  };
+
+  const handleToggleNotificacoes = async (valor) => {
+    setNotificacoes(valor);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/clinicians/${clinicianId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ notificationsEnabled: valor }),
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+    } catch (err) {
+      setNotificacoes(!valor);
+      Alert.alert('Erro', 'Não foi possível salvar a preferência de notificações.');
+    }
+  };
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -105,7 +155,7 @@ const Configuracoes = ({ navigation }) => {
         
         setEmail(d.email || '');
         setTelefone(formatTelefone(d.phone || ''));
-        setCelular(formatTelefone(d.phone || ''));
+        setCelular(formatTelefone(d.cellphone || d.phone || ''));
         setRegistroProfissional(d.councilId || '');
         setProfissao(d.profession || '');
         setEspecialidade(d.especialidade || '');
@@ -494,7 +544,7 @@ const Configuracoes = ({ navigation }) => {
             </View>
             <Switch
               value={notificacoes}
-              onValueChange={setNotificacoes}
+              onValueChange={handleToggleNotificacoes}
               trackColor={{ false: '#E2E8F0', true: '#B367D4' }}
               thumbColor="#FFFFFF"
             />
@@ -518,7 +568,7 @@ const Configuracoes = ({ navigation }) => {
 
           <View style={styles.preferenceItem}>
             <View style={styles.preferenceInfo}>
-              <Icon name="fingerprint" size={20} color="#B367D4" />
+              <Icon name="shield" size={20} color="#B367D4" />
               <View style={styles.preferenceTextContainer}>
                 <Text style={styles.preferenceLabel}>Login com Biometria</Text>
                 <Text style={styles.preferenceDescription}>Acessar usando impressão digital</Text>
@@ -596,15 +646,15 @@ const Configuracoes = ({ navigation }) => {
           <TouchableOpacity 
             style={styles.logoutButton}
             onPress={async () => {
-              await AsyncStorage.clear();
-              navigation.replace('LoginSignedUp');
+              await logout('clinician');
+              navigation.reset({ index: 0, routes: [{ name: 'LoginSignedUp' }] });
             }}
           >
             <Icon name="log-out" size={20} color="#EF4444" />
             <Text style={styles.logoutText}>Sair da conta</Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.deleteButton}>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => { setSenhaExclusao(''); setModalExcluirVisible(true); }}>
             <Icon name="trash-2" size={20} color="#EF4444" />
             <Text style={styles.deleteText}>Excluir conta</Text>
           </TouchableOpacity>
@@ -612,12 +662,38 @@ const Configuracoes = ({ navigation }) => {
 
         {/* Versão do App */}
         <View style={styles.versionContainer}>
-          <Text style={styles.versionText}>Versão 1.0.0</Text>
+          <Text style={styles.versionText}>Versão {Constants.expoConfig?.version || '1.0.0'}</Text>
           <Text style={styles.copyrightText}>© 2026 ApsiCare - Todos os direitos reservados</Text>
         </View>
       </ScrollView>
 
       {/* Modais */}
+      <Modal visible={modalExcluirVisible} transparent animationType="fade" onRequestClose={() => setModalExcluirVisible(false)}>
+        <View style={styles.excluirOverlay}>
+          <View style={styles.excluirContainer}>
+            <Icon name="alert-triangle" size={32} color="#EF4444" />
+            <Text style={styles.excluirTitulo}>Excluir conta</Text>
+            <Text style={styles.excluirTexto}>
+              Esta ação é permanente e apaga seu perfil e suas notificações. Só é possível excluir a conta depois de excluir todos os seus pacientes. Digite sua senha para confirmar.
+            </Text>
+            <TextInput
+              style={styles.excluirInput}
+              placeholder="Sua senha"
+              placeholderTextColor="#94A3B8"
+              secureTextEntry
+              value={senhaExclusao}
+              onChangeText={setSenhaExclusao}
+            />
+            <TouchableOpacity style={styles.excluirConfirmar} onPress={handleExcluirConta} disabled={excluindoConta}>
+              {excluindoConta ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.excluirConfirmarTexto}>Excluir definitivamente</Text>}
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setModalExcluirVisible(false)} disabled={excluindoConta}>
+              <Text style={styles.excluirCancelar}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <Modal
         visible={showProfissaoModal}
         transparent={true}
@@ -894,8 +970,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '400',
     color: '#0F172A',
-    paddingVertical: 14,
+    height: '100%',
+    paddingVertical: 0,
     paddingHorizontal: 0,
+    textAlignVertical: 'center',
   },
   placeholderText: {
     color: '#94A3B8',
@@ -950,6 +1028,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#EF4444',
   },
+  excluirOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.6)', justifyContent: 'center', alignItems: 'center', padding: 24 },
+  excluirContainer: { width: '100%', maxWidth: 400, backgroundColor: '#FFFFFF', borderRadius: 20, padding: 24, alignItems: 'center', gap: 12 },
+  excluirTitulo: { fontSize: 18, fontFamily: 'Manrope', fontWeight: '700', color: '#0F172A' },
+  excluirTexto: { fontSize: 14, fontFamily: 'Manrope', color: '#64748B', textAlign: 'center', lineHeight: 20 },
+  excluirInput: { width: '100%', height: 52, borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 16, paddingVertical: 0, fontSize: 16, color: '#0F172A' },
+  excluirConfirmar: { width: '100%', backgroundColor: '#EF4444', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
+  excluirConfirmarTexto: { color: '#FFFFFF', fontSize: 16, fontFamily: 'Manrope', fontWeight: '700' },
+  excluirCancelar: { color: '#64748B', fontSize: 14, fontFamily: 'Manrope', fontWeight: '600', paddingVertical: 4 },
   deleteButton: {
     flexDirection: 'row',
     alignItems: 'center',

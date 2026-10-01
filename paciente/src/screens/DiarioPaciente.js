@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL, GROQ_API_KEY } from '../../../src/services/api';
+import { API_URL } from '../../../src/services/api';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView,
   StatusBar, ScrollView, Alert, Modal, ActivityIndicator, Platform,
@@ -58,7 +58,7 @@ const DiarioPaciente = ({ navigation }) => {
     { id: 'calmo', label: 'Calmo', color: '#E0F2F1', iconColor: '#0D9488', emoji: '😌', valence: 7, arousal: 3 },
     { id: 'ansioso', label: 'Ansioso', color: '#F3E5F5', iconColor: '#9333EA', emoji: '😰', valence: 3, arousal: 8 },
     { id: 'triste', label: 'Triste', color: '#FCE4EC', iconColor: '#DB2777', emoji: '😢', valence: 2, arousal: 2 },
-    { id: 'neutral', label: 'Neutro', color: '#F1F5F9', iconColor: '#64748B', emoji: '😐', valence: 5, arousal: 5 },
+    { id: 'neutro', label: 'Neutro', color: '#F1F5F9', iconColor: '#64748B', emoji: '😐', valence: 5, arousal: 5 },
   ];
 
   useEffect(() => {
@@ -113,8 +113,8 @@ const DiarioPaciente = ({ navigation }) => {
           .filter(m => m.diaryText)
           .map((m, i) => ({
             id: String(i),
-            humor: m.contextTags?.[0] || 'neutro',
-            titulo: `Se sentindo ${m.contextTags?.[0] || 'neutro'}`,
+            humor: m.contextTags?.[0] === 'neutral' ? 'neutro' : (m.contextTags?.[0] || 'neutro'),
+            titulo: `Se sentindo ${m.contextTags?.[0] === 'neutral' ? 'neutro' : (m.contextTags?.[0] || 'neutro')}`,
             texto: m.diaryText || '',
             humorNota: m.moodScore || 5,
             impactoNota: m.impactScore || 3,
@@ -163,21 +163,25 @@ const DiarioPaciente = ({ navigation }) => {
       const uri = recordingRef.current.getURI();
       recordingRef.current = null;
 
-      const formData = new FormData();
-      formData.append('file', { uri, type: 'audio/m4a', name: 'recording.m4a' });
-      formData.append('model', 'whisper-large-v3-turbo');
-      formData.append('language', 'pt');
-
-      const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${GROQ_API_KEY}` },
-        body: formData,
+      const blob = await (await fetch(uri)).blob();
+      const audioBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
       });
-      const data = await res.json();
+
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/transcrever-voz`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ audio_base64: audioBase64, mimeType: 'audio/m4a' }),
+      });
+      const data = await res.json().catch(() => ({}));
       if (res.ok && data.text) {
         setAnotacao(prev => prev ? `${prev} ${data.text}` : data.text);
       } else {
-        Alert.alert('Erro na transcrição', data.error?.message || `Status ${res.status}`);
+        Alert.alert('Erro na transcrição', data.error || `Status ${res.status}`);
       }
     } catch (e) {
       console.error('[transcrever] erro geral:', e?.message);
@@ -242,6 +246,10 @@ const DiarioPaciente = ({ navigation }) => {
       Alert.alert('Atenção', 'Selecione como você está se sentindo');
       return;
     }
+    if (!anotacao.trim()) {
+      Alert.alert('Atenção', 'Escreva algo nas anotações antes de enviar');
+      return;
+    }
 
     setLoading(true);
     try {
@@ -266,6 +274,12 @@ const DiarioPaciente = ({ navigation }) => {
       });
 
       if (response.ok) {
+        const { timestamp } = await response.json();
+        await fetch(`${API_URL}/patients/${user.id}/moods/${timestamp}/share`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ sharedWithPsychologist: true }),
+        }).catch(() => {});
         setSelectedMood(null);
         setAnotacao('');
         setHumorNota(5);
@@ -273,6 +287,9 @@ const DiarioPaciente = ({ navigation }) => {
         setContexto('');
         Alert.alert('Sucesso', 'Anotação salva e compartilhada com seu psicólogo!');
         await carregarHistorico();
+      } else {
+        const errData = await response.json().catch(() => ({}));
+        Alert.alert('Erro', errData.error || `Status ${response.status}`);
       }
     } catch (err) {
       Alert.alert('Erro', 'Não foi possível salvar a anotação');
@@ -537,8 +554,7 @@ const DiarioPaciente = ({ navigation }) => {
             <TouchableOpacity
               style={[
                 styles.voiceButton,
-                gravando && { backgroundColor: adaptarCor('#EF4444') },
-                { backgroundColor: colors.primary }
+                { backgroundColor: gravando ? adaptarCor('#EF4444') : colors.primary }
               ]}
               onPress={gravando ? pararGravacaoETranscrever : iniciarGravacao}
               disabled={transcrevendo}
@@ -667,7 +683,7 @@ const DiarioPaciente = ({ navigation }) => {
                 <View style={styles.cardBadges}>
                   <View style={[styles.cardBadge, { backgroundColor: baixaVisao ? colors.cardBackground : '#F8FAFC' }]}>
                     <Icon name="star" {...getIconProps('star', 'small', '#F59E0B')} />
-                    <Text style={[styles.cardBadgeText, getTextStyle('small', colors.textSecondary)]}>Humor: {item.humorNota || 5}/10</Text>
+                    <Text style={[styles.cardBadgeText, getTextStyle('small', colors.textSecondary)]}>Humor: {item.humorNota || 5}/9</Text>
                   </View>
                   <View style={[styles.cardBadge, { backgroundColor: baixaVisao ? colors.cardBackground : '#F8FAFC' }]}>
                     <Icon name="activity" {...getIconProps('activity', 'small', '#10B981')} />
@@ -682,7 +698,7 @@ const DiarioPaciente = ({ navigation }) => {
                 </View>
                 
                 {item.texto && (
-                  <Text style={[styles.cardText, getTextStyle('medium', colors.textSecondary), { numberOfLines: 2 }]}>{item.texto}</Text>
+                  <Text numberOfLines={2} style={[styles.cardText, getTextStyle('medium', colors.textSecondary)]}>{item.texto}</Text>
                 )}
               </TouchableOpacity>
             ))
@@ -718,7 +734,7 @@ const DiarioPaciente = ({ navigation }) => {
                 <View style={[styles.modalBadges, { borderBottomColor: colors.border }]}>
                   <View style={styles.modalBadge}>
                     <Text style={[styles.modalBadgeLabel, getTextStyle('small', colors.textMuted)]}>😊 Humor</Text>
-                    <Text style={[styles.modalBadgeValue, getTextStyle('large', colors.text, '700')]}>{selectedAnotacao.humorNota || 5}/10</Text>
+                    <Text style={[styles.modalBadgeValue, getTextStyle('large', colors.text, '700')]}>{selectedAnotacao.humorNota || 5}/9</Text>
                   </View>
                   <View style={styles.modalBadge}>
                     <Text style={[styles.modalBadgeLabel, getTextStyle('small', colors.textMuted)]}>⚡ Impacto</Text>

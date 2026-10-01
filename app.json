@@ -1,7 +1,10 @@
 {
   "expo": {
-    "name": "Apsicare",
+    "name": "ApsiCare",
     "slug": "apsicare",
+    "version": "1.0.0",
+    "scheme": "apsicare",
+    "icon": "./assets/icon.png",
     "newArchEnabled": false,
     "ios": {
       "bundleIdentifier": "com.vewadie.apsicare",
@@ -16,9 +19,30 @@
         "android.permission.health.READ_HEART_RATE",
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
+      ],
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#B367D4"
+      },
+      "allowBackup": false,
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "com.google.android.gms.permission.AD_ID"
       ]
     },
     "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F6F8"
+        }
+      ],
       "@react-native-community/datetimepicker",
       "react-native-health-connect",
       "./plugins/withHealthConnectMainActivity",
@@ -30,7 +54,8 @@
             "minSdkVersion": 26
           }
         }
-      ]
+      ],
+      "./plugins/withReleaseSigning"
     ],
     "owner": "ve_wadie",
     "extra": {

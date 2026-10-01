@@ -1,6 +1,6 @@
 # Termos de Uso do ApsiCare
 
-**Última atualização:** 10/09/2026
+**Última atualização:** 01/10/2026
 
 Estes Termos de Uso ("Termos") regulam o acesso e uso do aplicativo **ApsiCare** ("Aplicativo", "App", "Serviço"), disponível para os perfis de **Paciente** e **Psicólogo/Clínico**. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a [Política de Privacidade](./politica-de-privacidade.md).
 
@@ -14,7 +14,7 @@ Se você não concordar com qualquer parte destes Termos, não utilize o Aplicat
 
 1.1. O uso do ApsiCare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.
 
-1.2. Menores de 18 anos só podem usar o Aplicativo com autorização e supervisão de responsável legal, e sempre vinculados a um psicólogo responsável cadastrado na plataforma.
+1.2. O Aplicativo é destinado exclusivamente a maiores de 18 anos.
 
 1.3. O cadastro de pacientes é feito por convite de um psicólogo já cadastrado no sistema. Ao aceitar esse convite e criar sua conta, o paciente concorda com estes Termos.
 
@@ -51,7 +51,7 @@ Você pode registrar como está se sentindo por meio de texto, emojis/slider de 
 **Importante:** o texto que você escreve ou grava no Diário é enviado a serviços de inteligência artificial de terceiros para gerar os *insights* de estresse/sentimento:
 
 - **OpenRouter** (modelo Llama 3.1), para análise de sentimento e estresse a partir do texto;
-- **HuggingFace/Whisper**, para transcrição de áudio em texto, quando você usa a função de gravação de voz.
+- **Groq/Whisper**, para transcrição de áudio em texto, quando você usa a função de gravação de voz.
 
 Esses provedores podem estar localizados fora do Brasil, o que caracteriza **transferência internacional de dados**, nos termos do art. 33 da Lei Geral de Proteção de Dados (LGPD). Buscamos usar, quando disponível, configurações de retenção zero de dados ("Zero Data Retention") junto a esses provedores, mas não temos controle total sobre a infraestrutura de terceiros.
 
@@ -118,7 +118,7 @@ O tratamento de dados pessoais e dados sensíveis (incluindo dados de saúde) é
 
 ## 12. Suspensão e Encerramento de Conta
 
-12.1. Você pode solicitar a exclusão da sua conta e dos seus dados a qualquer momento, pelo contato indicado na Seção 14.
+12.1. O psicólogo pode excluir a própria conta em Configurações → Excluir conta (depois de excluir seus pacientes). O paciente pode pedir a exclusão em Meus dados → Solicitar exclusão dos meus dados, e o psicólogo responsável faz a exclusão de todos os dados. Também é possível pedir pelo contato da Seção 14. Pedidos são atendidos em até 30 dias.
 
 12.2. Podemos suspender ou encerrar contas que violem estes Termos, sem prejuízo de outras medidas cabíveis.
 

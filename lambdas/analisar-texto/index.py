@@ -157,7 +157,7 @@ def handler(event, context):
         else:
             body = event
 
-        diary_text = body.get("diaryText", "").strip()
+        diary_text = (body.get("diaryText") or "").strip()
         if not diary_text:
             return _resp(400, {"error": "diaryText é obrigatório"})
 

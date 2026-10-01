@@ -21,7 +21,7 @@ export const handler = async (event) => {
     return resp(400, { error: "nome e telefone são obrigatórios" });
   }
 
-  const contactId = uuidv4();
+  const contactId = body.contactId || uuidv4();
 
   try {
     await dynamo.send(new PutCommand({

@@ -577,8 +577,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Manrope',
     fontWeight: '400',
     color: '#0F172A',
-    paddingVertical: 14,
+    height: '100%',
+    paddingVertical: 0,
     paddingHorizontal: 0,
+    textAlignVertical: 'center',
   },
   button: {
     backgroundColor: 'rgba(179, 103, 212, 0.84)',

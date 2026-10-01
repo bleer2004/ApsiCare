@@ -10,7 +10,7 @@ import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
-const HomePaciente = ({ navigation }) => {
+const HomePaciente = ({ navigation, route }) => {
   const screenWidth = Dimensions.get('window').width;
   const [selectedMood, setSelectedMood] = useState(null);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
@@ -41,13 +41,57 @@ const HomePaciente = ({ navigation }) => {
     { id: 'neutro', label: 'Neutro', color: '#F1F5F9', iconColor: '#64748B', icon: 'meh', valence: 5, arousal: 5 },
   ];
 
-  const [notificacoes, setNotificacoes] = useState([
-    { id: '1', titulo: 'Bem-vindo ao ApsiCare!', mensagem: 'Registre seu humor diariamente para acompanhar seu progresso.', data: 'Hoje', lida: false, icon: 'heart' },
-  ]);
+  const boasVindas = { id: 'boas-vindas', titulo: 'Bem-vindo ao ApsiCare!', mensagem: 'Registre seu humor diariamente para acompanhar seu progresso.', data: 'Hoje', lida: true, icon: 'heart', local: true };
+  const [notificacoes, setNotificacoes] = useState([boasVindas]);
 
   useEffect(() => {
-    carregarDados();
-  }, []);
+    const unsubscribe = navigation.addListener('focus', carregarDados);
+    return unsubscribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    if (route?.params?.abrirNotificacoes) {
+      setNotificationsVisible(true);
+      navigation.setParams({ abrirNotificacoes: undefined });
+    }
+  }, [route?.params?.abrirNotificacoes]);
+
+  const carregarNotificacoes = async (patientId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const res = await fetch(`${API_URL}/patients/${patientId}/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) return;
+      const lista = (data.notifications || []).map(n => ({
+        id: n.id,
+        titulo: n.title,
+        mensagem: n.body,
+        data: new Date(n.createdAt?.endsWith('Z') ? n.createdAt : `${n.createdAt}Z`).toLocaleDateString('pt-BR'),
+        lida: n.isRead,
+        icon: n.category === 'lembrete' ? 'bell' : 'info',
+      }));
+      setNotificacoes(lista.length > 0 ? lista : [boasVindas]);
+    } catch (err) {
+      console.error('Erro notificações:', err);
+    }
+  };
+
+  const marcarComoLida = async (item) => {
+    if (item.lida) return;
+    setNotificacoes(lista => lista.map(n => n.id === item.id ? { ...n, lida: true } : n));
+    if (item.local || !paciente?.id) return;
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await fetch(`${API_URL}/patients/${paciente.id}/notifications/${encodeURIComponent(item.id)}/read`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (err) {
+      console.error('Erro ao marcar notificação:', err);
+    }
+  };
 
   const carregarDados = async () => {
     try {
@@ -55,6 +99,7 @@ const HomePaciente = ({ navigation }) => {
       if (userStr) {
         const user = JSON.parse(userStr);
         setPaciente(user);
+        carregarNotificacoes(user.id);
         await carregarMoods(user.id);
       }
     } catch (err) {
@@ -111,9 +156,9 @@ const HomePaciente = ({ navigation }) => {
   const moodHistorySlice = moodHistory.length >= 2 ? moodHistory.slice(0, 7).reverse() : [];
   const chartData = {
     labels: moodHistorySlice.length >= 2
-      ? moodHistorySlice.map((_, i) => {
-          const dias = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
-          return dias[i] || '';
+      ? moodHistorySlice.map(m => {
+          const data = new Date(m.timestamp);
+          return isNaN(data) ? '' : ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
         })
       : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
     datasets: [{
@@ -140,7 +185,7 @@ const HomePaciente = ({ navigation }) => {
           borderLeftColor: !item.lida ? colors.primary : colors.border,
         }
       ]}
-      onPress={() => setNotificacoes(notificacoes.map(n => n.id === item.id ? { ...n, lida: true } : n))}
+      onPress={() => marcarComoLida(item)}
     >
       <View style={[styles.notificacaoIcon, { backgroundColor: colors.border }]}>
         <Icon name={item.icon} {...getIconProps(item.icon, 'medium', !item.lida ? colors.primary : colors.textMuted)} />

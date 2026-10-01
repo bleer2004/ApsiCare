@@ -14,7 +14,7 @@ export const handler = async (event) => {
 
     // ── DELETE /patients/{patientId}/insights/{timestamp} ──
     if (method === "DELETE") {
-      const timestamp = event.pathParameters?.timestamp;
+      const timestamp = decodeURIComponent(event.pathParameters?.timestamp || "");
       if (!timestamp) return response(400, { error: "timestamp é obrigatório" });
 
       await dynamo.send(new DeleteCommand({

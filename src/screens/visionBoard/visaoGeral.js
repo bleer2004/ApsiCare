@@ -22,9 +22,10 @@ const VisaoGeral = ({ navigation }) => {
   const [notificacoes, setNotificacoes] = useState([]);
 
   useEffect(() => {
-    carregarDados();
-    carregarNotificacoes();
-    const unsubscribe = navigation.addListener('focus', carregarNotificacoes);
+    const unsubscribe = navigation.addListener('focus', () => {
+      carregarDados();
+      carregarNotificacoes();
+    });
     return unsubscribe;
   }, []);
 

@@ -173,3 +173,29 @@ Docs em `docs/termos-de-uso.md`, `docs/politica-de-privacidade.md`, conteúdo no
 
 - **Texto invisível ao digitar (Android):** `TextInput` com `paddingVertical` dentro de wrapper de altura fixa (56) deixava menos espaço que uma linha; com foco o Android rola o texto pra fora. Padrão correto: wrapper define a altura, input com `height: '100%'`, `paddingVertical: 0`, `textAlignVertical: 'center'`. Corrigido em `loginSignedUp/index.js`, `LoginPaciente.js`, `RecuperarSenhaPaciente.js`. Ainda podem ter o mesmo problema: `recuperarSenha.js`, `cadastro.js`, `configuracoes.js`, `pacientes.js`.
 - **Acessibilidade "vazando" entre logins:** `AccessibilityProvider` (em volta do app inteiro) só lia as configs ao abrir o app. Agora o logout (`perfilPaciente.js`) chama `limparConfiguracoesLocais()` e o `LoginPaciente` chama `sincronizarComBackend()` após login (busca `GET /patients/{id}/configuracoes`).
+
+## Publicação na Play Store (guia gerado 2026-09-30)
+
+Guia completo em `docs/publicacao-play-store.md`. Bloqueadores confirmados no código:
+- Sem exclusão de conta (botão "Excluir conta" em `src/screens/Configs/configuracoes.js` sem `onPress`, nada no paciente, sem lambda) — Play exige in-app + link web.
+- Política de privacidade sem URL pública.
+- ~~Transcrição direto do app pra Groq com chave no APK~~ — corrigido 2026-09-30: `lambdas/transcrever-voz/index.py` (Groq Whisper `whisper-large-v3-turbo`, env `GROQ_API_KEY`) recebe `{audio_base64, mimeType}` (m4a). A menção a HuggingFace na seção LLM acima está obsoleta. Trocar a chave Groq antiga (estava nos APKs).
+- Release ainda assinada com keystore debug; `expo prebuild` apaga ajustes manuais do gradle (guia propõe config plugin `withReleaseSigning`).
+- Desde 30/09/2026 aparelhos certificados no Brasil só instalam apps de desenvolvedor verificado — APK debug pode parar de instalar (risco pra banca).
+
+## Revisão completa 2026-09-30
+
+Lista de achados e status em `docs/revisao-2026-09-30.md` (manter atualizada). Senhas: todo hash é bcrypt custo 8; `login`/`atualizar-senha-clinician` ainda aceitam sha256 legado e o `login` migra pra bcrypt. Logout usa `logout(userType)` de `src/services/api.ts` (remove pushToken) + `navigation.reset`.
+Exclusão (2026-09-30): psicólogo só exclui a própria conta sem pacientes (`excluir-conta-clinician`, pede senha); psicólogo exclui paciente apagando TUDO do `PATIENT#<id>` + S3 + notificações + item link (`excluir-paciente`); paciente só *pede* exclusão (`solicitar-exclusao-paciente` → `NOTIFICATION#` `category: deletion_request`). Decisão da dona do projeto. Deploy pendente listado em `docs/revisao-2026-09-30.md`.
+Health Connect: amostras agregadas por minuto (`mapToHealthIngestSamples`) e leitura paginada; `gerar-insight` deduplica por `time_s` e só usa últimas 24h (pacientes reais). Datas de "hoje" em horário de Brasília (`BRASILIA`).
+Notificações do paciente (2026-09-30): `PATIENT#<id>`/`NOTIFICATION#<ts>` (`lambdas/notificacoes-paciente`), lembretes `PATIENT#<id>`/`LEMBRETE#<ts>#<uuid>` (`lambdas/lembretes-paciente`, envio manual gera push + notificação). App restaura sessão na tela inicial e abre a tela certa ao tocar no push (`src/services/sessao.js`). Paciente mock "Ana Clara" em `visaoGeral.js` é **intencional** (demo) — não remover.
+Deploy via AWS CloudShell (2026-09-30): `deploy-aws/deploy.sh` (`bash deploy.sh plan` / `apply`) — cria lambdas faltantes reaproveitando a role da `login`, atualiza código a partir de `zips/`, ajusta timeout/memória e cria rotas no HTTP API `2ube699efh`. Não há CLI local nem access keys (contas criadas pelo professor, sem IAM); CloudShell usa a sessão do console. Pacote pronto: `apsicare-deploy.zip` (script + `lambdas/zips/`).
+Deploy de 30/09 aplicado com sucesso (6 lambdas novas com tags obrigatórias do professor: environment=GRADUACAO, project=TCC, group=CIC404, creator=VERINAWADIE_23012668, owner=BOSSINI; role `aluno_23.01266-8_lambda_dynamodb`; 34 atualizadas; 10 rotas novas). **Lambda nova sempre precisa dessas tags.** Falta: APK novo e teste manual no celular.
+
+## Preparação Play Store — grupo 1 (2026-09-30/10-01)
+- `plugins/withReleaseSigning.js`: release assina com keystore de upload se `APSICARE_UPLOAD_*` existir em `~/.gradle/gradle.properties` (fora do repo); senão cai na debug.
+- `app.json`: nome ApsiCare, `version`/`versionCode` (subir `versionCode` a cada upload na Play), `scheme: apsicare`, ícone/adaptive/splash (`assets/`, provisórios até a dona mandar o logo), `allowBackup: false`, `blockedPermissions` (SYSTEM_ALERT_WINDOW, storage, AD_ID), `expo-splash-screen` instalado.
+- Link de política do Health Connect: `withHealthConnectMainActivity.js` troca a action por `apsicare://privacidade` → `ambienteTeste.js`/`App.js` abrem `DocumentoLegal`.
+- **CRLF quebra o prebuild** (regex do Expo não acham `package`/`class` com `\r`): criado `.gitattributes` com `eol=lf` para .kt/.java/.gradle. Plugins aceitam `\r?\n`.
+- Política/termos atualizados 01/10: 18+, S3, SES, contato de emergência, IBI estimado, uso limitado Health Connect, exclusão em 30 dias. E-mail de contato mantido `apsicare.noreply@gmail.com` (decisão da dona).
+- Pendente: compilar (`gradlew` foi morto por falta de memória), keystore (dona gera com senha própria), `bundleRelease`.
