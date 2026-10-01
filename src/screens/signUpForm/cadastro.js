@@ -119,7 +119,12 @@ const Cadastro = ({ navigation }) => {
         return;
       }
 
-      Alert.alert('Sucesso', 'Cadastro realizado com sucesso!');
+      Alert.alert(
+        'Cadastro realizado!',
+        responseData.emailVerificacao === 'pendente'
+          ? 'Você vai receber um e-mail da Amazon Web Services (em inglês) para confirmar seu endereço. Clique no link: sem essa confirmação, a recuperação de senha e os convites por e-mail não funcionam.'
+          : 'Cadastro realizado com sucesso!'
+      );
       navigation.navigate('LoginSignedUp');
 
     } catch (err) {

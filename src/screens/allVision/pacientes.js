@@ -153,7 +153,7 @@ const Pacientes = ({ navigation }) => {
               const data = await response.json();
 
               if (!response.ok) {
-                Alert.alert('Erro', data.error || 'Erro ao enviar convite');
+                Alert.alert(data.verificacaoPendente ? 'Confirmação pendente' : 'Erro', data.error || 'Erro ao enviar convite');
                 return;
               }
 
@@ -248,11 +248,15 @@ const Pacientes = ({ navigation }) => {
 
       Alert.alert(
         'Paciente cadastrado!',
-        'Deseja enviar um convite por e-mail para o paciente acessar o app?',
-        [
-          { text: 'Agora não', style: 'cancel' },
-          { text: 'Enviar convite', onPress: () => handleEnviarConvite(patientId) }
-        ]
+        data.emailVerificacao === 'pendente'
+          ? 'Antes do convite, o paciente vai receber um e-mail da Amazon Web Services (em inglês) para confirmar o endereço. Peça para ele clicar no link (confira o spam) e depois envie o convite. Depois, toque no ícone de enviar ao lado do nome dele na lista.'
+          : 'Deseja enviar um convite por e-mail para o paciente acessar o app?',
+        data.emailVerificacao === 'pendente'
+          ? [{ text: 'Entendi' }]
+          : [
+              { text: 'Agora não', style: 'cancel' },
+              { text: 'Enviar convite', onPress: () => handleEnviarConvite(patientId) }
+            ]
       );
 
     } catch (err) {
@@ -286,6 +290,14 @@ const Pacientes = ({ navigation }) => {
             <Text style={styles.pacienteUltimaSessao}>Última sessão: {item.ultimaSessao}</Text>
           </View>
         </View>
+        <TouchableOpacity
+          onPress={() => handleEnviarConvite(item.id)}
+          style={styles.conviteButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityLabel={`Enviar convite para ${item.nome}`}
+        >
+          <Icon name="send" size={16} color="#B367D4" />
+        </TouchableOpacity>
         <Icon name="chevron-right" size={18} color="#CBD5E1" />
       </TouchableOpacity>
     );
@@ -436,6 +448,7 @@ const Pacientes = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  conviteButton: { padding: 8, marginRight: 4, borderRadius: 999, backgroundColor: 'rgba(179, 103, 212, 0.10)' },
   container: {
     flex: 1,
     backgroundColor: '#F6F6F8',

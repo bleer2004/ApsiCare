@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, QueryCommand, UpdateCommand } from "@aws-sdk/lib-dynamodb";
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { SESClient, SendEmailCommand, GetIdentityVerificationAttributesCommand, VerifyEmailIdentityCommand } from "@aws-sdk/client-ses";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -14,6 +14,21 @@ const ses = new SESClient({ region: "sa-east-1" });
 
 const TABLE = "ApsiCare";
 const FROM = "apsicare.noreply@gmail.com";
+
+// SES em sandbox só entrega para e-mails verificados: pede a verificação (a AWS manda um e-mail com link)
+// e informa o status. Sem permissão de IAM, devolve "sem_permissao" e o fluxo segue como antes.
+async function statusVerificacaoEmail(ses, email) {
+  try {
+    const r = await ses.send(new GetIdentityVerificationAttributesCommand({ Identities: [email] }));
+    const status = r.VerificationAttributes?.[email]?.VerificationStatus;
+    if (status === "Success") return "verificado";
+    await ses.send(new VerifyEmailIdentityCommand({ EmailAddress: email }));
+    return "pendente";
+  } catch (err) {
+    console.error("[ses] não foi possível checar/pedir verificação do e-mail:", err.name, err.message);
+    return "sem_permissao";
+  }
+}
 
 export const handler = async (event) => {
   let body;
@@ -40,6 +55,10 @@ export const handler = async (event) => {
 
     if (!paciente) {
       return resp(200, { message: "Se o e-mail estiver cadastrado, você receberá um código." });
+    }
+
+    if ((await statusVerificacaoEmail(ses, email)) === "pendente") {
+      return resp(409, { error: "A Amazon Web Services enviou um e-mail (em inglês, assunto \"Amazon Web Services – Email Address Verification Request\") para confirmar este endereço. Clique no link desse e-mail e tente de novo. Confira também o spam.", verificacaoPendente: true });
     }
 
     const codigo = String(Math.floor(100000 + Math.random() * 900000));

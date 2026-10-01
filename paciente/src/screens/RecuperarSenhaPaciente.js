@@ -65,7 +65,7 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
       });
       const data = await response.json();
       if (!response.ok) {
-        Alert.alert('Erro', data.error || 'Erro ao enviar código');
+        Alert.alert(data.verificacaoPendente ? 'Confirme seu e-mail' : 'Erro', data.error || 'Erro ao enviar código');
         return false;
       }
       return true;

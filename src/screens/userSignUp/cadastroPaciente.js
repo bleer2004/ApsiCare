@@ -146,7 +146,12 @@ const CadastroPaciente = ({ navigation }) => {
         } catch (err) { console.warn('Erro ao salvar contato:', err); }
       }
 
-      Alert.alert('Paciente cadastrado!', 'O paciente foi cadastrado com sucesso.');
+      Alert.alert(
+        'Paciente cadastrado!',
+        data.emailVerificacao === 'pendente'
+          ? 'Antes do convite, o paciente vai receber um e-mail da Amazon Web Services (em inglês) para confirmar o endereço. Peça para ele clicar no link (confira o spam) e depois envie o convite.'
+          : 'O paciente foi cadastrado com sucesso.'
+      );
       setCadastroConcluido(true);
     } catch (err) {
       console.error(err);
@@ -165,7 +170,7 @@ const CadastroPaciente = ({ navigation }) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
       });
       const data = await res.json();
-      if (!res.ok) { Alert.alert('Erro', data.error || 'Erro ao enviar convite'); return; }
+      if (!res.ok) { Alert.alert(data.verificacaoPendente ? 'Confirmação pendente' : 'Erro', data.error || 'Erro ao enviar convite'); return; }
       Alert.alert('Convite enviado!', 'O paciente receberá um e-mail com as credenciais de acesso.');
     } catch { Alert.alert('Erro', 'Não foi possível enviar o convite.'); }
   };

@@ -48,7 +48,7 @@ const RecuperarSenha = ({ navigation }) => {
       console.log("Resposta do Servidor:", data); 
 
       if (!response.ok) {
-        Alert.alert('Erro', data.error || 'Erro desconhecido no servidor');
+        Alert.alert(data.verificacaoPendente ? 'Confirme seu e-mail' : 'Erro', data.error || 'Erro desconhecido no servidor');
         return;
       }
 

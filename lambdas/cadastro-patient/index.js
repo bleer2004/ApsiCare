@@ -1,11 +1,28 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient, PutCommand, QueryCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
+import { SESClient, GetIdentityVerificationAttributesCommand, VerifyEmailIdentityCommand } from "@aws-sdk/client-ses";
 import bcrypt from "bcryptjs";
 import { v4 as uuidv4 } from "uuid";
 
 const client = new DynamoDBClient({ region: "sa-east-1" });
 const dynamo = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = "ApsiCare";
+const ses = new SESClient({ region: "sa-east-1" });
+
+// SES em sandbox só entrega para e-mails verificados: pede a verificação (a AWS manda um e-mail com link)
+// e informa o status. Sem permissão de IAM, devolve "sem_permissao" e o fluxo segue como antes.
+async function statusVerificacaoEmail(ses, email) {
+  try {
+    const r = await ses.send(new GetIdentityVerificationAttributesCommand({ Identities: [email] }));
+    const status = r.VerificationAttributes?.[email]?.VerificationStatus;
+    if (status === "Success") return "verificado";
+    await ses.send(new VerifyEmailIdentityCommand({ EmailAddress: email }));
+    return "pendente";
+  } catch (err) {
+    console.error("[ses] não foi possível checar/pedir verificação do e-mail:", err.name, err.message);
+    return "sem_permissao";
+  }
+}
 
 export const handler = async (event) => {
   try {
@@ -87,7 +104,9 @@ export const handler = async (event) => {
     await dynamo.send(new PutCommand({ TableName: TABLE_NAME, Item: patientItem }));
     await dynamo.send(new PutCommand({ TableName: TABLE_NAME, Item: linkItem }));
 
-    return response(201, { patient: { id, name, email, diagnostico: diagnostico || null, createdAt: now } });
+    const emailVerificacao = await statusVerificacaoEmail(ses, email.trim().toLowerCase());
+
+    return response(201, { patient: { id, name, email, diagnostico: diagnostico || null, createdAt: now }, emailVerificacao });
 
   } catch (err) {
     console.error(err);
