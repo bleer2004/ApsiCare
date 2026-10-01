@@ -199,3 +199,6 @@ Deploy de 30/09 aplicado com sucesso (6 lambdas novas com tags obrigatórias do 
 - **CRLF quebra o prebuild** (regex do Expo não acham `package`/`class` com `\r`): criado `.gitattributes` com `eol=lf` para .kt/.java/.gradle. Plugins aceitam `\r?\n`.
 - Política/termos atualizados 01/10: 18+, S3, SES, contato de emergência, IBI estimado, uso limitado Health Connect, exclusão em 30 dias. E-mail de contato mantido `apsicare.noreply@gmail.com` (decisão da dona).
 - Pendente: compilar (`gradlew` foi morto por falta de memória), keystore (dona gera com senha própria), `bundleRelease`.
+
+## Páginas públicas (GitHub Pages, 2026-10-01)
+Branch `gh-pages` (órfã, só HTML) com política, termos e exclusão de conta, geradas de `docs/*.md` por `scripts/gerar_paginas_legais.py <pasta>` (precisa `pip install markdown`). URLs (depois de ligar o Pages em Settings → Pages → branch `gh-pages` / root): `https://bleer2004.github.io/ApsiCare/politica-de-privacidade.html`, `.../termos-de-uso.html`, `.../exclusao-de-conta.html`. Ao mudar a política: editar `docs/*.md` **e** `src/content/legalDocs.js`, regerar as páginas e dar push na `gh-pages`. Listas em Markdown precisam de linha em branco antes (senão o conversor junta no parágrafo).

@@ -24,12 +24,14 @@ O psicólogo pode cadastrar um contato de emergência do paciente (nome, telefon
 Arquivos que o psicólogo anexa ao perfil do paciente (ex.: PDFs, imagens) ficam armazenados no Amazon S3 e só podem ser abertos pelo psicólogo e pelo próprio paciente.
 
 ### 2.2. Dados de saúde e bem-estar (dados sensíveis)
+
 - Registros de humor e diário pessoal (texto e áudio);
 - Frequência cardíaca (batimentos por minuto), lida do smartwatch via Android Health Connect. O intervalo entre batimentos usado nos cálculos é **estimado a partir do BPM**, não lido diretamente do relógio;
 - *Insights* de estresse físico/emocional gerados a partir desses dados.
 
 ### 2.2.1. Uso dos dados do Health Connect
 O ApsiCare solicita **somente a permissão de leitura de frequência cardíaca** do Health Connect. Esses dados:
+
 - são usados apenas para gerar os indicadores de estresse do próprio paciente e exibi-los a ele e ao psicólogo responsável;
 - **não são usados para publicidade**, não são vendidos e não são compartilhados com terceiros para outras finalidades;
 - **não são enviados aos provedores de inteligência artificial** (OpenRouter e Groq), que recebem apenas o texto e o áudio do Diário;
@@ -38,6 +40,7 @@ O ApsiCare solicita **somente a permissão de leitura de frequência cardíaca**
 O uso das informações recebidas do Health Connect segue a Política de Permissões do Health Connect, incluindo os requisitos de uso limitado.
 
 ### 2.3. Dados técnicos
+
 - Token de autenticação (sessão) e token de notificações push;
 - Registros de sincronização (data/hora dos envios de dados fisiológicos).
 
@@ -79,6 +82,7 @@ O envio de texto e áudio do Diário para **OpenRouter** e **Groq** (Seção 5) 
 Mantemos seus dados enquanto sua conta estiver ativa, para permitir o acompanhamento contínuo do seu histórico junto ao psicólogo.
 
 **Como excluir a conta:**
+
 - **Psicólogo:** em Configurações → Excluir conta, confirmando a senha. A exclusão só é liberada depois de excluir todos os pacientes vinculados. Perfil, login e notificações são apagados na hora.
 - **Paciente:** em Meus dados → Solicitar exclusão dos meus dados. O psicólogo responsável é avisado e faz a exclusão, que apaga **todos** os dados do paciente no ApsiCare (perfil, diário, humor, insights, dados do smartwatch, documentos, lembretes e contato de emergência).
 - Sem acesso ao app: pelo e-mail da Seção 13.
