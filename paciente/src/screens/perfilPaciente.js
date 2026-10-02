@@ -2,15 +2,25 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL, logout } from '../../../src/services/api';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, ActivityIndicator, Switch, Linking,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  Switch,
+  Linking,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import SmartwatchPaciente from '../../../src/screens/smartwatch/SmartWatchPaciente';
 import { useAccessibility } from '../contexts/AccessibilityContext';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const PerfilPaciente = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [paciente, setPaciente] = useState(null);
   const [documentos, setDocumentos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -575,8 +585,9 @@ const PerfilPaciente = ({ navigation }) => {
       {/* Bottom Navigation */}
       <View style={[
         styles.bottomNavigation,
+        { paddingBottom: 12 + insets.bottom },
         {
-          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.90)',
+          backgroundColor: baixaVisao ? colors.cardBackground : '#FFFFFF',
           borderTopColor: colors.border,
         }
       ]}>

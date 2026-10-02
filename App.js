@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Linking } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { NavigationContainer, createNavigationContainerRef } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import * as Notifications from 'expo-notifications';
@@ -63,6 +64,7 @@ export default function App() {
   }, []);
 
   return (
+    <SafeAreaProvider>
     <AccessibilityProvider>
     <NavigationContainer ref={navigationRef}>
       <Stack.Navigator initialRouteName="AmbienteTeste">
@@ -94,5 +96,6 @@ export default function App() {
       </Stack.Navigator>
     </NavigationContainer>
     </AccessibilityProvider>
+    </SafeAreaProvider>
   );
 }

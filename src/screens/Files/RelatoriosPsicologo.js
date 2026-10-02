@@ -2,9 +2,19 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView,
-  StatusBar, Alert, Modal, ActivityIndicator, Share, Platform,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  Alert,
+  Modal,
+  ActivityIndicator,
+  Share,
+  Platform,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import BottomNav from '../../components/BottomNav';

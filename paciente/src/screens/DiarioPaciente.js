@@ -2,14 +2,25 @@ import React, { useState, useEffect, useRef } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../../src/services/api';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, Modal, ActivityIndicator, Platform,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  Alert,
+  Modal,
+  ActivityIndicator,
+  Platform,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import * as Audio from 'expo-av/build/Audio';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const DiarioPaciente = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [selectedMood, setSelectedMood] = useState(null);
   const [anotacao, setAnotacao] = useState('');
   const [modalVisible, setModalVisible] = useState(false);
@@ -470,9 +481,8 @@ const DiarioPaciente = ({ navigation }) => {
         {/* Avaliação de Humor */}
         <View style={[styles.ratingSection, { paddingHorizontal: getSpacing('medium') }]}>
           <Text style={[styles.ratingTitle, getTextStyle('medium', colors.text, '600')]}>Qual foi seu nível de humor hoje?</Text>
-          <Text style={[styles.ratingSubtitle, getTextStyle('small', colors.textSecondary)]}>1 = Muito mal | 10 = Muito bem</Text>
+          <Text style={[styles.ratingSubtitle, getTextStyle('small', colors.textSecondary)]}>1 = Muito mal | 9 = Muito bem</Text>
           <View style={styles.ratingContainer}>
-            <Text style={[styles.ratingMin, getTextStyle('small', colors.textSecondary)]}>1</Text>
             <View style={styles.ratingSlider}>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
                 <TouchableOpacity
@@ -491,7 +501,6 @@ const DiarioPaciente = ({ navigation }) => {
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={[styles.ratingMax, getTextStyle('small', colors.textSecondary)]}>10</Text>
           </View>
         </View>
 
@@ -776,8 +785,9 @@ const DiarioPaciente = ({ navigation }) => {
       {/* Bottom Navigation */}
       <View style={[
         styles.bottomNavigation,
+        { paddingBottom: 12 + insets.bottom },
         {
-          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          backgroundColor: baixaVisao ? colors.cardBackground : '#FFFFFF',
           borderTopColor: colors.border,
         }
       ]}>

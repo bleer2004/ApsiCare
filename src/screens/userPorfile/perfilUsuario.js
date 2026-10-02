@@ -2,10 +2,21 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView,
-  SafeAreaView, StatusBar, Dimensions, Share, Alert, ActivityIndicator,
-  Modal, Linking,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  Dimensions,
+  Share,
+  Alert,
+  ActivityIndicator,
+  Modal,
+  Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import * as DocumentPicker from 'expo-document-picker';
 import { LineChart } from 'react-native-chart-kit';
 import Icon from 'react-native-vector-icons/Feather';

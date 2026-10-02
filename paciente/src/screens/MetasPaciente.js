@@ -2,13 +2,21 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../../src/services/api';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView,
-  StatusBar, ScrollView, Alert, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const MetasPaciente = ({ navigation }) => {
+  const insets = useSafeAreaInsets();
   const [metasList, setMetasList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -331,8 +339,9 @@ const MetasPaciente = ({ navigation }) => {
 
       <View style={[
         styles.bottomNavigation,
+        { paddingBottom: 12 + insets.bottom },
         {
-          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          backgroundColor: baixaVisao ? colors.cardBackground : '#FFFFFF',
           borderTopColor: colors.border,
         }
       ]}>

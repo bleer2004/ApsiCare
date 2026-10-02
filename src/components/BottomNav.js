@@ -2,8 +2,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const BottomNav = ({ navigation, currentScreen }) => {
+  const insets = useSafeAreaInsets();
   const navItems = [
     { name: 'VisaoGeral', label: 'Início', icon: 'home' },
     { name: 'Pacientes', label: 'Pacientes', icon: 'users' },
@@ -11,7 +13,7 @@ const BottomNav = ({ navigation, currentScreen }) => {
   ];
 
   return (
-    <View style={styles.bottomNavigation}>
+    <View style={[styles.bottomNavigation, { paddingBottom: 10 + insets.bottom }]}>
       {navItems.map((item) => (
         <TouchableOpacity
           key={item.name}
@@ -48,7 +50,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: '#FFFFFF',
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
     paddingVertical: 10,

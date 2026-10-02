@@ -1,8 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, FlatList, SafeAreaView,
-  StatusBar, ActivityIndicator, RefreshControl,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  FlatList,
+  StatusBar,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
@@ -69,6 +76,9 @@ const NotificacoesPsicologo = ({ navigation }) => {
           birthDate: p.birthDate,
           idade: p.birthDate ? calcularIdade(p.birthDate) : null,
           diagnosticoPrincipal: p.diagnostico || 'Aguardando diagnóstico',
+          diagnostico: p.diagnostico || '',
+          observacoes: p.observacoes || '',
+          phone: p.phone || '',
           condicao: 'Em acompanhamento',
           statusEmocional: 'Estável',
           melhoraPercentual: 0,

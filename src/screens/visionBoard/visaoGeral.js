@@ -1,8 +1,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, ScrollView, SafeAreaView,
-  StatusBar, FlatList, Modal, Linking, Alert, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  ScrollView,
+  StatusBar,
+  FlatList,
+  Modal,
+  Linking,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../services/api';
@@ -62,6 +72,9 @@ const VisaoGeral = ({ navigation }) => {
           telefone: p.phone || p.telefone || p.phoneNumber,
           birthDate: p.birthDate,
           diagnosticoPrincipal: p.diagnostico || 'Aguardando diagnóstico',
+          diagnostico: p.diagnostico || '',
+          observacoes: p.observacoes || '',
+          phone: p.phone || '',
           condicao: 'Em acompanhamento',
           statusEmocional: 'Estável',
           melhoraPercentual: 0,
@@ -150,7 +163,7 @@ const VisaoGeral = ({ navigation }) => {
           ? `HR ${dadosWesad.hr_mean} bpm • Stress ${dadosWesad.nivelStress} • Perfil ${dadosWesad.perfil}`
           : 'Aguardando dados fisiológicos',
         tempo: dadosWesad?.atualizadoEm
-          ? new Date(`${dadosWesad.atualizadoEm}Z`.replace('ZZ','Z')).toLocaleDateString('pt-BR')
+          ? `Atualizado em ${new Date(`${dadosWesad.atualizadoEm}Z`.replace('ZZ','Z')).toLocaleDateString('pt-BR')}`
           : (dadosWesad ? 'Atualizado hoje' : 'Sem dados'),
         origem: p.wesadId ? 'Dataset WESAD' : 'Dados reais',
         cor: classificacao.cor,
@@ -175,7 +188,8 @@ const VisaoGeral = ({ navigation }) => {
     nome: 'Ana Clara Souza',
     tipo: 'CRÍTICO',
     descricao: 'HR: 96, RMSSD: 38, Perfil: hiperreativo',
-    tempo: '12 minutos',
+    tempo: 'Emitido há 12 minutos',
+    origem: 'Paciente de demonstração',
     cor: '#DC2626',
     corBg: '#FEE2E2',
     icon: 'alert-triangle',
@@ -418,7 +432,7 @@ const VisaoGeral = ({ navigation }) => {
             <Icon name={item.icon} size={14} color={item.cor} />
             <Text style={[styles.criticalMessageText, { color: item.cor }]}>{item.descricao}</Text>
           </View>
-          <Text style={styles.alertMeta}>Emitido há {item.tempo} • {item.origem}</Text>
+          <Text style={styles.alertMeta}>{item.tempo} • {item.origem}</Text>
           <View style={styles.actionButtons}>
             <TouchableOpacity style={styles.primaryButton} onPress={() => handleVerProntuario(item)}>
               <Text style={styles.primaryButtonText}>Ver Prontuário</Text>

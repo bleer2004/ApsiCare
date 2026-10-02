@@ -12,11 +12,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  SafeAreaView,
   StatusBar,
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const RecuperarSenha = ({ navigation }) => {
   const [email, setEmail] = useState('');

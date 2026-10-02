@@ -2,15 +2,26 @@ import React, { useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../../src/services/api';
 import {
-  View, Text, TouchableOpacity, StyleSheet, SafeAreaView, StatusBar,
-  ScrollView, Image, Alert, Modal, FlatList, ActivityIndicator,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+  ScrollView,
+  Image,
+  Alert,
+  Modal,
+  FlatList,
+  ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Feather';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { useAccessibilityStyles } from '../hooks/useAccessibilityStyles';
 
 const HomePaciente = ({ navigation, route }) => {
+  const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
   const [selectedMood, setSelectedMood] = useState(null);
   const [notificationsVisible, setNotificationsVisible] = useState(false);
@@ -158,7 +169,7 @@ const HomePaciente = ({ navigation, route }) => {
     labels: moodHistorySlice.length >= 2
       ? moodHistorySlice.map(m => {
           const data = new Date(m.timestamp);
-          return isNaN(data) ? '' : ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][data.getDay()];
+          return isNaN(data) ? '' : `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
         })
       : ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
     datasets: [{
@@ -416,9 +427,10 @@ const HomePaciente = ({ navigation, route }) => {
 
       {/* Bottom Navigation */}
       <View style={[
-        styles.bottomNavigation, 
+        styles.bottomNavigation,
+        { paddingBottom: 12 + insets.bottom },
         { 
-          backgroundColor: baixaVisao ? colors.cardBackground : 'rgba(255, 255, 255, 0.80)',
+          backgroundColor: baixaVisao ? colors.cardBackground : '#FFFFFF',
           borderTopColor: colors.border,
         }
       ]}>

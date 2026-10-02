@@ -13,11 +13,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  SafeAreaView,
   StatusBar,
   Modal,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const RecuperarSenhaPaciente = ({ navigation, route }) => {
   const primeiroAcesso = route?.params?.primeiroAcesso || false;

@@ -13,11 +13,11 @@ import {
   Platform,
   ScrollView,
   Alert,
-  SafeAreaView,
   StatusBar,
   Modal,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 const Cadastro = ({ navigation }) => {

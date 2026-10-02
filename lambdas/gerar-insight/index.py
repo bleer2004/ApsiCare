@@ -208,6 +208,12 @@ def resolver_action(event):
     return action or "insight"
 
 # ── RELATÓRIO SEMANAL ────────────────────────────────────────
+def stress_physio_do_dia(d):
+    salvo = float(d.get("stress_physio", 0) or 0)
+    if salvo > 0:
+        return salvo
+    return calc_stress_physio(float(d["HR"]), float(d["IBI"]), float(d["RMSSD"]))
+
 def gerar_relatorio_semanal(event):
     pk, patient_id = resolver_patient_id(event)
     if not patient_id:
@@ -290,6 +296,10 @@ def gerar_relatorio_semanal(event):
                 dias_salvos = json.loads(dados.get("dias", "[]"))
             except Exception:
                 pass
+            # relatório salvo antes de existir stress_physio por dia: descarta e gera de novo
+            if not dias_salvos or any("stress_physio" not in d for d in dias_salvos):
+                table.delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
+                break
             return _resp(200, {
                 "message": "Relatório desta semana já existe",
                 "pk_paciente": pk,
@@ -319,7 +329,7 @@ def gerar_relatorio_semanal(event):
     hrs         = [float(d["HR"]) for d in dias]
     ibis        = [float(d["IBI"]) for d in dias]
     rmssds      = [float(d["RMSSD"]) for d in dias]
-    sfs         = [float(d.get("stress_physio", 0)) for d in dias]
+    sfs         = [stress_physio_do_dia(d) for d in dias]
     perfil      = dias[0].get("perfil", "neutro")
 
     total       = len(flags)
@@ -370,7 +380,7 @@ def gerar_relatorio_semanal(event):
             "HR":          float(d["HR"]),
             "IBI":         float(d["IBI"]),
             "RMSSD":       float(d["RMSSD"]),
-            "stress_physio": float(d.get("stress_physio", 0) or 0),
+            "stress_physio": stress_physio_do_dia(d),
             "mood":        int(d.get("mood", 0)),
             "emoji":       d.get("emotion_emoji", ""),
             "contexto":    d.get("context", ""),

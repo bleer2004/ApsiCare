@@ -1,9 +1,18 @@
 import React, { useState } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  ScrollView, SafeAreaView, Alert, ActivityIndicator,
-  StyleSheet, Dimensions, Keyboard, TouchableWithoutFeedback,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  Alert,
+  ActivityIndicator,
+  StyleSheet,
+  Dimensions,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { API_URL, registerForPushNotificationsAsync } from '../../services/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Feather';
