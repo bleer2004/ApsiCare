@@ -398,6 +398,7 @@ const DashboardPaciente = ({ navigation, route }) => {
         const rel = data.relatorio || data.insight;
         if (rel) Alert.alert(rel.titulo || rel.title || 'Relatório gerado', rel.corpo || rel.body || 'Insight semanal gerado!');
         await carregarInsights();
+        await carregarDadosDiarios();
       } else {
         Alert.alert('Erro', data.error || 'Não foi possível gerar o insight');
       }
@@ -1107,6 +1108,7 @@ const handleRemoverArquivo = (id, nome) => {
           {[{ id: 'perfil', icon: 'user', label: 'Perfil' }, { id: 'metas', icon: 'target', label: 'Metas' }, { id: 'arquivos', icon: 'folder', label: 'Arquivos' }, { id: 'relatorios', icon: 'bar-chart-2', label: 'Relatórios' }].map(tab => (
           <TouchableOpacity key={tab.id} style={[styles.tab, abaAtiva === tab.id && styles.tabActive]} onPress={() => {
             setAbaAtiva(tab.id);
+            if (tab.id === 'perfil') carregarDadosDiarios();
             if (tab.id === 'arquivos') carregarArquivos();
           }}>             
           <Icon name={tab.icon} size={18} color={abaAtiva === tab.id ? '#B367D4' : '#94A3B8'} />
