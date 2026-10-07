@@ -26,8 +26,9 @@ ApsiCare
 
 **Descrição curta (até 80):**
 ```
-Acompanhamento entre psicólogo e paciente: diário, humor e frequência cardíaca.
+Diário de humor e bem-estar com controle de estresse pelo smartwatch.
 ```
+(A descrição completa foi reescrita em 06/10 com foco em bem-estar e controle de estresse; o texto atual está no Play Console.)
 
 **Descrição completa (até 4000):**
 ```
@@ -123,9 +124,10 @@ Não / Não / Nenhum.
 **Não**, o app não usa ID de publicidade (a permissão `AD_ID` foi bloqueada no manifest).
 
 ### 4.8 Declaração de apps de saúde
-Marque:
-- **Saúde e fitness → Gerenciamento de estresse, relaxamento, acuidade mental**
-- **Medicina → Saúde mental e comportamental** (o app acompanha pacientes de um psicólogo; omitir isso pode ser visto como declaração enganosa)
+Marque **só**:
+- **Saúde e fitness → Controle de estresse, relaxamento e acuidade mental**
+
+**Não marque "Medicina → Saúde mental e comportamental"**: em 05/10/2026 a Google recusou o app por isso ("alguns tipos de apps só podem ser distribuídos por organizações"). Essa categoria exige conta de organização, e a nossa é pessoal.
 
 Não marque "Pesquisa com seres humanos", a menos que o TCC tenha aprovação de comitê de ética com participantes reais.
 
