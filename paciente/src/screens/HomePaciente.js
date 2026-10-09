@@ -52,7 +52,7 @@ const HomePaciente = ({ navigation, route }) => {
     { id: 'neutro', label: 'Neutro', color: '#F1F5F9', iconColor: '#64748B', icon: 'meh', valence: 5, arousal: 5 },
   ];
 
-  const boasVindas = { id: 'boas-vindas', titulo: 'Bem-vindo ao ApsiCare!', mensagem: 'Registre seu humor diariamente para acompanhar seu progresso.', data: 'Hoje', lida: true, icon: 'heart', local: true };
+  const boasVindas = { id: 'boas-vindas', titulo: 'Bem-vindo ao Apsicare!', mensagem: 'Registre seu humor diariamente para acompanhar seu progresso.', data: 'Hoje', lida: true, icon: 'heart', local: true };
   const [notificacoes, setNotificacoes] = useState([boasVindas]);
 
   useEffect(() => {

@@ -208,7 +208,7 @@ const PerfilPaciente = ({ navigation }) => {
   const handleSolicitarExclusao = () => {
     Alert.alert(
       'Solicitar exclusão',
-      'Seu psicólogo será avisado e fará a exclusão da sua conta e de todos os seus dados no ApsiCare. Deseja continuar?',
+      'Seu psicólogo será avisado e fará a exclusão da sua conta e de todos os seus dados no Apsicare. Deseja continuar?',
       [
         { text: 'Cancelar', style: 'cancel' },
         {

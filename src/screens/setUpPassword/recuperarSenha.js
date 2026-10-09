@@ -360,7 +360,7 @@ const RecuperarSenha = ({ navigation }) => {
                 <Icon name="heart" size={28} color="#B367D4" />
               </View>
             </View>
-            <Text style={styles.title}>ApsiCare</Text>
+            <Text style={styles.title}>Apsicare</Text>
             <Text style={styles.subtitle}>
               Plataforma clínica de saúde mental.
             </Text>

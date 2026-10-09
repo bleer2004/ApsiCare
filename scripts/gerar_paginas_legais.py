@@ -27,7 +27,7 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 
 
 def nav(atual):
-    return ''.join(
+    return '<a href="baixar.html">Baixar</a>' + ''.join(
         f'<a href="{s}.html"{" aria-current=\"page\"" if s == atual else ""}>{t}</a>' for s, t in PAGINAS
     )
 
@@ -35,9 +35,9 @@ def nav(atual):
 def pagina(slug, titulo, corpo):
     return f"""<!doctype html>
 <html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{titulo} · ApsiCare</title><meta name="description" content="{titulo} do aplicativo ApsiCare."><style>{CSS}</style></head>
-<body><header><div class="w"><a href="index.html">ApsiCare</a><nav>{nav(slug)}</nav></div></header>
-<main><article>{corpo}</article></main><footer>ApsiCare · projeto acadêmico (TCC) · contato: apsicare.noreply@gmail.com</footer></body></html>
+<title>{titulo} · Apsicare</title><meta name="description" content="{titulo} do aplicativo Apsicare."><style>{CSS}</style></head>
+<body><header><div class="w"><a href="index.html">Apsicare</a><nav>{nav(slug)}</nav></div></header>
+<main><article>{corpo}</article></main><footer>Apsicare · projeto acadêmico (TCC) · contato: apsicare.noreply@gmail.com</footer></body></html>
 """
 
 
@@ -50,7 +50,8 @@ def main(saida):
         corpo = corpo.replace('<table>', '<div class="tabela"><table>').replace('</table>', '</table></div>')
         open(os.path.join(saida, f'{slug}.html'), 'w', encoding='utf-8').write(pagina(slug, titulo, corpo))
     links = ''.join(f'<li><a href="{s}.html">{t}</a></li>' for s, t in PAGINAS)
-    indice = f'<h1>ApsiCare: documentos legais</h1><p>Aplicativo de acompanhamento psicológico que conecta psicólogo e paciente.</p><ul>{links}</ul>'
+    botao = '<p><a href="baixar.html" style="display:inline-block;background:#B367D4;color:#fff;text-decoration:none;font-weight:700;padding:12px 20px;border-radius:10px">Baixar o app (Android)</a></p>'
+    indice = f'<h1>Apsicare: documentos legais</h1><p>Diário de humor e bem-estar que conecta paciente e psicólogo.</p>{botao}<ul>{links}</ul>'
     open(os.path.join(saida, 'index.html'), 'w', encoding='utf-8').write(pagina('index', 'Documentos legais', indice))
     open(os.path.join(saida, '.nojekyll'), 'w').close()
 

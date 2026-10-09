@@ -1,16 +1,16 @@
-# Política de Privacidade do ApsiCare
+# Política de Privacidade do Apsicare
 
 **Última atualização:** 01/10/2026
 
-Esta Política de Privacidade descreve como o **ApsiCare** ("Aplicativo", "App") coleta, usa, armazena e compartilha dados pessoais de seus usuários — pacientes e psicólogos/clínicos —, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, "LGPD"). Ela é parte integrante dos [Termos de Uso](./termos-de-uso.md).
+Esta Política de Privacidade descreve como o **Apsicare** ("Aplicativo", "App") coleta, usa, armazena e compartilha dados pessoais de seus usuários — pacientes e psicólogos/clínicos —, em conformidade com a Lei Geral de Proteção de Dados (Lei nº 13.709/2018, "LGPD"). Ela é parte integrante dos [Termos de Uso](./termos-de-uso.md).
 
-> **Natureza do projeto:** o ApsiCare é um projeto acadêmico (TCC), sem CNPJ, operado por sua equipe de desenvolvimento. Para fins da LGPD, essa equipe atua como **controladora** dos dados tratados pelo Aplicativo.
+> **Natureza do projeto:** o Apsicare é um projeto acadêmico (TCC), sem CNPJ, operado por sua equipe de desenvolvimento. Para fins da LGPD, essa equipe atua como **controladora** dos dados tratados pelo Aplicativo.
 
 ---
 
 ## 1. Quem somos (Controlador)
 
-A equipe responsável pelo desenvolvimento do ApsiCare é a controladora dos dados pessoais tratados neste Aplicativo. Por se tratar de um projeto acadêmico, não há uma pessoa jurídica constituída; dúvidas ou solicitações devem ser enviadas ao contato indicado na Seção 13.
+A equipe responsável pelo desenvolvimento do Apsicare é a controladora dos dados pessoais tratados neste Aplicativo. Por se tratar de um projeto acadêmico, não há uma pessoa jurídica constituída; dúvidas ou solicitações devem ser enviadas ao contato indicado na Seção 13.
 
 ## 2. Quais Dados Coletamos
 
@@ -30,7 +30,7 @@ Arquivos que o psicólogo anexa ao perfil do paciente (ex.: PDFs, imagens) ficam
 - *Insights* de estresse físico/emocional gerados a partir desses dados.
 
 ### 2.2.1. Uso dos dados do Health Connect
-O ApsiCare solicita **somente a permissão de leitura de frequência cardíaca** do Health Connect. Esses dados:
+O Apsicare solicita **somente a permissão de leitura de frequência cardíaca** do Health Connect. Esses dados:
 
 - são usados apenas para gerar os indicadores de estresse do próprio paciente e exibi-los a ele e ao psicólogo responsável;
 - **não são usados para publicidade**, não são vendidos e não são compartilhados com terceiros para outras finalidades;
@@ -84,10 +84,10 @@ Mantemos seus dados enquanto sua conta estiver ativa, para permitir o acompanham
 **Como excluir a conta:**
 
 - **Psicólogo:** em Configurações → Excluir conta, confirmando a senha. A exclusão só é liberada depois de excluir todos os pacientes vinculados. Perfil, login e notificações são apagados na hora.
-- **Paciente:** em Meus dados → Solicitar exclusão dos meus dados. O psicólogo responsável é avisado e faz a exclusão, que apaga **todos** os dados do paciente no ApsiCare (perfil, diário, humor, insights, dados do smartwatch, documentos, lembretes e contato de emergência).
+- **Paciente:** em Meus dados → Solicitar exclusão dos meus dados. O psicólogo responsável é avisado e faz a exclusão, que apaga **todos** os dados do paciente no Apsicare (perfil, diário, humor, insights, dados do smartwatch, documentos, lembretes e contato de emergência).
 - Sem acesso ao app: pelo e-mail da Seção 13.
 
-Pedidos de exclusão são atendidos em **até 30 dias**. Registros que o psicólogo mantém fora do Aplicativo (prontuário profissional) seguem as normas do Conselho Federal de Psicologia e não fazem parte do ApsiCare.
+Pedidos de exclusão são atendidos em **até 30 dias**. Registros que o psicólogo mantém fora do Aplicativo (prontuário profissional) seguem as normas do Conselho Federal de Psicologia e não fazem parte do Apsicare.
 
 ## 8. Como Protegemos Seus Dados
 
@@ -110,7 +110,7 @@ Responderemos às solicitações em até 15 dias (exclusão de conta: até 30 di
 
 ## 10. Crianças e Adolescentes
 
-O ApsiCare é destinado **exclusivamente a maiores de 18 anos**. Não coletamos intencionalmente dados de menores de idade; se identificarmos uma conta de menor, ela será excluída.
+O Apsicare é destinado **exclusivamente a maiores de 18 anos**. Não coletamos intencionalmente dados de menores de idade; se identificarmos uma conta de menor, ela será excluída.
 
 ## 11. Armazenamento Local no Dispositivo
 

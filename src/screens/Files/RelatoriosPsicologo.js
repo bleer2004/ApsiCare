@@ -209,12 +209,12 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
   const handleBaixarRelatorio = async (relatorio) => {
     try {
       const texto = relatorio.tipo === 'smartwatch'
-        ? `📊 RELATÓRIO SMARTWATCH - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n📝 ${relatorio.titulo}\n\n${relatorio.descricao}\n\n---\nApsiCare`
+        ? `📊 RELATÓRIO SMARTWATCH - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n📝 ${relatorio.titulo}\n\n${relatorio.descricao}\n\n---\nApsicare`
         : `📝 RELATÓRIO ANOTAÇÕES - ${relatorio.pacienteNome}\n📅 ${relatorio.data}\n\n${
             (contagensPorPaciente[relatorio.pacienteId]?.diarios || [])
               .map(m => `• ${new Date(m.timestamp).toLocaleDateString('pt-BR')}: ${m.diaryText}`)
               .join('\n') || 'Nenhuma anotação compartilhada pelo paciente.'
-          }\n\n---\nApsiCare`;
+          }\n\n---\nApsicare`;
       await Share.share({ message: texto, title: `Relatorio_${relatorio.pacienteNome}.txt` });
     } catch { Alert.alert('Erro', 'Não foi possível compartilhar'); }
   };
@@ -224,7 +224,7 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
     if (filtrados.length === 0) { Alert.alert('Aviso', 'Nenhum relatório para exportar'); return; }
     let texto = `📊 RELATÓRIOS APSICARE\n${new Date().toLocaleDateString('pt-BR')}\nTotal: ${filtrados.length}\n\n`;
     filtrados.forEach((r, i) => { texto += `${i + 1}. ${r.titulo}\nPaciente: ${r.pacienteNome}\nData: ${r.data}\n\n`; });
-    try { await Share.share({ message: texto, title: 'Relatorios_ApsiCare.txt' }); }
+    try { await Share.share({ message: texto, title: 'Relatorios_Apsicare.txt' }); }
     catch { Alert.alert('Erro', 'Não foi possível exportar'); }
   };
 
@@ -487,7 +487,7 @@ const Relatorios = ({ navigation, paciente, standalone }) => {
               </TouchableOpacity>
               {analiseSelecionada && (
                 <TouchableOpacity style={styles.analiseExportButton} onPress={async () => {
-                  try { await Share.share({ message: `${analiseSelecionada.tituloIA || analiseSelecionada.titulo}\n\n${analiseSelecionada.analise}\n\n---\nApsiCare` }); setModalAnaliseVisible(false); } catch {}
+                  try { await Share.share({ message: `${analiseSelecionada.tituloIA || analiseSelecionada.titulo}\n\n${analiseSelecionada.analise}\n\n---\nApsicare` }); setModalAnaliseVisible(false); } catch {}
                 }}>
                   <Icon name="download" size={18} color="#FFFFFF" />
                   <Text style={styles.analiseExportButtonText}>Exportar</Text>

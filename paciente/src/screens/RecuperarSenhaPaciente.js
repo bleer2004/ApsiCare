@@ -401,7 +401,7 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
         {primeiroAcesso ? 'Criar sua senha' : 'Redefinir sua senha'}
       </Text>
       <Text style={[styles.stepDescription, getTextStyle('medium', colors.textSecondary, '400')]}>
-        Crie uma senha forte e segura para acessar o ApsiCare.
+        Crie uma senha forte e segura para acessar o Apsicare.
       </Text>
       <View style={[styles.inputContainer, { marginBottom: getSpacing('large') }]}>
         <Text style={[styles.inputLabel, getTextStyle('medium', colors.text)]}>Nova senha</Text>
@@ -613,7 +613,7 @@ const RecuperarSenhaPaciente = ({ navigation, route }) => {
                 <Icon name="heart" {...getIconProps('heart', 'medium', colors.primary)} />
               </View>
             </View>
-            <Text style={[styles.title, { color: colors.text, fontSize: baixaVisao ? 32 : 24 }]}>ApsiCare</Text>
+            <Text style={[styles.title, { color: colors.text, fontSize: baixaVisao ? 32 : 24 }]}>Apsicare</Text>
             <Text style={[styles.subtitle, getTextStyle('medium', colors.textSecondary, '500')]}>
               {primeiroAcesso ? 'Configure sua senha de acesso.' : 'Plataforma clínica de saúde mental.'}
             </Text>

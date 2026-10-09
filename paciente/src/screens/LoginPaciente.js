@@ -93,7 +93,7 @@ const LoginPaciente = ({ navigation }) => {
               </View>
             </View>
             <Text style={[styles.appName, getTextStyle('xxlarge', colors.text)]}>
-              ApsiCare
+              Apsicare
             </Text>
             <Text style={[styles.appDescription, getTextStyle('medium', colors.textSecondary)]}>
               Plataforma clínica de saúde mental.

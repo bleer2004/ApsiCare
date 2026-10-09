@@ -663,7 +663,7 @@ const Configuracoes = ({ navigation }) => {
         {/* Versão do App */}
         <View style={styles.versionContainer}>
           <Text style={styles.versionText}>Versão {Constants.expoConfig?.version || '1.0.0'}</Text>
-          <Text style={styles.copyrightText}>© 2026 ApsiCare - Todos os direitos reservados</Text>
+          <Text style={styles.copyrightText}>© 2026 Apsicare - Todos os direitos reservados</Text>
         </View>
       </ScrollView>
 

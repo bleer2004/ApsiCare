@@ -1,4 +1,4 @@
-# Guia de publicação do ApsiCare na Google Play Store
+# Guia de publicação do Apsicare na Google Play Store
 
 **Data de referência:** 30/09/2026. As regras da Google Play mudam com frequência; confira os links oficiais da seção 10 antes de cada etapa.
 
@@ -10,7 +10,7 @@ Package: `com.vewadie.apsicare` · Nome: `Apsicare` · Conta Expo: `ve_wadie` ·
 
 A partir de **30/09/2026**, em aparelhos Android certificados no **Brasil** (e em Indonésia, Singapura e Tailândia), só instalam apps cujo package esteja registrado por um desenvolvedor verificado. Segundo a documentação: *"Any package names not registered by this date will no longer be installable on certified Android devices in those regions."*
 
-O que isso muda para o ApsiCare:
+O que isso muda para o Apsicare:
 
 - O APK que é instalado hoje via `adb install` / arquivo, assinado com a **keystore debug**, pode deixar de instalar em celulares no Brasil, inclusive no dia da banca do TCC.
 - A keystore `android/app/debug.keystore` é a keystore padrão do template React Native (senha `android`), a mesma em milhares de projetos. **Não registre o package com ela.** Gere primeiro a sua keystore própria (seção 3.1) e use essa.
@@ -71,7 +71,7 @@ Fonte: [Requisitos de teste para novas contas pessoais](https://support.google.c
 | Build | grátis | Build local com `gradlew` (recomendado). EAS Build tem plano gratuito com fila e limite mensal, útil só como alternativa se o build local quebrar. |
 | E-mail de contato do desenvolvedor | grátis | Fica público na loja. Hoje as políticas usam `apsicare.noreply@gmail.com`. Um endereço "noreply" passa a impressão de que ninguém lê; o ideal é criar algo como `apsicare.contato@gmail.com` e usar o mesmo em todos os lugares. |
 
-**Conta pessoal ou de organização?** Conta de organização exige número D-U-N-S (empresa). O ApsiCare não tem CNPJ, então o caminho é a **conta pessoal**. Veja o risco na seção 6.3: a Google exige conta de organização para "Medical apps".
+**Conta pessoal ou de organização?** Conta de organização exige número D-U-N-S (empresa). O Apsicare não tem CNPJ, então o caminho é a **conta pessoal**. Veja o risco na seção 6.3: a Google exige conta de organização para "Medical apps".
 
 Fonte: [Registro da conta](https://support.google.com/googleplay/android-developer/answer/6112435) · [Requisitos da Play Console](https://support.google.com/googleplay/android-developer/answer/10788890)
 
@@ -101,7 +101,7 @@ mkdir C:\Users\verin\keys
   -alias apsicare-upload -keyalg RSA -keysize 2048 -validity 10000
 ```
 
-- O comando pede uma senha e dados de nome/organização. Pode colocar seu nome e "ApsiCare".
+- O comando pede uma senha e dados de nome/organização. Pode colocar seu nome e "Apsicare".
 - **Backup:** copie `apsicare-upload.jks` e as senhas para um lugar seguro (pendrive + gerenciador de senhas / Google Drive pessoal). **Nunca** coloque no Git.
 - A raiz `.gitignore` não ignora `*.jks`/`*.keystore`. Mantendo o arquivo fora do repo, o problema some.
 
@@ -244,7 +244,7 @@ Fontes: [Expo — builds de produção locais](https://docs.expo.dev/guides/loca
 3. Faça a **verificação de identidade** (documento com foto + cartão no mesmo nome).
 4. Instale o app **Google Play Console** no seu Android e conclua a **verificação de acesso a aparelho**.
 5. **Criar app:**
-   - Nome: `ApsiCare` (até 30 caracteres). Decida entre `Apsicare` e `ApsiCare`. O `app.json` usa `"name": "Apsicare"` e os documentos usam "ApsiCare". Padronize, porque o nome da loja e o nome sob o ícone devem bater.
+   - Nome: `Apsicare` (até 30 caracteres). Decida entre `Apsicare` e `Apsicare`. O `app.json` usa `"name": "Apsicare"` e os documentos usam "Apsicare". Padronize, porque o nome da loja e o nome sob o ícone devem bater.
    - Idioma padrão: Português (Brasil).
    - App ou jogo: **App**. Gratuito ou pago: **Gratuito** (não dá para mudar para pago depois).
    - Aceite as declarações.
@@ -257,7 +257,7 @@ Fontes: [Expo — builds de produção locais](https://docs.expo.dev/guides/loca
 
 ### 5.1 Textos
 
-- **Nome do app** (até 30): `ApsiCare`
+- **Nome do app** (até 30): `Apsicare`
 - **Descrição curta** (até 80), sugestão:
   `Acompanhamento entre psicólogo e paciente: diário, humor e frequência cardíaca.`
 - **Descrição completa** (até 4000). Precisa incluir:
@@ -266,7 +266,7 @@ Fontes: [Expo — builds de produção locais](https://docs.expo.dev/guides/loca
   - o uso do Health Connect (somente frequência cardíaca, somente leitura);
   - que o diário (texto/voz) é analisado por IA de terceiros;
   - o **aviso exigido pela política de saúde** (texto obrigatório, adaptado):
-    > "O ApsiCare não é um dispositivo médico e não diagnostica, trata, cura ou previne nenhuma condição de saúde. Os insights gerados são estimativas automatizadas e não substituem a avaliação de um profissional. Consulte sempre um profissional de saúde para aconselhamento, diagnóstico ou tratamento."
+    > "O Apsicare não é um dispositivo médico e não diagnostica, trata, cura ou previne nenhuma condição de saúde. Os insights gerados são estimativas automatizadas e não substituem a avaliação de um profissional. Consulte sempre um profissional de saúde para aconselhamento, diagnóstico ou tratamento."
   - o aviso de emergência, que já está nos Termos: "Não é um serviço de emergência. Em caso de crise, ligue para o CVV (188) ou SAMU (192)."
   - que é um projeto acadêmico (TCC). Isso ajuda a revisão a entender o contexto.
 - **Evite** frases como "detecta ansiedade", "diagnóstico de estresse" ou "trata depressão". Alegações médicas levam o app para a categoria "Medical" (ver 6.3). Prefira "acompanhamento", "bem-estar", "estimativa de estresse".
@@ -328,7 +328,7 @@ Sem isso, a rejeição é quase certa.
 
 **Obrigatória para todo app publicado**, inclusive em teste fechado/aberto.
 
-Categorias do formulário e o que marcar para o ApsiCare:
+Categorias do formulário e o que marcar para o Apsicare:
 
 | Opção | Definição da Google | Marcar? |
 |---|---|---|
@@ -354,7 +354,7 @@ Fica em **Conteúdo do app > Health Connect / Permissões de saúde**. É obriga
 - **Funcionalidade:** selecione "Stress management, relaxation, mental acuity" e, se aplicável, "Mental and behavioral health" (mantenha coerente com a 6.3).
 - **Tipo de dado:** somente **Heart rate (leitura)**. Não peça nada além disso. A política diz: *"If your app does not require access to specific data types, you must not request access to them."* O `app.json` já está enxuto nesse ponto.
 - **Justificativa** (em inglês costuma ir mais rápido; sugestão):
-  > "ApsiCare reads the user's heart rate records (last 24 hours) from Health Connect, only after explicit user action on the 'My data' screen. Heart rate is used to estimate a daily physiological stress indicator (HR and HRV-derived metrics), which is shown to the user and to the psychologist the user is linked to, supporting ongoing psychological follow-up. Data is transmitted over HTTPS to our backend (AWS, Brazil) and is never sold, used for advertising, or shared with third parties. Users can delete their account and data at any time."
+  > "Apsicare reads the user's heart rate records (last 24 hours) from Health Connect, only after explicit user action on the 'My data' screen. Heart rate is used to estimate a daily physiological stress indicator (HR and HRV-derived metrics), which is shown to the user and to the psychologist the user is linked to, supporting ongoing psychological follow-up. Data is transmitted over HTTPS to our backend (AWS, Brazil) and is never sold, used for advertising, or shared with third parties. Users can delete their account and data at any time."
 - **Política de privacidade:** a mesma URL da loja. Ela **precisa** citar o Health Connect nominalmente, quais dados são lidos, para quê, com quem são compartilhados, retenção e exclusão. A atual cita isso na seção 2.2, mas veja a lacuna 8.4.
 - **Tela de justificativa (rationale):** quando o usuário toca em "política de privacidade" do app dentro do Health Connect, o Android abre a activity registrada para `ACTION_SHOW_PERMISSIONS_RATIONALE` / `VIEW_PERMISSION_USAGE`. Hoje essa activity é a `MainActivity`, que abre o app normal e não mostra a política. Ver lacuna 8.5.
 - A declaração é revista a cada nova versão enviada. Se aprovada e depois você acrescentar outro tipo de dado, precisa declarar de novo.
@@ -375,7 +375,7 @@ Perguntas gerais:
 
 "Coletado" = sai do aparelho para você ou para um terceiro. "Compartilhado" = vai para um **terceiro** que não é seu prestador de serviço. Provedores que processam **em seu nome e sob suas instruções** (AWS, OpenRouter, Groq, Expo/FCM) contam como **prestadores de serviço** e **não** entram como "compartilhado". Continuam entrando como "coletado". Dados que só passam pela memória para atender uma requisição podem ser declarados como "processados de forma temporária".
 
-| Categoria > tipo | Coletado | Compartilhado | Opcional? | Finalidades a marcar | De onde vem no ApsiCare |
+| Categoria > tipo | Coletado | Compartilhado | Opcional? | Finalidades a marcar | De onde vem no Apsicare |
 |---|---|---|---|---|---|
 | **Informações pessoais > Nome** | Sim | Não | Obrigatório | Funcionalidade do app, Gerenciamento da conta | cadastro de paciente/psicólogo |
 | **Informações pessoais > Endereço de e-mail** | Sim | Não | Obrigatório | Funcionalidade do app, Gerenciamento da conta, Comunicações do desenvolvedor (recuperação de senha por e-mail) | login, `forgot-password` |
@@ -413,7 +413,7 @@ Fonte: [Classificação de conteúdo](https://support.google.com/googleplay/andr
 A regra vale para todo app que **permite criar conta dentro do app**. Isso inclui o psicólogo (`cadastro.js`) e o paciente, que cria senha pelo convite. Exige **as duas coisas**:
 
 1. **Caminho dentro do app** para excluir a conta **e os dados associados**, fácil de achar (ex.: Configurações/Perfil). Não basta "mande e-mail".
-2. **Link na web** (informado no Data Safety) onde o usuário pede a exclusão **sem precisar reinstalar o app**. Pode ser uma página no mesmo GitHub Pages (`excluir-conta.md`) explicando os passos no app e oferecendo o e-mail de contato com um modelo de pedido ("Assunto: Excluir conta ApsiCare; informe o e-mail cadastrado"). A página deve citar o nome do app/desenvolvedor, dizer quais dados são apagados, quais ficam retidos (se algum) e por quanto tempo.
+2. **Link na web** (informado no Data Safety) onde o usuário pede a exclusão **sem precisar reinstalar o app**. Pode ser uma página no mesmo GitHub Pages (`excluir-conta.md`) explicando os passos no app e oferecendo o e-mail de contato com um modelo de pedido ("Assunto: Excluir conta Apsicare; informe o e-mail cadastrado"). A página deve citar o nome do app/desenvolvedor, dizer quais dados são apagados, quais ficam retidos (se algum) e por quanto tempo.
 
 Tudo que aparece no Data Safety precisa ser apagado: perfil, `MOOD#`, `HEALTH_BATCH#`, `PHYSIO#`, `INSIGHT#`, documentos no S3, item "link" `CLINICIAN#<id>/PATIENT#<id>` e token push. Para o psicólogo: `CLINICIAN#` e `NOTIFICATION#`. Decida e documente o que acontece com os pacientes de um psicólogo que se exclui.
 
@@ -566,7 +566,7 @@ Antes de bloquear o armazenamento, confirme que o upload de documentos (`expo-do
 - **Nenhum lambda valida JWT** (descrito no CLAUDE.md). A revisão da Play não testa isso, mas em um app público de saúde mental qualquer pessoa com um `patientId` pode ler dados sensíveis. Hoje, "Todos os dados são criptografados em trânsito" é verdade; "dados protegidos" não seria. Considere corrigir antes de abrir para pacientes reais.
 - `expo-dev-client` está nas dependências e `EX_DEV_CLIENT_NETWORK_INSPECTOR=true` no `gradle.properties`. Em `bundleRelease` o launcher de desenvolvimento não é ativado, mas se quiser um AAB mais limpo, pode remover para a build da loja.
 - `android:allowBackup="true"` no manifest: o backup do Android inclui o `AsyncStorage`, onde fica o **token JWT**. Para app de saúde, `allowBackup: false` (via `app.json` > `android.allowBackup: false`) é mais seguro.
-- Nome inconsistente: `Apsicare` (`app.json`) x `ApsiCare` (documentos, loja).
+- Nome inconsistente: `Apsicare` (`app.json`) x `Apsicare` (documentos, loja).
 - `reactNativeArchitectures` inclui `x86`/`x86_64`. No AAB, a Play entrega só a arquitetura do aparelho; não precisa mudar.
 
 ---

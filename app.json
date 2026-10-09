@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "ApsiCare",
+    "name": "Apsicare",
     "slug": "apsicare",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "scheme": "apsicare",
     "icon": "./assets/icon.png",
     "newArchEnabled": false,
@@ -20,7 +20,7 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.POST_NOTIFICATIONS"
       ],
-      "versionCode": 1,
+      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#D8D9F5"

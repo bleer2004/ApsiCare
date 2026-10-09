@@ -1,18 +1,18 @@
-# Termos de Uso do ApsiCare
+# Termos de Uso do Apsicare
 
 **Última atualização:** 01/10/2026
 
-Estes Termos de Uso ("Termos") regulam o acesso e uso do aplicativo **ApsiCare** ("Aplicativo", "App", "Serviço"), disponível para os perfis de **Paciente** e **Psicólogo/Clínico**. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a [Política de Privacidade](./politica-de-privacidade.md).
+Estes Termos de Uso ("Termos") regulam o acesso e uso do aplicativo **Apsicare** ("Aplicativo", "App", "Serviço"), disponível para os perfis de **Paciente** e **Psicólogo/Clínico**. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a [Política de Privacidade](./politica-de-privacidade.md).
 
 Se você não concordar com qualquer parte destes Termos, não utilize o Aplicativo.
 
-> **Natureza do projeto:** o ApsiCare é um projeto acadêmico desenvolvido como Trabalho de Conclusão de Curso (TCC). Não é uma empresa constituída, não possui CNPJ e é operado por sua equipe de desenvolvimento ("nós", "equipe responsável"). Essa natureza experimental está descrita na Seção 10.
+> **Natureza do projeto:** o Apsicare é um projeto acadêmico desenvolvido como Trabalho de Conclusão de Curso (TCC). Não é uma empresa constituída, não possui CNPJ e é operado por sua equipe de desenvolvimento ("nós", "equipe responsável"). Essa natureza experimental está descrita na Seção 10.
 
 ---
 
 ## 1. Aceitação dos Termos
 
-1.1. O uso do ApsiCare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.
+1.1. O uso do Apsicare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.
 
 1.2. O Aplicativo é destinado exclusivamente a maiores de 18 anos.
 
@@ -20,7 +20,7 @@ Se você não concordar com qualquer parte destes Termos, não utilize o Aplicat
 
 ## 2. Descrição do Serviço
 
-O ApsiCare conecta psicólogos e pacientes para acompanhamento psicológico contínuo, oferecendo:
+O Apsicare conecta psicólogos e pacientes para acompanhamento psicológico contínuo, oferecendo:
 
 - Registro de humor e diário pessoal (texto e voz) pelo paciente;
 - Leitura de dados fisiológicos (frequência cardíaca) via smartwatch conectado através do Android Health Connect;
@@ -73,7 +73,7 @@ Psicólogos podem receber notificações push (Android) quando o sistema identif
 
 ## 5. Aviso Importante — Não é um Serviço de Emergência
 
-**O ApsiCare não é um serviço de pronto-socorro, plantão psicológico ou atendimento de crise.** Os *insights* gerados podem levar tempo para serem processados e revisados pelo psicólogo.
+**O Apsicare não é um serviço de pronto-socorro, plantão psicológico ou atendimento de crise.** Os *insights* gerados podem levar tempo para serem processados e revisados pelo psicólogo.
 
 Se você ou alguém que você conhece está em risco imediato ou pensando em se machucar, **não use o Aplicativo para pedir ajuda com urgência**. Procure imediatamente:
 
@@ -94,11 +94,11 @@ Você concorda em:
 
 ## 7. Responsabilidades do Psicólogo/Clínico
 
-O profissional cadastrado como psicólogo declara possuir registro profissional válido (CRP) e é o único responsável pelas condutas, diagnósticos e decisões clínicas tomadas em relação aos pacientes acompanhados pelo Aplicativo. O ApsiCare é uma ferramenta de apoio ao acompanhamento, não substitui o exercício profissional nem a responsabilidade ética do psicólogo perante seu Conselho de Classe.
+O profissional cadastrado como psicólogo declara possuir registro profissional válido (CRP) e é o único responsável pelas condutas, diagnósticos e decisões clínicas tomadas em relação aos pacientes acompanhados pelo Aplicativo. O Apsicare é uma ferramenta de apoio ao acompanhamento, não substitui o exercício profissional nem a responsabilidade ética do psicólogo perante seu Conselho de Classe.
 
 ## 8. Propriedade Intelectual
 
-O código-fonte, design, marca e demais elementos do ApsiCare pertencem à equipe responsável pelo seu desenvolvimento, no contexto de um projeto acadêmico (TCC). O uso do Aplicativo não concede a você qualquer direito de propriedade sobre esses elementos.
+O código-fonte, design, marca e demais elementos do Apsicare pertencem à equipe responsável pelo seu desenvolvimento, no contexto de um projeto acadêmico (TCC). O uso do Aplicativo não concede a você qualquer direito de propriedade sobre esses elementos.
 
 ## 9. Conteúdo do Usuário
 
@@ -106,7 +106,7 @@ Você mantém a titularidade sobre os textos, áudios e demais conteúdos que re
 
 ## 10. Natureza Experimental, Isenção de Garantias e Limitação de Responsabilidade
 
-10.1. O ApsiCare é um **projeto acadêmico/protótipo (TCC)**, não uma solução comercial validada clinicamente. É fornecido "como está" ("as is"), sem garantias de disponibilidade contínua, ausência de erros, ou precisão absoluta dos dados e *insights* gerados.
+10.1. O Apsicare é um **projeto acadêmico/protótipo (TCC)**, não uma solução comercial validada clinicamente. É fornecido "como está" ("as is"), sem garantias de disponibilidade contínua, ausência de erros, ou precisão absoluta dos dados e *insights* gerados.
 
 10.2. Na máxima extensão permitida pela lei, a equipe responsável não se responsabiliza por danos diretos ou indiretos decorrentes do uso ou da impossibilidade de uso do Aplicativo, incluindo decisões tomadas com base nos *insights* gerados, indisponibilidade de serviços de terceiros (Health Connect, provedores de IA, push notifications) ou perda de dados.
 

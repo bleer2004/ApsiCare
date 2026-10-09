@@ -81,7 +81,7 @@ export const handler = async (event) => {
       Source: process.env.SENDER_EMAIL,
       Destination: { ToAddresses: [patient.email] },
       Message: {
-        Subject: { Data: "Seu acesso ao ApsiCare 🎉" },
+        Subject: { Data: "Seu acesso ao Apsicare 🎉" },
         Body: { Html: { Data: htmlTemplate } }
       }
     }));

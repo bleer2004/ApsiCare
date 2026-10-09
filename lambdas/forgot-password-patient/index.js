@@ -85,7 +85,7 @@ export const handler = async (event) => {
       Source: FROM,
       Destination: { ToAddresses: [email] },
       Message: {
-        Subject: { Data: "ApsiCare — Código de verificação" },
+        Subject: { Data: "Apsicare — Código de verificação" },
         Body: { Html: { Data: htmlTemplate } }
       }
     }));

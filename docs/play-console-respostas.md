@@ -12,7 +12,7 @@ Onde aparece **[URL ...]**, use os links do GitHub Pages depois que ele for liga
 
 | Campo | Resposta |
 |---|---|
-| Nome do app | ApsiCare |
+| Nome do app | Apsicare |
 | Idioma padrão | Português (Brasil) – pt-BR |
 | App ou jogo | App |
 | Gratuito ou pago | Gratuito |
@@ -21,7 +21,7 @@ Onde aparece **[URL ...]**, use os links do GitHub Pages depois que ele for liga
 
 **Nome (até 30):**
 ```
-ApsiCare
+Apsicare
 ```
 
 **Descrição curta (até 80):**
@@ -32,7 +32,7 @@ Diário de humor e bem-estar com controle de estresse pelo smartwatch.
 
 **Descrição completa (até 4000):**
 ```
-O ApsiCare aproxima psicólogo e paciente entre uma sessão e outra. O paciente registra como está se sentindo, e o psicólogo acompanha a evolução com dados organizados, em vez de depender só da memória da semana.
+O Apsicare aproxima psicólogo e paciente entre uma sessão e outra. O paciente registra como está se sentindo, e o psicólogo acompanha a evolução com dados organizados, em vez de depender só da memória da semana.
 
 PARA O PACIENTE
 • Diário de humor: escolha como você está, dê uma nota para o seu dia e escreva ou grave por voz o que aconteceu.
@@ -58,9 +58,9 @@ PRIVACIDADE
 Seus dados não são vendidos nem usados para publicidade. Você pode pedir a exclusão da sua conta e de todos os seus dados dentro do app.
 
 AVISO IMPORTANTE
-O ApsiCare não é um dispositivo médico e não diagnostica, trata, cura ou previne nenhuma condição de saúde. As estimativas de estresse são automatizadas e não substituem a avaliação de um profissional. Não é um serviço de emergência: em caso de crise, ligue para o CVV (188, 24h e gratuito) ou para o SAMU (192).
+O Apsicare não é um dispositivo médico e não diagnostica, trata, cura ou previne nenhuma condição de saúde. As estimativas de estresse são automatizadas e não substituem a avaliação de um profissional. Não é um serviço de emergência: em caso de crise, ligue para o CVV (188, 24h e gratuito) ou para o SAMU (192).
 
-O ApsiCare é um projeto acadêmico (Trabalho de Conclusão de Curso), destinado a maiores de 18 anos.
+O Apsicare é um projeto acadêmico (Trabalho de Conclusão de Curso), destinado a maiores de 18 anos.
 ```
 
 ## 3. Configurações da loja
@@ -138,7 +138,7 @@ Não marque "Pesquisa com seres humanos", a menos que o TCC tenha aprovação de
 - Funcionalidade: a mesma da 4.8.
 - Justificativa (o formulário costuma aceitar em inglês, que acelera a análise):
 ```
-ApsiCare reads heart rate records from the last 24 hours in Health Connect, only after the user taps "Connect smartwatch" on the "My data" screen. Heart rate is used to compute a daily physiological stress estimate (average BPM and HRV-derived metrics), shown to the user and to the psychologist the user is linked to, to support ongoing psychological follow-up. Samples are aggregated per minute and sent over HTTPS to our backend (AWS, São Paulo region). Health Connect data is never sold, never used for advertising, and never sent to AI providers. Users can delete their account and all associated data from inside the app.
+Apsicare reads heart rate records from the last 24 hours in Health Connect, only after the user taps "Connect smartwatch" on the "My data" screen. Heart rate is used to compute a daily physiological stress estimate (average BPM and HRV-derived metrics), shown to the user and to the psychologist the user is linked to, to support ongoing psychological follow-up. Samples are aggregated per minute and sent over HTTPS to our backend (AWS, São Paulo region). Health Connect data is never sold, never used for advertising, and never sent to AI providers. Users can delete their account and all associated data from inside the app.
 ```
 - URL da política: `[URL da política]` (o link "política de privacidade" dentro do Health Connect já abre a política no app).
 
@@ -176,12 +176,12 @@ ApsiCare reads heart rate records from the last 24 hours in Health Connect, only
 
 **Notas da versão (pt-BR):**
 ```
-Primeira versão de teste do ApsiCare: diário de humor com voz, integração com smartwatch via Health Connect, painel do psicólogo, lembretes e exclusão de conta.
+Primeira versão de teste do Apsicare: diário de humor com voz, integração com smartwatch via Health Connect, painel do psicólogo, lembretes e exclusão de conta.
 ```
 
 **Mensagem para os testadores (WhatsApp/e-mail):**
 ```
-Oi! Estou testando o ApsiCare, o app do meu TCC, e queria sua ajuda.
+Oi! Estou testando o Apsicare, o app do meu TCC, e queria sua ajuda.
 1. Abra este link no celular Android, com a mesma conta Google que você me passou: [LINK DE PARTICIPAÇÃO]
 2. Toque em "Aceitar convite" e depois em "Baixar na Google Play".
 3. Entre com a conta que eu te mandar e use o app normalmente por alguns dias.

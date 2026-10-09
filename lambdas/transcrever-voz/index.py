@@ -51,7 +51,7 @@ def handler(event, context):
         req = urllib.request.Request(
             GROQ_URL,
             data=dados,
-            headers={"Authorization": f"Bearer {api_key}", "Content-Type": content_type, "User-Agent": "ApsiCare/1.0"},
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": content_type, "User-Agent": "Apsicare/1.0"},
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=25) as r:

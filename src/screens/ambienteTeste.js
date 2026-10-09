@@ -317,7 +317,7 @@ const WelcomeScreen = ({ navigation }) => {
           >
             <Icon name="heart" size={48} color="#B367D4" />
           </Animated.View>
-          <Text style={styles.logoText}>ApsiCare</Text>
+          <Text style={styles.logoText}>Apsicare</Text>
           <Text style={styles.logoSubtext}>
             Cuidando da sua saúde mental
           </Text>

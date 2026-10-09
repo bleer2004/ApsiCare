@@ -49,7 +49,7 @@ export const handler = async (event) => {
       }));
       const nomePaciente = patient.Item.name || "Um paciente";
       const titulo = "Pedido de exclusão de dados";
-      const corpo = `${nomePaciente} pediu a exclusão da conta e dos dados no ApsiCare.`;
+      const corpo = `${nomePaciente} pediu a exclusão da conta e dos dados no Apsicare.`;
 
       let pushSent = false;
       try {

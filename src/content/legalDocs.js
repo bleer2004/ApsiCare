@@ -7,16 +7,16 @@ export const termosDeUso = {
   titulo: 'Termos de Uso',
   atualizadoEm: '01/10/2026',
   blocos: [
-    { tipo: 'p', texto: 'Estes Termos de Uso regulam o acesso e uso do aplicativo ApsiCare, disponível para os perfis de Paciente e Psicólogo/Clínico. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a Política de Privacidade.' },
-    { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o ApsiCare é um projeto acadêmico (TCC). Não é uma empresa constituída, não possui CNPJ, e é operado por sua equipe de desenvolvimento.' },
+    { tipo: 'p', texto: 'Estes Termos de Uso regulam o acesso e uso do aplicativo Apsicare, disponível para os perfis de Paciente e Psicólogo/Clínico. Ao criar uma conta ou usar o Aplicativo, você declara que leu, entendeu e concorda com estes Termos e com a Política de Privacidade.' },
+    { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o Apsicare é um projeto acadêmico (TCC). Não é uma empresa constituída, não possui CNPJ, e é operado por sua equipe de desenvolvimento.' },
 
     { tipo: 'h2', texto: '1. Aceitação dos Termos' },
-    { tipo: 'p', texto: '1.1. O uso do ApsiCare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.' },
+    { tipo: 'p', texto: '1.1. O uso do Apsicare é condicionado à aceitação integral destes Termos, tanto por pacientes quanto por psicólogos/clínicos cadastrados.' },
     { tipo: 'p', texto: '1.2. O Aplicativo é destinado exclusivamente a maiores de 18 anos.' },
     { tipo: 'p', texto: '1.3. O cadastro de pacientes é feito por convite de um psicólogo já cadastrado no sistema. Ao aceitar esse convite e criar sua conta, o paciente concorda com estes Termos.' },
 
     { tipo: 'h2', texto: '2. Descrição do Serviço' },
-    { tipo: 'p', texto: 'O ApsiCare conecta psicólogos e pacientes para acompanhamento psicológico contínuo, oferecendo:' },
+    { tipo: 'p', texto: 'O Apsicare conecta psicólogos e pacientes para acompanhamento psicológico contínuo, oferecendo:' },
     { tipo: 'bullet', texto: 'Registro de humor e diário pessoal (texto e voz) pelo paciente' },
     { tipo: 'bullet', texto: 'Leitura de dados fisiológicos (frequência cardíaca) via smartwatch conectado através do Android Health Connect' },
     { tipo: 'bullet', texto: 'Geração automática de insights sobre estresse físico e emocional' },
@@ -43,7 +43,7 @@ export const termosDeUso = {
     { tipo: 'h3', texto: '4.5 Notificações' },
     { tipo: 'p', texto: 'Psicólogos podem receber notificações push (Android) sobre sinais de risco ou compartilhamento do diário — são apoio ao acompanhamento, não substituem julgamento clínico.' },
 
-    { tipo: 'emergencia', titulo: '5. O ApsiCare não é um serviço de emergência', texto: 'Não é pronto-socorro, plantão psicológico ou atendimento de crise. Se você ou alguém que você conhece está em risco imediato, não use o app para pedir ajuda com urgência. Procure imediatamente:', contatos: [
+    { tipo: 'emergencia', titulo: '5. O Apsicare não é um serviço de emergência', texto: 'Não é pronto-socorro, plantão psicológico ou atendimento de crise. Se você ou alguém que você conhece está em risco imediato, não use o app para pedir ajuda com urgência. Procure imediatamente:', contatos: [
       { nome: 'CVV — 24h, gratuito', numero: '188' },
       { nome: 'SAMU', numero: '192' },
       { nome: 'Emergência', numero: '190' },
@@ -57,16 +57,16 @@ export const termosDeUso = {
     { tipo: 'bullet', texto: 'Usar os insights como apoio complementar, nunca como única base de decisão' },
 
     { tipo: 'h2', texto: '7. Responsabilidades do Psicólogo/Clínico' },
-    { tipo: 'p', texto: 'O profissional cadastrado declara possuir registro profissional válido (CRP) e é o único responsável pelas condutas e decisões clínicas. O ApsiCare é ferramenta de apoio, não substitui o exercício profissional.' },
+    { tipo: 'p', texto: 'O profissional cadastrado declara possuir registro profissional válido (CRP) e é o único responsável pelas condutas e decisões clínicas. O Apsicare é ferramenta de apoio, não substitui o exercício profissional.' },
 
     { tipo: 'h2', texto: '8. Propriedade Intelectual' },
-    { tipo: 'p', texto: 'O código-fonte, design, marca e demais elementos do ApsiCare pertencem à equipe responsável pelo seu desenvolvimento, no contexto de um projeto acadêmico (TCC).' },
+    { tipo: 'p', texto: 'O código-fonte, design, marca e demais elementos do Apsicare pertencem à equipe responsável pelo seu desenvolvimento, no contexto de um projeto acadêmico (TCC).' },
 
     { tipo: 'h2', texto: '9. Conteúdo do Usuário' },
     { tipo: 'p', texto: 'Você mantém a titularidade sobre os textos, áudios e conteúdos que registra. Ao usar o app, você autoriza o processamento desse conteúdo pelos serviços da seção 4, só para gerar seus insights e permitir o acompanhamento.' },
 
     { tipo: 'h2', texto: '10. Natureza Experimental e Limitação de Responsabilidade' },
-    { tipo: 'p', texto: '10.1. O ApsiCare é um projeto acadêmico/protótipo (TCC), fornecido "como está", sem garantias de disponibilidade contínua ou precisão absoluta dos dados.' },
+    { tipo: 'p', texto: '10.1. O Apsicare é um projeto acadêmico/protótipo (TCC), fornecido "como está", sem garantias de disponibilidade contínua ou precisão absoluta dos dados.' },
     { tipo: 'p', texto: '10.2. Na máxima extensão permitida por lei, a equipe responsável não se responsabiliza por danos decorrentes do uso do app, incluindo indisponibilidade de serviços de terceiros ou perda de dados.' },
     { tipo: 'p', texto: '10.3. Nada nestes Termos exclui responsabilidades que não possam ser legalmente limitadas, como dolo ou culpa grave.' },
 
@@ -90,11 +90,11 @@ export const politicaDePrivacidade = {
   titulo: 'Política de Privacidade',
   atualizadoEm: '01/10/2026',
   blocos: [
-    { tipo: 'p', texto: 'Esta Política descreve como o ApsiCare coleta, usa, armazena e compartilha dados pessoais de pacientes e psicólogos/clínicos, em conformidade com a LGPD. Ela é parte integrante dos Termos de Uso.' },
-    { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o ApsiCare é um projeto acadêmico (TCC), sem CNPJ, operado por sua equipe de desenvolvimento, que atua como controladora dos dados para fins da LGPD.' },
+    { tipo: 'p', texto: 'Esta Política descreve como o Apsicare coleta, usa, armazena e compartilha dados pessoais de pacientes e psicólogos/clínicos, em conformidade com a LGPD. Ela é parte integrante dos Termos de Uso.' },
+    { tipo: 'aviso', icone: 'info', texto: 'Natureza do projeto: o Apsicare é um projeto acadêmico (TCC), sem CNPJ, operado por sua equipe de desenvolvimento, que atua como controladora dos dados para fins da LGPD.' },
 
     { tipo: 'h2', texto: '1. Quem Somos (Controlador)' },
-    { tipo: 'p', texto: 'A equipe responsável pelo desenvolvimento do ApsiCare é a controladora dos dados pessoais tratados neste Aplicativo. Dúvidas devem ser enviadas ao contato da seção 13.' },
+    { tipo: 'p', texto: 'A equipe responsável pelo desenvolvimento do Apsicare é a controladora dos dados pessoais tratados neste Aplicativo. Dúvidas devem ser enviadas ao contato da seção 13.' },
 
     { tipo: 'h2', texto: '2. Quais Dados Coletamos' },
     { tipo: 'h3', texto: '2.1 Dados de cadastro' },
@@ -135,7 +135,7 @@ export const politicaDePrivacidade = {
     { tipo: 'h2', texto: '7. Por Quanto Tempo Guardamos os Dados' },
     { tipo: 'p', texto: 'Mantemos seus dados enquanto sua conta estiver ativa.' },
     { tipo: 'bullet', texto: 'Psicólogo: Configurações → Excluir conta (com senha, depois de excluir os pacientes)' },
-    { tipo: 'bullet', texto: 'Paciente: Meus dados → Solicitar exclusão dos meus dados. O psicólogo apaga todos os seus dados no ApsiCare' },
+    { tipo: 'bullet', texto: 'Paciente: Meus dados → Solicitar exclusão dos meus dados. O psicólogo apaga todos os seus dados no Apsicare' },
     { tipo: 'p', texto: 'Pedidos de exclusão são atendidos em até 30 dias. Registros que o psicólogo mantém fora do app (prontuário profissional) seguem as normas do Conselho Federal de Psicologia.' },
 
     { tipo: 'h2', texto: '8. Como Protegemos Seus Dados' },
@@ -153,7 +153,7 @@ export const politicaDePrivacidade = {
     { tipo: 'p', texto: 'Responderemos em até 15 dias (exclusão de conta: até 30 dias).' },
 
     { tipo: 'h2', texto: '10. Crianças e Adolescentes' },
-    { tipo: 'p', texto: 'O ApsiCare é destinado exclusivamente a maiores de 18 anos. Contas de menores identificadas serão excluídas.' },
+    { tipo: 'p', texto: 'O Apsicare é destinado exclusivamente a maiores de 18 anos. Contas de menores identificadas serão excluídas.' },
 
     { tipo: 'h2', texto: '11. Armazenamento Local no Dispositivo' },
     { tipo: 'p', texto: 'O Aplicativo guarda localmente (AsyncStorage) seu token de sessão, dados básicos de perfil, preferências de acessibilidade e o registro de consentimento do Diário. Não entram no backup do Android e são removidos ao sair da conta ou desinstalar o app.' },
