@@ -28,6 +28,10 @@ const HomePaciente = ({ navigation, route }) => {
   const [loadingMood, setLoadingMood] = useState(false);
   const [paciente, setPaciente] = useState(null);
   const [moodHistory, setMoodHistory] = useState([]);
+  
+  // Estados do Tutorial / Jornada
+  const [tutorialVisible, setTutorialVisible] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   // Hooks de acessibilidade
   const {
@@ -52,6 +56,64 @@ const HomePaciente = ({ navigation, route }) => {
     { id: 'neutro', label: 'Neutro', color: '#F1F5F9', iconColor: '#64748B', icon: 'meh', valence: 5, arousal: 5 },
   ];
 
+  // Passos do Tutorial - Jornada do Paciente
+  const tutorialSteps = [
+    {
+      icon: 'smile',
+      title: 'Bem-vindo ao ApsiCare!',
+      description: 'Vamos te mostrar como usar o app em poucos passos. É simples e rápido!',
+      tip: 'Toque em "Próximo" para continuar',
+    },
+    {
+      icon: 'bell',
+      title: 'Notificações',
+      description: 'Toque no sino no canto superior para ver lembretes e mensagens do seu psicólogo.',
+      tip: 'Toque em uma notificação para marcá-la como lida',
+    },
+    {
+      icon: 'smile',
+      title: 'Como está se sentindo?',
+      description: 'Escolha entre 5 emojis: Feliz, Calmo, Ansioso, Triste ou Neutro. Seu humor é registrado automaticamente!',
+      tip: 'Registre seu humor diariamente para acompanhar sua evolução',
+    },
+    {
+      icon: 'alert-triangle',
+      title: 'Botão de Emergência',
+      description: 'Em momentos difíceis, toque em "Ligar para emergência". Você verá os números do CVV (188) e SAMU (192).',
+      tip: 'Em emergências, use o botão vermelho na Home',
+    },
+    {
+      icon: 'edit-2',
+      title: 'Anotações Diárias',
+      description: 'Toque em "Anotações diárias" para escrever o que vem à sua mente em um ambiente seguro.',
+      tip: 'Você também pode registrar sonhos no Diário',
+    },
+    {
+      icon: 'target',
+      title: 'Minhas Metas',
+      description: 'Toque em "Minhas metas" para ver os objetivos definidos pelo seu psicólogo.',
+      tip: 'Marque as metas como "Iniciar" ou "Concluir"',
+    },
+    {
+      icon: 'bar-chart-2',
+      title: 'Histórico Emocional',
+      description: 'No final da Home, veja um gráfico com sua evolução emocional. Cada ponto é um registro de humor.',
+      tip: 'Quanto mais dados, melhor o acompanhamento',
+    },
+    {
+      icon: 'navigation',
+      title: 'Navegação Inferior',
+      description: 'Use as abas na parte de baixo: Home, Diário, Metas e Perfil para navegar pelo app.',
+      tip: 'Cada aba tem funcionalidades específicas',
+    },
+    {
+      icon: 'check-circle',
+      title: 'Tudo pronto!',
+      description: 'Agora você sabe como usar o app. Lembre-se: registre seu humor, anote seus sonhos e compartilhe com seu psicólogo.',
+      tip: 'Boa jornada! 💜',
+    },
+  ];
+
   const boasVindas = { id: 'boas-vindas', titulo: 'Bem-vindo ao Apsicare!', mensagem: 'Registre seu humor diariamente para acompanhar seu progresso.', data: 'Hoje', lida: true, icon: 'heart', local: true };
   const [notificacoes, setNotificacoes] = useState([boasVindas]);
 
@@ -66,6 +128,40 @@ const HomePaciente = ({ navigation, route }) => {
       navigation.setParams({ abrirNotificacoes: undefined });
     }
   }, [route?.params?.abrirNotificacoes]);
+
+  // Verificar se é o primeiro acesso para mostrar o tutorial
+  useEffect(() => {
+    verificarPrimeiroAcesso();
+  }, []);
+
+  const verificarPrimeiroAcesso = async () => {
+    try {
+      const tutorialVisto = await AsyncStorage.getItem('tutorial_visto');
+      if (!tutorialVisto) {
+        setTutorialVisible(true);
+      }
+    } catch (err) {
+      console.error('Erro ao verificar tutorial:', err);
+    }
+  };
+
+  const finalizarTutorial = async () => {
+    try {
+      await AsyncStorage.setItem('tutorial_visto', 'true');
+      setTutorialVisible(false);
+      setTutorialStep(0);
+    } catch (err) {
+      console.error('Erro ao salvar tutorial:', err);
+    }
+  };
+
+  const proximoPassoTutorial = () => {
+    if (tutorialStep < tutorialSteps.length - 1) {
+      setTutorialStep(tutorialStep + 1);
+    } else {
+      finalizarTutorial();
+    }
+  };
 
   const carregarNotificacoes = async (patientId) => {
     try {
@@ -214,9 +310,90 @@ const HomePaciente = ({ navigation, route }) => {
     </TouchableOpacity>
   );
 
+  // Renderização do Modal de Tutorial (Jornada Básica)
+  const renderTutorialModal = () => {
+    const currentStep = tutorialSteps[tutorialStep];
+    const isLastStep = tutorialStep === tutorialSteps.length - 1;
+
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={tutorialVisible}
+        onRequestClose={finalizarTutorial}
+      >
+        <View style={styles.tutorialOverlay}>
+          <View style={[styles.tutorialContainer, { backgroundColor: colors.cardBackground }]}>
+            {/* Indicador de progresso */}
+            <View style={styles.tutorialProgress}>
+              {tutorialSteps.map((_, index) => (
+                <View
+                  key={index}
+                  style={[
+                    styles.tutorialProgressDot,
+                    { backgroundColor: index <= tutorialStep ? colors.primary : colors.border }
+                  ]}
+                />
+              ))}
+            </View>
+
+            {/* Ícone */}
+            <View style={[styles.tutorialIconWrapper, { backgroundColor: colors.primary + '20' }]}>
+              <Icon name={currentStep.icon} size={48} color={colors.primary} />
+            </View>
+
+            {/* Título */}
+            <Text style={[styles.tutorialTitle, getTextStyle('xlarge', colors.text, '700')]}>
+              {currentStep.title}
+            </Text>
+
+            {/* Descrição */}
+            <Text style={[styles.tutorialDescription, getTextStyle('medium', colors.textSecondary)]}>
+              {currentStep.description}
+            </Text>
+
+            {/* Dica */}
+            <View style={[styles.tutorialTipContainer, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '30' }]}>
+              <Icon name="info" size={16} color={colors.primary} />
+              <Text style={[styles.tutorialTip, getTextStyle('small', colors.primary, '500')]}>
+                {currentStep.tip}
+              </Text>
+            </View>
+
+            {/* Botões */}
+            <View style={styles.tutorialButtons}>
+              <TouchableOpacity
+                style={[styles.tutorialSkipButton]}
+                onPress={finalizarTutorial}
+              >
+                <Text style={[styles.tutorialSkipText, getTextStyle('medium', colors.textMuted)]}>
+                  Pular
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.tutorialNextButton, { backgroundColor: colors.primary }]}
+                onPress={proximoPassoTutorial}
+              >
+                <Text style={[styles.tutorialNextText, getTextStyle('medium', '#FFFFFF', '700')]}>
+                  {isLastStep ? 'Começar' : 'Próximo'}
+                </Text>
+                <Icon name="arrow-right" size={18} color="#FFFFFF" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <StatusBar barStyle={baixaVisao ? 'light-content' : 'dark-content'} backgroundColor={colors.background} />
+      
+      {/* Modal de Tutorial */}
+      {renderTutorialModal()}
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {/* Header */}
         <View style={[styles.header, { backgroundColor: colors.background }]}>
@@ -246,6 +423,17 @@ const HomePaciente = ({ navigation, route }) => {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Botão para abrir tutorial novamente */}
+        <TouchableOpacity 
+          style={[styles.tutorialButton, { marginHorizontal: getSpacing('medium') }]}
+          onPress={() => { setTutorialStep(0); setTutorialVisible(true); }}
+        >
+          <Icon name="help-circle" size={16} color={colors.primary} />
+          <Text style={[styles.tutorialButtonText, getTextStyle('small', colors.primary, '500')]}>
+            Como usar o app?
+          </Text>
+        </TouchableOpacity>
 
         {/* Seção de Humor */}
         <View style={[styles.moodSection, { paddingHorizontal: getSpacing('medium') }]}>
@@ -532,6 +720,103 @@ const styles = StyleSheet.create({
   notificationBadgeText: {
     fontFamily: 'Manrope',
     fontWeight: '700',
+  },
+  // Botão Tutorial
+  tutorialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 8,
+    marginBottom: 8,
+  },
+  tutorialButtonText: {
+    fontFamily: 'Manrope',
+  },
+  // Modal Tutorial
+  tutorialOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  tutorialContainer: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 24,
+    padding: 24,
+    alignItems: 'center',
+  },
+  tutorialProgress: {
+    flexDirection: 'row',
+    gap: 6,
+    marginBottom: 20,
+  },
+  tutorialProgressDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  tutorialIconWrapper: {
+    width: 96,
+    height: 96,
+    borderRadius: 48,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  tutorialTitle: {
+    fontFamily: 'Manrope',
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  tutorialDescription: {
+    fontFamily: 'Manrope',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  tutorialTipContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  tutorialTip: {
+    fontFamily: 'Manrope',
+    flex: 1,
+  },
+  tutorialButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  tutorialSkipButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tutorialSkipText: {
+    fontFamily: 'Manrope',
+  },
+  tutorialNextButton: {
+    flex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+  },
+  tutorialNextText: {
+    fontFamily: 'Manrope',
   },
   moodSection: {
     marginTop: 24,

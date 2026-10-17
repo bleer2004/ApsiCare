@@ -1,47 +1,78 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect, useContext, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_URL } from '../../../src/services/api';
 
 const AccessibilityContext = createContext();
 
+// Configurações padrão
+const CONFIGURACOES_PADRAO = {
+  baixaVisao: false,
+  daltonismo: false,
+};
+
 export const AccessibilityProvider = ({ children }) => {
-  const [configuracoes, setConfiguracoes] = useState({
-    baixaVisao: false,
-    daltonismo: false,
-  });
+  const [configuracoes, setConfiguracoes] = useState(CONFIGURACOES_PADRAO);
   const [loading, setLoading] = useState(true);
   const [sincronizando, setSincronizando] = useState(false);
+  const [ultimoErro, setUltimoErro] = useState(null);
 
+  // ==========================================================
+  // CARREGAMENTO INICIAL
+  // ==========================================================
   useEffect(() => {
     carregarConfiguracoes();
   }, []);
 
+  /**
+   * Carrega as configurações do AsyncStorage
+   */
   const carregarConfiguracoes = async () => {
     try {
+      setLoading(true);
+      setUltimoErro(null);
+      
       const userStr = await AsyncStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
         const acessibilidade = user?.configuracoesApp?.acessibilidade || {};
+        
         setConfiguracoes({
-          baixaVisao: acessibilidade.baixaVisao || false,
-          daltonismo: acessibilidade.daltonismo || false,
+          baixaVisao: Boolean(acessibilidade.baixaVisao),
+          daltonismo: Boolean(acessibilidade.daltonismo),
         });
+      } else {
+        // Se não tem usuário, mantém padrão
+        setConfiguracoes(CONFIGURACOES_PADRAO);
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error);
+      setUltimoErro(error.message);
+      // Em caso de erro, mantém configurações padrão
+      setConfiguracoes(CONFIGURACOES_PADRAO);
     } finally {
       setLoading(false);
     }
   };
 
-  // Sincronizar com o backend
+  // ==========================================================
+  // SINCRONIZAÇÃO COM BACKEND
+  // ==========================================================
+  
+  /**
+   * Busca configurações do backend e mescla com local
+   */
   const sincronizarComBackend = async () => {
     setSincronizando(true);
+    setUltimoErro(null);
+    
     try {
       const token = await AsyncStorage.getItem('token');
       const userStr = await AsyncStorage.getItem('user');
       
-      if (!token || !userStr) return;
+      if (!token || !userStr) {
+        console.warn('Sincronização ignorada: token ou usuário não encontrados');
+        return { success: false, reason: 'not_authenticated' };
+      }
 
       const user = JSON.parse(userStr);
       const response = await fetch(`${API_URL}/patients/${user.id}/configuracoes`, {
@@ -57,12 +88,13 @@ export const AccessibilityProvider = ({ children }) => {
         const acessibilidade = data?.configuracoesApp?.acessibilidade || {};
         
         const novasConfigs = {
-          baixaVisao: acessibilidade.baixaVisao || false,
-          daltonismo: acessibilidade.daltonismo || false,
+          baixaVisao: Boolean(acessibilidade.baixaVisao),
+          daltonismo: Boolean(acessibilidade.daltonismo),
         };
 
         setConfiguracoes(novasConfigs);
 
+        // Atualizar AsyncStorage
         const updatedUser = {
           ...user,
           configuracoesApp: {
@@ -71,39 +103,60 @@ export const AccessibilityProvider = ({ children }) => {
           },
         };
         await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        
+        return { success: true, data: novasConfigs };
+      } else {
+        throw new Error(`Erro HTTP: ${response.status}`);
       }
     } catch (error) {
       console.error('Erro ao sincronizar com backend:', error);
+      setUltimoErro(error.message);
+      return { success: false, error: error.message };
     } finally {
       setSincronizando(false);
     }
   };
 
+  // ==========================================================
+  // ATUALIZAÇÃO DE CONFIGURAÇÕES
+  // ==========================================================
+  
+  /**
+   * Atualiza configurações (otimista - local primeiro, depois backend)
+   */
   const atualizarConfiguracoes = async (novasConfigs) => {
     try {
+      setUltimoErro(null);
+      
       const userStr = await AsyncStorage.getItem('user');
-      if (userStr) {
-        const user = JSON.parse(userStr);
-        
-        // Atualizar localmente primeiro (otimista)
-        setConfiguracoes(prev => ({ ...prev, ...novasConfigs }));
-        
-        // Atualizar AsyncStorage
-        const updatedUser = {
-          ...user,
-          configuracoesApp: {
-            ...user.configuracoesApp,
-            acessibilidade: {
-              ...user.configuracoesApp?.acessibilidade,
-              ...novasConfigs,
-            },
+      if (!userStr) {
+        console.warn('Nenhum usuário logado para atualizar configurações');
+        return { success: false, reason: 'no_user' };
+      }
+      
+      const user = JSON.parse(userStr);
+      
+      // 1. Atualizar localmente primeiro (otimista)
+      const configsAnteriores = { ...configuracoes };
+      setConfiguracoes(prev => ({ ...prev, ...novasConfigs }));
+      
+      // 2. Atualizar AsyncStorage
+      const updatedUser = {
+        ...user,
+        configuracoesApp: {
+          ...user.configuracoesApp,
+          acessibilidade: {
+            ...user.configuracoesApp?.acessibilidade,
+            ...novasConfigs,
           },
-        };
-        await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+        },
+      };
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
 
-        // Tentar sincronizar com backend
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
+      // 3. Tentar sincronizar com backend
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        try {
           const response = await fetch(`${API_URL}/patients/${user.id}/configuracoes`, {
             method: 'PUT',
             headers: { 
@@ -117,26 +170,50 @@ export const AccessibilityProvider = ({ children }) => {
 
           if (!response.ok) {
             console.warn('Erro ao sincronizar com backend, mas dados mantidos localmente');
+            return { success: true, synced: false, reason: 'backend_error' };
           }
+          
+          return { success: true, synced: true };
+        } catch (syncError) {
+          console.warn('Erro de rede ao sincronizar:', syncError.message);
+          return { success: true, synced: false, reason: 'network_error' };
         }
+      } else {
+        return { success: true, synced: false, reason: 'no_token' };
       }
     } catch (error) {
       console.error('Erro ao atualizar configurações:', error);
+      setUltimoErro(error.message);
+      
       // Reverter em caso de erro
       await carregarConfiguracoes();
+      return { success: false, error: error.message };
     }
   };
 
-  const limparConfiguracoesLocais = () => {
-    setConfiguracoes({ baixaVisao: false, daltonismo: false });
-  };
+  // ==========================================================
+  // RESET E LIMPEZA
+  // ==========================================================
+  
+  /**
+   * Limpa apenas as configurações locais (sem backend)
+   */
+  const limparConfiguracoesLocais = useCallback(() => {
+    setConfiguracoes({ ...CONFIGURACOES_PADRAO });
+    setUltimoErro(null);
+  }, []);
 
+  /**
+   * Reseta configurações (local + backend)
+   */
   const resetarConfiguracoes = async () => {
     try {
+      setUltimoErro(null);
+      
       const userStr = await AsyncStorage.getItem('user');
       if (userStr) {
         const user = JSON.parse(userStr);
-        const resetConfigs = { baixaVisao: false, daltonismo: false };
+        const resetConfigs = { ...CONFIGURACOES_PADRAO };
         
         setConfiguracoes(resetConfigs);
         
@@ -163,31 +240,80 @@ export const AccessibilityProvider = ({ children }) => {
             }),
           });
         }
+        
+        return { success: true };
       }
+      return { success: false, reason: 'no_user' };
     } catch (error) {
       console.error('Erro ao resetar configurações:', error);
+      setUltimoErro(error.message);
       await carregarConfiguracoes();
+      return { success: false, error: error.message };
     }
   };
 
+  // ==========================================================
+  // TOGGLES (ATALHOS)
+  // ==========================================================
+  
+  const toggleBaixaVisao = async () => {
+    return await atualizarConfiguracoes({ baixaVisao: !configuracoes.baixaVisao });
+  };
+
+  const toggleDaltonismo = async () => {
+    return await atualizarConfiguracoes({ daltonismo: !configuracoes.daltonismo });
+  };
+
+  const setBaixaVisao = async (valor) => {
+    return await atualizarConfiguracoes({ baixaVisao: Boolean(valor) });
+  };
+
+  const setDaltonismo = async (valor) => {
+    return await atualizarConfiguracoes({ daltonismo: Boolean(valor) });
+  };
+
+  // ==========================================================
+  // UTILITÁRIOS
+  // ==========================================================
+  
+  /**
+   * Verifica se algum modo de acessibilidade está ativo
+   */
+  const modoAcessivelAtivo = configuracoes.baixaVisao || configuracoes.daltonismo;
+
+  /**
+   * Retorna quantas configurações estão ativas
+   */
+  const totalConfiguracoesAtivas = 
+    (configuracoes.baixaVisao ? 1 : 0) + 
+    (configuracoes.daltonismo ? 1 : 0);
+
+  // ==========================================================
+  // PROVIDER
+  // ==========================================================
   return (
     <AccessibilityContext.Provider
       value={{
+        // Estado
         configuracoes,
         loading,
         sincronizando,
+        ultimoErro,
+        modoAcessivelAtivo,
+        totalConfiguracoesAtivas,
+        
+        // Funções principais
         atualizarConfiguracoes,
         sincronizarComBackend,
         resetarConfiguracoes,
         limparConfiguracoesLocais,
         recarregar: carregarConfiguracoes,
-        // Atalhos para uso direto
-        toggleBaixaVisao: async () => {
-          await atualizarConfiguracoes({ baixaVisao: !configuracoes.baixaVisao });
-        },
-        toggleDaltonismo: async () => {
-          await atualizarConfiguracoes({ daltonismo: !configuracoes.daltonismo });
-        },
+        
+        // Toggles
+        toggleBaixaVisao,
+        toggleDaltonismo,
+        setBaixaVisao,
+        setDaltonismo,
       }}
     >
       {children}
