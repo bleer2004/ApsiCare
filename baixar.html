@@ -24,10 +24,14 @@ code{background:rgba(127,127,127,.15);padding:1px 5px;border-radius:4px;font-siz
 .link{text-align:center;margin:8px 0 24px}.link p{margin:0 0 10px;color:var(--suave);font-size:.92rem}.link code{word-break:break-all}
 .botao-sec{background:transparent;color:var(--roxo);border:2px solid var(--roxo);font:inherit;font-weight:700;padding:10px 18px;border-radius:10px;cursor:pointer}
 .contas{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-top:4px}.conta{background:var(--card);border:1px solid var(--borda);border-radius:10px;padding:12px 14px}.conta strong{display:block;margin-bottom:4px}.conta code{font-size:.95em;word-break:break-all}
+.plataforma{display:flex;gap:10px;align-items:center;background:rgba(179,103,212,.12);border:1px solid var(--roxo);border-radius:10px;padding:12px 14px;margin:0 0 20px;font-weight:600}
+.iphone{display:none;background:#FEF3C7;color:#78350F;border-radius:10px;padding:12px 14px;margin:0 0 20px}
 </style></head>
 <body><header><div class="w"><a href="index.html">Apsicare</a><nav><a href="baixar.html" aria-current="page">Baixar</a><a href="politica-de-privacidade.html">Política de Privacidade</a><a href="termos-de-uso.html">Termos de Uso</a><a href="exclusao-de-conta.html">Exclusão de Conta</a></nav></div></header>
 <main><article>
 <h1>Baixe o Apsicare</h1>
+<p class="plataforma"><span aria-hidden="true">🤖</span><span>Só para celular Android, pela Google Play. Ainda não existe versão para iPhone.</span></p>
+<p class="iphone" id="aviso-iphone"><strong>Você está num iPhone.</strong> O Apsicare ainda não funciona no iPhone. Para instalar, abra esta página num celular Android.</p>
 <p>O app está em teste na Google Play. São três passos rápidos no celular Android:</p>
 <div class="qr so-pc"><img src="qrcode-baixar.png" alt="QR code que abre esta página de download do Apsicare"><p>O app é instalado no celular. Escaneie este código com a câmera do seu Android e continue os passos por lá.</p></div>
 <div class="link so-cel"><p>Quer mandar para alguém ou abrir depois? Link da página: <code>bleer2004.github.io/ApsiCare/baixar.html</code></p><button class="botao-sec" id="compartilhar" type="button">Compartilhar link</button></div>
@@ -45,4 +49,5 @@ if(navigator.share){navigator.share({title:'Baixe o Apsicare',url:u}).catch(func
 var ok=function(){b.textContent='Link copiado!';setTimeout(function(){b.textContent='Compartilhar link'},2000)};
 if(navigator.clipboard){navigator.clipboard.writeText(u).then(ok,function(){prompt('Copie o link:',u)})}else{prompt('Copie o link:',u)}
 })})();
-</script><footer>Apsicare · projeto acadêmico (TCC) · contato: apsicare.noreply@gmail.com</footer></body></html>
+</script><footer>Apsicare · projeto acadêmico (TCC) · contato: apsicare.noreply@gmail.com</footer><script>if(/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1))document.getElementById("aviso-iphone").style.display="block";</script>
+</body></html>
